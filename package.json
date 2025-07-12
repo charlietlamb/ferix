@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "ferix",
   "private": true,
   "scripts": {
     "build": "turbo run build",
