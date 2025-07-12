@@ -11,10 +11,10 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "hooks": "@/hooks",
-    "lib": "@/lib",
-    "ui": "@/components/shadcn"
+    "components": "@ferix/ui/components",
+    "utils": "@ferix/ui/lib/utils",
+    "hooks": "@ferix/ui/hooks",
+    "lib": "@ferix/ui/lib",
+    "ui": "@ferix/ui/components/shadcn"
   }
 }
