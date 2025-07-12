@@ -1,4 +1,8 @@
 import { DashboardSidebar } from '@ferix/ui/components/dashboard/sidebar/dashboard-sidebar'
+import {
+  SidebarInset,
+  SidebarProvider,
+} from '@ferix/ui/components/shadcn/sidebar'
 
 export default function DashboardLayout({
   children,
@@ -6,9 +10,9 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex">
+    <SidebarProvider>
       <DashboardSidebar />
-      <main className="flex-1">{children}</main>
-    </div>
+      <SidebarInset>{children}</SidebarInset>
+    </SidebarProvider>
   )
 }
