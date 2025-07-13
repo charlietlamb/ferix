@@ -1,9 +1,12 @@
 import { betterAuth } from 'better-auth'
-import { Pool } from 'pg'
-import { env } from '@ferix/env'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { db } from '@ferix/database/index'
+import * as schema from '@ferix/database/db/schema'
 
 export const auth = betterAuth({
-  database: new Pool({
-    connectionString: env.DATABASE_URL,
+  database: drizzleAdapter(db, {
+    provider: 'pg',
+    schema,
+    usePlural: true,
   }),
 })
