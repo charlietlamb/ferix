@@ -137,7 +137,7 @@ export function DashboardSidebar({
           size={open ? 'default' : 'icon'}
           classNames={{
             trigger: {
-              base: 'bg-foreground/10 hover:bg-primary/50 cursor-pointer',
+              base: 'bg-transparent hover:bg-foreground/10 cursor-pointer',
             },
             content: {
               menuItem: 'cursor-pointer',

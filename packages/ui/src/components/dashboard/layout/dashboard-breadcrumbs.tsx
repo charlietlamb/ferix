@@ -36,10 +36,7 @@ export function DashboardBreadcrumbs() {
     return (
       <Fragment key={href}>
         <BreadcrumbItem
-          className={cn(
-            'hidden md:block text-foreground/80',
-            isLast && 'text-foreground'
-          )}
+          className={cn('hidden md:block', isLast && 'text-foreground')}
         >
           <BreadcrumbLink href={segment.href}>{segment.label}</BreadcrumbLink>
         </BreadcrumbItem>

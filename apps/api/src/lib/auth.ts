@@ -10,7 +10,12 @@ export const auth = betterAuth({
     schema,
     usePlural: true,
   }),
-  plugins: [organization(), openAPI()],
+  plugins: [
+    organization({
+      teams: { enabled: true },
+    }),
+    openAPI(),
+  ],
   emailAndPassword: {
     enabled: true,
     maxPasswordLength: 100,
