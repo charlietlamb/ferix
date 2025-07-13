@@ -3,6 +3,10 @@
   "compilerOptions": {
     "strict": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx"
+    "jsxImportSource": "hono/jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@ferix/env": ["../../packages/env/src/index.ts"]
+    }
   }
 }
