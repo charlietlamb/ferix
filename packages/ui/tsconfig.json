@@ -1,11 +1,7 @@
 {
   "extends": "@ferix/typescript-config/react-library.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "baseUrl": ".",
-    "paths": {
-      "@ferix/env": ["../env/src"]
-    }
+    "outDir": "dist"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

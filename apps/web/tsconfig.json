@@ -4,8 +4,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
+      "@ferix/api/*": ["../../apps/api/src/*"],
       "@ferix/ui/*": ["../../packages/ui/src/*"],
-      "@ferix/api/*": ["../../apps/api/src/*"]
+      "@ferix/env": ["../../packages/env/src"],
+      "@ferix/database/*": ["../../packages/database/src/*"]
     },
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],

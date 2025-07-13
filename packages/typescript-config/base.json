@@ -16,7 +16,8 @@
     "skipLibCheck": true,
     "strict": true,
     "paths": {
-      "@ferix/ui/*": ["../../packages/ui/src/*"]
+      "@ferix/ui/*": ["../../packages/ui/src/*"],
+      "@ferix/env": ["../../packages/env/src"]
     }
   },
   "exclude": ["node_modules", "dist"]

@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @source '../../src/';
 @source '../../../../apps/web'
+@source "../../../../node_modules/@daveyplate/better-auth-ui";
+
 @import 'tw-animate-css';
 @import './themes.css';
 
