@@ -1,9 +1,4 @@
 import { BetterAuthCard } from '@ferix/ui/components/auth/better-auth-card'
-import { authViewPaths } from '@daveyplate/better-auth-ui/server'
-
-export function generateStaticParams() {
-  return Object.values(authViewPaths).map((pathname) => ({ pathname }))
-}
 
 export default async function AuthPage({
   params,

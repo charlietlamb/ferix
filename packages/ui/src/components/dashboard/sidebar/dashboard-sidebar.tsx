@@ -14,11 +14,12 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarRail,
+  useSidebar,
 } from '@ferix/ui/components/shadcn/sidebar'
 import { RiSlowDownLine } from '@remixicon/react'
 import { UserButton } from '@daveyplate/better-auth-ui'
+import { cn } from '@ferix/ui/lib/utils'
 
-// This is sample data.
 const data = {
   user: {
     name: 'Mark Bannert',
@@ -82,6 +83,7 @@ function SidebarLogo() {
 export function DashboardSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
+  const { open } = useSidebar()
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader className="h-16 max-md:mt-2 mb-2 justify-center">
@@ -122,7 +124,7 @@ export function DashboardSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <UserButton />
+        <UserButton size={open ? 'default' : 'icon'} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
