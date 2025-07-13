@@ -19,12 +19,17 @@ export function BetterAuthUIProvider({
       replace={router.replace}
       onSessionChange={() => router.refresh()}
       Link={Link}
+      credentials={{
+        rememberMe: true,
+        forgotPassword: true,
+        passwordValidation: {
+          minLength: 8,
+          maxLength: 100,
+        },
+      }}
       social={{
         providers: ['google', 'github'],
       }}
-      multiSession
-      magicLink
-      basePath="/"
     >
       {children}
     </AuthUIProvider>

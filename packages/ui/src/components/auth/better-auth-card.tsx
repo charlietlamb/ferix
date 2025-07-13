@@ -1,3 +1,5 @@
+'use client'
+
 import { AuthCard, AuthCardProps } from '@daveyplate/better-auth-ui'
 
 export const BetterAuthCard = (props: AuthCardProps) => {
@@ -7,6 +9,7 @@ export const BetterAuthCard = (props: AuthCardProps) => {
       classNames={{
         separator: 'flex-1',
       }}
+      socialLayout="horizontal"
       {...props}
     />
   )
