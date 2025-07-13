@@ -4,8 +4,16 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@ferix/ui/*": ["../../packages/ui/src/*"]
-    }
+      "@ferix/ui/*": ["../../packages/ui/src/*"],
+      "@ferix/api/*": ["../../apps/api/src/*"]
+    },
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "noEmit": true,
+    "incremental": true,
+    "module": "esnext",
+    "resolveJsonModule": true
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
