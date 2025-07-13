@@ -2,8 +2,6 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-
-import { NavUser } from '@ferix/ui/components/dashboard/sidebar/nav-user'
 import {
   Sidebar,
   SidebarContent,
@@ -15,17 +13,10 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarRail,
 } from '@ferix/ui/components/shadcn/sidebar'
-import {
-  RiSlowDownLine,
-  RiLeafLine,
-  RiNavigationLine,
-  RiSpeakLine,
-  RiCodeSSlashLine,
-  RiGeminiLine,
-  RiLinksLine,
-  RiDatabase2Line,
-} from '@remixicon/react'
+import { RiSlowDownLine } from '@remixicon/react'
+import { UserButton } from '@daveyplate/better-auth-ui'
 
 // This is sample data.
 const data = {
@@ -44,41 +35,6 @@ const data = {
           url: '#',
           icon: RiSlowDownLine,
           isActive: true,
-        },
-        {
-          title: 'Transactions',
-          url: '#',
-          icon: RiLeafLine,
-        },
-        {
-          title: 'Metrics',
-          url: '#',
-          icon: RiNavigationLine,
-        },
-        {
-          title: 'Security',
-          url: '#',
-          icon: RiSpeakLine,
-        },
-        {
-          title: 'API',
-          url: '#',
-          icon: RiCodeSSlashLine,
-        },
-        {
-          title: 'Quick Setup',
-          url: '#',
-          icon: RiGeminiLine,
-        },
-        {
-          title: 'Payment Links',
-          url: '#',
-          icon: RiLinksLine,
-        },
-        {
-          title: 'Archive',
-          url: '#',
-          icon: RiDatabase2Line,
         },
       ],
     },
@@ -166,8 +122,9 @@ export function DashboardSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <UserButton />
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   )
 }
