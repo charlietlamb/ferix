@@ -5,23 +5,24 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@ferix/ui/components/shadcn/breadcrumb'
 import { cn } from '@ferix/ui/lib/utils'
+import { Fragment } from 'react'
 import { usePathname } from 'next/navigation'
 
 export function DashboardBreadcrumbs() {
   let pathname = usePathname()
-  const segments: { label: string; href: string }[] = pathname
-    .split('/')
-    .filter(Boolean)
-    .map((segment, index) => {
+  const pathSegments = pathname.split('/').filter(Boolean)
+
+  const segments: { label: string; href: string }[] = pathSegments.map(
+    (segment, index) => {
       return {
         label: segment.charAt(0).toUpperCase() + segment.slice(1),
-        href: `/${segments.slice(0, index + 1).join('/')}`,
+        href: `/${pathSegments.slice(0, index + 1).join('/')}`,
       }
-    })
+    }
+  )
 
   segments.unshift({
     label: 'Dashboard',
@@ -33,12 +34,14 @@ export function DashboardBreadcrumbs() {
     const isLast = index === segments.length - 1
 
     return (
-      <BreadcrumbItem
-        key={href}
-        className={cn('hidden md:block', isLast && 'text-foreground')}
-      >
-        <BreadcrumbLink href={segment.href}>{segment.label}</BreadcrumbLink>
-      </BreadcrumbItem>
+      <Fragment key={href}>
+        <BreadcrumbItem
+          className={cn('hidden md:block', isLast && 'text-foreground')}
+        >
+          <BreadcrumbLink href={segment.href}>{segment.label}</BreadcrumbLink>
+        </BreadcrumbItem>
+        {!isLast && <BreadcrumbSeparator />}
+      </Fragment>
     )
   })
 

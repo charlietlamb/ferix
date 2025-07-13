@@ -4,6 +4,7 @@ import {
   SidebarProvider,
 } from '@ferix/ui/components/shadcn/sidebar'
 import { RedirectToSignIn } from '@daveyplate/better-auth-ui'
+import { DashboardLayout as PageDashboardLayout } from '@ferix/ui/components/dashboard/layout/dashboard-layout'
 
 export default function DashboardLayout({
   children,
@@ -15,7 +16,9 @@ export default function DashboardLayout({
       <RedirectToSignIn />
       <SidebarProvider>
         <DashboardSidebar />
-        <SidebarInset>{children}</SidebarInset>
+        <SidebarInset>
+          <PageDashboardLayout>{children}</PageDashboardLayout>
+        </SidebarInset>
       </SidebarProvider>
     </>
   )

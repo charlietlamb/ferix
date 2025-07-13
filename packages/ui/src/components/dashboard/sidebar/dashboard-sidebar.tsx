@@ -16,26 +16,29 @@ import {
   SidebarRail,
   useSidebar,
 } from '@ferix/ui/components/shadcn/sidebar'
-import { RiSlowDownLine } from '@remixicon/react'
 import { UserButton } from '@daveyplate/better-auth-ui'
-import { cn } from '@ferix/ui/lib/utils'
+import { Gauge, Users, WalletCards } from 'lucide-react'
+import { useRouter, usePathname } from 'next/navigation'
 
 const data = {
-  user: {
-    name: 'Mark Bannert',
-    email: 'mark@bannert.com',
-    avatar:
-      'https://raw.githubusercontent.com/origin-space/origin-images/refs/heads/main/exp3/user_itiiaq.png',
-  },
   navMain: [
     {
       title: 'General',
       items: [
         {
           title: 'Dashboard',
-          url: '#',
-          icon: RiSlowDownLine,
-          isActive: true,
+          url: '/',
+          icon: Gauge,
+        },
+        {
+          title: 'Subscriptions',
+          url: '/subscriptions',
+          icon: WalletCards,
+        },
+        {
+          title: 'Organization',
+          url: '/organization',
+          icon: Users,
         },
       ],
     },
@@ -84,6 +87,8 @@ export function DashboardSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const { open } = useSidebar()
+  const router = useRouter()
+  const pathname = usePathname()
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader className="h-16 max-md:mt-2 mb-2 justify-center">
@@ -103,7 +108,10 @@ export function DashboardSidebar({
                       asChild
                       className="group/menu-button group-data-[collapsible=icon]:px-[5px]! font-medium gap-3 h-9 [&>svg]:size-auto"
                       tooltip={item.title}
-                      isActive={item.isActive}
+                      isActive={item.url === pathname}
+                      onClick={() => {
+                        router.push(item.url)
+                      }}
                     >
                       <a href={item.url}>
                         {item.icon && (
