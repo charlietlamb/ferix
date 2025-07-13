@@ -19,6 +19,7 @@ import {
 import { UserButton } from '@daveyplate/better-auth-ui'
 import { Gauge, Users, WalletCards } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
+import { cn } from '@ferix/ui/lib/utils'
 
 const data = {
   navMain: [
@@ -132,7 +133,17 @@ export function DashboardSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <UserButton size={open ? 'default' : 'icon'} />
+        <UserButton
+          size={open ? 'default' : 'icon'}
+          classNames={{
+            trigger: {
+              base: 'bg-foreground/10 hover:bg-primary/50 cursor-pointer',
+            },
+            content: {
+              menuItem: 'cursor-pointer',
+            },
+          }}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

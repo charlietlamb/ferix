@@ -16,4 +16,7 @@ export const auth = betterAuth({
     maxPasswordLength: 100,
     minPasswordLength: 8,
   },
+  advanced: {
+    cookiePrefix: 'ferix',
+  },
 })
