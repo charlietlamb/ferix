@@ -30,6 +30,7 @@ export function BetterAuthUIProvider({
       social={{
         providers: ['google', 'github'],
       }}
+      organization={true}
     >
       {children}
     </AuthUIProvider>

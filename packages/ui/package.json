@@ -20,7 +20,7 @@
     "typescript": "5.8.2"
   },
   "dependencies": {
-    "@daveyplate/better-auth-ui": "^2.0.12",
+    "@daveyplate/better-auth-ui": "^2.0.8",
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
