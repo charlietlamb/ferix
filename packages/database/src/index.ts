@@ -3,7 +3,6 @@ import { drizzle as localDrizzle } from 'drizzle-orm/node-postgres'
 import { databaseEnv } from './env'
 
 const isLocal = databaseEnv.DATABASE_URL.includes('localhost')
-console.log('isLocal', isLocal)
 const drizzle = isLocal ? localDrizzle : hostedDrizzle
 
 // @ts-expect-error - drizzle is not typed correctly

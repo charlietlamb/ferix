@@ -7,7 +7,10 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "sync:env": "./scripts/sync-env.sh"
+    "sync:env": "./scripts/sync-env.sh",
+    "db:generate": "cd packages/database && bun db:generate",
+    "db:migrate": "cd packages/database && bun db:migrate",
+    "db:studio": "cd packages/database && bun db:studio"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
