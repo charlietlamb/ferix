@@ -6,7 +6,8 @@
   },
   "organization": {
     "create": {
-      "title": "Create Organization",
+      "heading": "Create Organization",
+      "subheading": "Create a new organization to get started.",
       "name": {
         "label": "Organization Name",
         "placeholder": "Acme Inc",
@@ -16,7 +17,13 @@
         "label": "Organization Slug",
         "placeholder": "acme-inc",
         "textAfter": "This is how your organization will be identified in the URL."
-      }
+      },
+      "submit": "Create Organization"
+    }
+  },
+  "form": {
+    "fieldInfo": {
+      "validating": "Validating..."
     }
   }
 }

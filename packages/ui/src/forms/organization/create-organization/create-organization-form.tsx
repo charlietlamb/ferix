@@ -2,13 +2,14 @@
 
 import { useTranslations } from 'next-intl'
 import { useCreateOrganizationForm } from './use-create-organization-form'
+import { FormWrapper } from '@ferix/ui/components/forms/form-wrapper'
 
 export function CreateOrganizationForm() {
   const form = useCreateOrganizationForm()
   const t = useTranslations('organization.create')
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-xl">
+    <FormWrapper heading={t('heading')} subheading={t('subheading')}>
       <form.AppField
         name="name"
         children={(field) => (
@@ -31,6 +32,9 @@ export function CreateOrganizationForm() {
           />
         )}
       />
-    </div>
+      <form.AppForm>
+        <form.SubmitButton label={t('submit')} />
+      </form.AppForm>
+    </FormWrapper>
   )
 }

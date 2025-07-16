@@ -13,5 +13,9 @@ export function useCreateOrganizationForm() {
     validators: {
       onSubmit: createOrganizationSchema,
     },
+    onSubmit: async (values) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      console.log(values)
+    },
   })
 }
