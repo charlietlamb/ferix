@@ -6,15 +6,16 @@ import {
 import { DashboardLayout as PageDashboardLayout } from '@ferix/ui/components/dashboard/layout/dashboard-layout'
 import { auth } from '@ferix/api/lib/auth'
 import { headers as nextHeaders } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { redirect } from '@/i18n/navigation'
 import { Onboarding } from '@ferix/ui/components/onboarding/onboarding'
+import { getLocale } from 'next-intl/server'
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const headers = await nextHeaders()
+  const [headers, locale] = await Promise.all([nextHeaders(), getLocale()])
   const [session, organizations] = await Promise.all([
     auth.api.getSession({
       headers,
@@ -25,7 +26,7 @@ export default async function DashboardLayout({
   ])
 
   if (!session) {
-    return redirect('/auth/sign-in')
+    return redirect({ href: '/auth/sign-in', locale })
   }
 
   if (organizations.length === 0) {
@@ -33,13 +34,11 @@ export default async function DashboardLayout({
   }
 
   return (
-    <>
-      <SidebarProvider>
-        <DashboardSidebar />
-        <SidebarInset>
-          <PageDashboardLayout>{children}</PageDashboardLayout>
-        </SidebarInset>
-      </SidebarProvider>
-    </>
+    <SidebarProvider>
+      <DashboardSidebar />
+      <SidebarInset>
+        <PageDashboardLayout>{children}</PageDashboardLayout>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

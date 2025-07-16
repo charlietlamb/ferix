@@ -3,5 +3,20 @@
     "header": {
       "title": "Ferix"
     }
+  },
+  "organization": {
+    "create": {
+      "title": "Create Organization",
+      "name": {
+        "label": "Organization Name",
+        "placeholder": "Acme Inc",
+        "textAfter": "You can always change this later."
+      },
+      "slug": {
+        "label": "Organization Slug",
+        "placeholder": "acme-inc",
+        "textAfter": "This is how your organization will be identified in the URL."
+      }
+    }
   }
 }
