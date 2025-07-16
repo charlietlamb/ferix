@@ -16,14 +16,10 @@
       "slug": {
         "label": "Organization Slug",
         "placeholder": "acme-inc",
-        "textAfter": "This is how your organization will be identified in the URL."
+        "textAfter": "This is how your organization will be identified in the URL.",
+        "error": "Slug is already taken"
       },
       "submit": "Create Organization"
-    }
-  },
-  "form": {
-    "fieldInfo": {
-      "validating": "Validating..."
     }
   }
 }

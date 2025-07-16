@@ -11,10 +11,6 @@ export function SubmitButton({ label }: { label: string }) {
         <Button
           type="submit"
           disabled={isSubmitting}
-          onClick={(e) => {
-            e.preventDefault()
-            form.handleSubmit()
-          }}
           className={cn(isSubmitting && 'cursor-default')}
         >
           {isSubmitting ? <Spinner /> : label}
