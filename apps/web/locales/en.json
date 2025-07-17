@@ -11,13 +11,22 @@
       "name": {
         "label": "Organization Name",
         "placeholder": "Acme Inc",
-        "textAfter": "You can always change this later."
+        "text-after": "You can always change this later.",
+        "error": {
+          "min": "Name must be at least 1 character",
+          "max": "Name must be less than 255 characters"
+        }
       },
       "slug": {
         "label": "Organization Slug",
         "placeholder": "acme-inc",
-        "textAfter": "This is how your organization will be identified in the URL.",
-        "error": "Slug is already taken"
+        "text-after": "This is how your organization will be identified in the URL.",
+        "error": {
+          "min": "Slug must be at least 1 character",
+          "max": "Slug must be less than 255 characters",
+          "regex": "Slug must only contain lowercase letters, numbers, and hyphens",
+          "taken": "Slug is already taken"
+        }
       },
       "submit": "Create Organization"
     }

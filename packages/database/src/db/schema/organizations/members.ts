@@ -1,7 +1,6 @@
 import { pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 import { organizations } from './organizations'
 import { users } from '../auth/users'
-import { teams } from './teams'
 
 export const members = pgTable('members', {
   id: text('id').primaryKey(),
@@ -11,7 +10,7 @@ export const members = pgTable('members', {
   userId: text('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  teamId: text('team_id').references(() => teams.id),
   role: text('role').default('member').notNull(),
+  teamId: text('team_id'),
   createdAt: timestamp('created_at').notNull(),
 })

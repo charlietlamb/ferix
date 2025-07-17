@@ -23,7 +23,7 @@ export function CreateOrganizationForm() {
             label={t('name.label')}
             type="text"
             placeholder={t('name.placeholder')}
-            textAfter={t('name.textAfter')}
+            textAfter={t('name.text-after')}
           />
         )}
       />
@@ -36,7 +36,7 @@ export function CreateOrganizationForm() {
               slug: value,
             })
             if (!response.data?.status) {
-              return t('slug.error')
+              return t('slug.error.taken')
             }
           },
         }}
@@ -45,7 +45,7 @@ export function CreateOrganizationForm() {
             label={t('slug.label')}
             type="text"
             placeholder={t('slug.placeholder')}
-            textAfter={t('slug.textAfter')}
+            textAfter={t('slug.text-after')}
           />
         )}
       />

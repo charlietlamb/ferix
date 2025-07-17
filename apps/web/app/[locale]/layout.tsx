@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import '@ferix/ui/styles/globals.css'
 import { hasLocale } from 'next-intl'
 import { notFound } from 'next/navigation'
-import { routing } from '@/i18n/routing'
+import { routing } from '@ferix/i18n/routing'
 import { Providers } from '@ferix/ui/providers'
 
 const geistSans = Geist({

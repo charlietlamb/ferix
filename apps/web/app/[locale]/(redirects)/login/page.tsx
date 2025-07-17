@@ -1,4 +1,4 @@
-import { redirect } from '@/i18n/navigation'
+import { redirect } from '@ferix/i18n/navigation'
 import { getLocale } from 'next-intl/server'
 
 export default async function () {

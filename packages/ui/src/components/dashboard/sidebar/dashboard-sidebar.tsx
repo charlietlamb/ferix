@@ -18,8 +18,7 @@ import {
 } from '@ferix/ui/components/shadcn/sidebar'
 import { UserButton } from '@daveyplate/better-auth-ui'
 import { Gauge, Users, WalletCards } from 'lucide-react'
-import { useRouter, usePathname } from 'next/navigation'
-import { cn } from '@ferix/ui/lib/utils'
+import { useRouter, usePathname } from '@ferix/i18n/navigation'
 
 const data = {
   navMain: [

@@ -1,20 +1,23 @@
 import { authClient } from '@ferix/ui/lib/auth-client'
 import {
   CreateOrganizationSchema,
-  createOrganizationSchema,
+  getCreateOrganizationSchema,
 } from './create-organization-schema'
 import { useAppForm } from '@ferix/ui/hooks/form'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@ferix/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
 export function useCreateOrganizationForm() {
   const router = useRouter()
+  const t = useTranslations('organization.create')
   return useAppForm({
     defaultValues: {
       name: '',
       slug: '',
     } satisfies CreateOrganizationSchema,
     validators: {
-      onSubmit: createOrganizationSchema,
+      onChange: getCreateOrganizationSchema(t),
+      onSubmit: getCreateOrganizationSchema(t),
     },
     onSubmit: async (values) => {
       const response = await authClient.organization.create({

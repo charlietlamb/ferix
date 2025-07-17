@@ -6,7 +6,7 @@ import {
 import { DashboardLayout as PageDashboardLayout } from '@ferix/ui/components/dashboard/layout/dashboard-layout'
 import { auth } from '@ferix/api/lib/auth'
 import { headers as nextHeaders } from 'next/headers'
-import { redirect } from '@/i18n/navigation'
+import { redirect } from '@ferix/i18n/navigation'
 import { Onboarding } from '@ferix/ui/components/onboarding/onboarding'
 import { getLocale } from 'next-intl/server'
 

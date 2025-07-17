@@ -2,7 +2,7 @@
 
 import { AuthUIProvider } from '@daveyplate/better-auth-ui'
 import { authClient } from '@ferix/ui/lib/auth-client'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@ferix/i18n/navigation'
 import Link from 'next/link'
 
 export function BetterAuthUIProvider({
