@@ -15,7 +15,16 @@
       "go-to-next-page": "Go to next page",
       "go-to-last-page": "Go to last page"
     },
-    "no-results": "No results."
+    "no-results": "No results.",
+    "organization": {
+      "members": {
+        "filter": {
+          "placeholder": "Filter by name or role...",
+          "placeholder-aria-label": "Filter by name or role",
+          "clear-filter-aria-label": "Clear filter"
+        }
+      }
+    }
   },
   "organization": {
     "create": {

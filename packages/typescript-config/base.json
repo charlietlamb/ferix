@@ -18,7 +18,8 @@
     "paths": {
       "@ferix/ui/*": ["../../packages/ui/src/*"],
       "@ferix/env": ["../../packages/env/src"],
-      "@ferix/i18n/*": ["../../packages/i18n/src/*"]
+      "@ferix/i18n/*": ["../../packages/i18n/src/*"],
+      "@ferix/types/*": ["../../packages/types/src/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

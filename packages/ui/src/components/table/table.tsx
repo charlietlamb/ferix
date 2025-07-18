@@ -16,18 +16,18 @@ import { useTranslations } from 'next-intl'
 
 export function Table<T>({
   table,
-  fitlers,
+  filters,
 }: {
   table: TanstackTable<T>
-  fitlers: React.ReactNode
+  filters: React.ReactNode
 }) {
   const numberOfColumns = table.getAllColumns().length
   const t = useTranslations('table')
   return (
     <div className="space-y-4">
-      {fitlers && (
+      {filters && (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {fitlers}
+          {filters}
         </div>
       )}
 

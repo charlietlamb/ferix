@@ -1,13 +1,12 @@
 'use client'
 
-import { authClient } from '@ferix/ui/lib/auth-client'
+import type { OrganizationWithMembers } from '@ferix/types/organization-with-members'
+import { OrganizationMembersTable } from '@ferix/ui/tables/organization-members/organization-members-table'
 
-export function OrganizationDashboard() {
-  const { data: organizations } = authClient.useListOrganizations()
-  return (
-    <div>
-      <h1>Organizations</h1>
-      <pre>{JSON.stringify(organizations, null, 2)}</pre>
-    </div>
-  )
+export function OrganizationDashboard({
+  organization,
+}: {
+  organization: OrganizationWithMembers
+}) {
+  return <OrganizationMembersTable organization={organization} />
 }
