@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { db } from '@ferix/database/index'
 import * as schema from '@ferix/database/db/schema'
 import { openAPI, organization } from 'better-auth/plugins'
+import { env } from '@ferix/env'
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -24,4 +25,5 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: 'ferix',
   },
+  trustedOrigins: [env.NEXT_PUBLIC_BASE_URL],
 })
