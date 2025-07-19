@@ -3,15 +3,15 @@ import type { Member } from 'better-auth/plugins/organization'
 
 export const organizationMembersColumns: ColumnDef<Member>[] = [
   {
-    header: 'ID',
+    header: 'User Name',
     accessorKey: 'user.name',
   },
   {
-    header: 'Role',
+    header: 'Organization Role',
     accessorKey: 'role',
   },
   {
-    header: 'Joined',
+    header: 'Date Joined',
     accessorKey: 'createdAt',
     cell: ({ getValue }) => {
       const date = getValue<Date>()
