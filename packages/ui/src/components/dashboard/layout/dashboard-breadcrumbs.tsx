@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import {
   Breadcrumb,
@@ -6,32 +6,32 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from '@ferix/ui/components/shadcn/breadcrumb'
-import { cn } from '@ferix/ui/lib/utils'
-import { Fragment } from 'react'
-import { usePathname } from 'next/navigation'
+} from '@ferix/ui/components/shadcn/breadcrumb';
+import { cn } from '@ferix/ui/lib/utils';
+import { usePathname } from 'next/navigation';
+import { Fragment } from 'react';
 
 export function DashboardBreadcrumbs() {
-  let pathname = usePathname()
-  const pathSegments = pathname.split('/').filter(Boolean)
+  const pathname = usePathname();
+  const pathSegments = pathname.split('/').filter(Boolean);
 
   const segments: { label: string; href: string }[] = pathSegments.map(
     (segment, index) => {
       return {
         label: segment.charAt(0).toUpperCase() + segment.slice(1),
         href: `/${pathSegments.slice(0, index + 1).join('/')}`,
-      }
+      };
     }
-  )
+  );
 
   segments.unshift({
     label: 'Dashboard',
     href: '/',
-  })
+  });
 
   const breadcrumbs = segments.map((segment, index) => {
-    const href = `/${segments.slice(0, index + 1).join('/')}`
-    const isLast = index === segments.length - 1
+    const href = `/${segments.slice(0, index + 1).join('/')}`;
+    const isLast = index === segments.length - 1;
 
     return (
       <Fragment key={href}>
@@ -42,12 +42,12 @@ export function DashboardBreadcrumbs() {
         </BreadcrumbItem>
         {!isLast && <BreadcrumbSeparator />}
       </Fragment>
-    )
-  })
+    );
+  });
 
   return (
     <Breadcrumb>
       <BreadcrumbList>{breadcrumbs}</BreadcrumbList>
     </Breadcrumb>
-  )
+  );
 }

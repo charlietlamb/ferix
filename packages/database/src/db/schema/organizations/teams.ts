@@ -1,5 +1,5 @@
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core'
-import { organizations } from './organizations'
+import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { organizations } from './organizations';
 
 export const teams = pgTable('teams', {
   id: text('id').primaryKey(),
@@ -9,4 +9,4 @@ export const teams = pgTable('teams', {
     .references(() => organizations.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at'),
-})
+});

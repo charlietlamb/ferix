@@ -1,15 +1,16 @@
-import { authClient } from '@ferix/ui/lib/auth-client'
+import { useRouter } from '@ferix/i18n/navigation';
+import { useAppForm } from '@ferix/ui/hooks/form';
+import { authClient } from '@ferix/ui/lib/auth-client';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import {
-  CreateOrganizationSchema,
+  type CreateOrganizationSchema,
   getCreateOrganizationSchema,
-} from './create-organization-schema'
-import { useAppForm } from '@ferix/ui/hooks/form'
-import { useRouter } from '@ferix/i18n/navigation'
-import { useTranslations } from 'next-intl'
+} from './create-organization-schema';
 
 export function useCreateOrganizationForm() {
-  const router = useRouter()
-  const t = useTranslations('organization.create')
+  const router = useRouter();
+  const t = useTranslations('organization.create');
   return useAppForm({
     defaultValues: {
       name: '',
@@ -23,12 +24,11 @@ export function useCreateOrganizationForm() {
       const response = await authClient.organization.create({
         name: values.value.name,
         slug: values.value.slug,
-      })
+      });
       if (response.error) {
-        console.log('TODO: global error handling')
-        console.log(response.error)
+        toast.error(response.error.message);
       }
-      router.refresh()
+      router.refresh();
     },
-  })
+  });
 }

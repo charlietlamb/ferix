@@ -1,4 +1,4 @@
-import { AuthCard, AuthCardProps } from '@daveyplate/better-auth-ui'
+import { AuthCard, type AuthCardProps } from '@daveyplate/better-auth-ui';
 
 export const BetterAuthCard = (props: AuthCardProps) => {
   return (
@@ -10,5 +10,5 @@ export const BetterAuthCard = (props: AuthCardProps) => {
       socialLayout="horizontal"
       {...props}
     />
-  )
-}
+  );
+};

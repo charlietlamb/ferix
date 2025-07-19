@@ -3,13 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit"
   },
   "devDependencies": {
     "@ferix/typescript-config": "*",
     "@types/node": "^22.15.3",
-    "eslint": "^9.30.0",
     "typescript": "5.8.2"
   },
   "dependencies": {

@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import { useId } from 'react'
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import { CustomTooltipContent } from '@ferix/ui/components/dashboard/charts/charts-extra';
+import { Badge } from '@ferix/ui/components/shadcn/badge';
 
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '@ferix/ui/components/shadcn/card'
+} from '@ferix/ui/components/shadcn/card';
 import {
-  ChartConfig,
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
-} from '@ferix/ui/components/shadcn/chart'
-import { CustomTooltipContent } from '@ferix/ui/components/dashboard/charts/charts-extra'
-import { Badge } from '@ferix/ui/components/shadcn/badge'
+} from '@ferix/ui/components/shadcn/chart';
+import { useId } from 'react';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const chartData = [
   { month: 'Jan 2025', individual: 2000, team: 1000, enterprise: 1000 },
@@ -30,7 +30,7 @@ const chartData = [
   { month: 'Oct 2025', individual: 2500, team: 3000, enterprise: 3500 },
   { month: 'Nov 2025', individual: 500, team: 1500, enterprise: 1000 },
   { month: 'Dec 2025', individual: 2000, team: 3000, enterprise: 1500 },
-]
+];
 
 const chartConfig = {
   individual: {
@@ -45,14 +45,14 @@ const chartConfig = {
     label: 'Enterprise',
     color: 'var(--chart-6)',
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function Chart05() {
-  const id = useId()
+  const id = useId();
 
   // Get first and last month with type assertions
-  const firstMonth = chartData[0]?.month as string
-  const lastMonth = chartData[chartData.length - 1]?.month as string
+  const firstMonth = chartData[0]?.month as string;
+  const lastMonth = chartData.at(-1)?.month as string;
 
   return (
     <Card className="gap-4">
@@ -62,7 +62,7 @@ export function Chart05() {
             <CardTitle>Subscriptions Sold</CardTitle>
             <div className="flex items-start gap-2">
               <div className="font-semibold text-2xl">12,296</div>
-              <Badge className="mt-1.5 bg-emerald-500/24 text-emerald-500 border-none">
+              <Badge className="mt-1.5 border-none bg-emerald-500/24 text-emerald-500">
                 +11.9%
               </Badge>
             </div>
@@ -72,7 +72,7 @@ export function Chart05() {
               <div
                 aria-hidden="true"
                 className="size-1.5 shrink-0 rounded-xs bg-chart-4"
-              ></div>
+              />
               <div className="text-[13px]/3 text-muted-foreground/50">
                 Individual
               </div>
@@ -81,14 +81,14 @@ export function Chart05() {
               <div
                 aria-hidden="true"
                 className="size-1.5 shrink-0 rounded-xs bg-chart-1"
-              ></div>
+              />
               <div className="text-[13px]/3 text-muted-foreground/50">Team</div>
             </div>
             <div className="flex items-center gap-2">
               <div
                 aria-hidden="true"
                 className="size-1.5 shrink-0 rounded-xs bg-chart-6"
-              ></div>
+              />
               <div className="text-[13px]/3 text-muted-foreground/50">
                 Enterprise
               </div>
@@ -98,39 +98,39 @@ export function Chart05() {
       </CardHeader>
       <CardContent>
         <ChartContainer
-          config={chartConfig}
           className="aspect-auto h-60 w-full [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-[var(--chart-1)]/15"
+          config={chartConfig}
         >
           <BarChart
             accessibilityLayer
             data={chartData}
-            maxBarSize={20}
             margin={{ left: -12, right: 12, top: 12 }}
+            maxBarSize={20}
           >
             <defs>
-              <linearGradient id={`${id}-gradient`} x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={`${id}-gradient`} x1="0" x2="0" y1="0" y2="1">
                 <stop offset="0%" stopColor="var(--chart-1)" />
                 <stop offset="100%" stopColor="var(--chart-2)" />
               </linearGradient>
             </defs>
             <CartesianGrid
-              vertical={false}
-              strokeDasharray="2 2"
               stroke="var(--border)"
+              strokeDasharray="2 2"
+              vertical={false}
             />
             <XAxis
               dataKey="month"
+              stroke="var(--border)"
               tickLine={false}
               tickMargin={12}
               ticks={[firstMonth, lastMonth]}
-              stroke="var(--border)"
             />
             <YAxis
-              tickLine={false}
               axisLine={false}
               tickFormatter={(value) =>
                 value === 0 ? '0' : `${(value / 1000).toFixed(0)}K`
               }
+              tickLine={false}
             />
             <ChartTooltip
               content={
@@ -140,12 +140,12 @@ export function Chart05() {
                     team: 'var(--chart-1)',
                     enterprise: 'var(--chart-6)',
                   }}
+                  dataKeys={['individual', 'team', 'enterprise']}
                   labelMap={{
                     individual: 'Individual',
                     team: 'Team',
                     enterprise: 'Enterprise',
                   }}
-                  dataKeys={['individual', 'team', 'enterprise']}
                   valueFormatter={(value) => `$${value.toLocaleString()}`}
                 />
               }
@@ -157,5 +157,5 @@ export function Chart05() {
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

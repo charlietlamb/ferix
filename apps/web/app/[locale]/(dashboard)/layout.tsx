@@ -1,21 +1,21 @@
-import { DashboardSidebar } from '@ferix/ui/components/dashboard/sidebar/dashboard-sidebar'
+import { auth } from '@ferix/api/lib/auth';
+import { redirect } from '@ferix/i18n/navigation';
+import { DashboardLayout as PageDashboardLayout } from '@ferix/ui/components/dashboard/layout/dashboard-layout';
+import { DashboardSidebar } from '@ferix/ui/components/dashboard/sidebar/dashboard-sidebar';
+import { Onboarding } from '@ferix/ui/components/onboarding/onboarding';
 import {
   SidebarInset,
   SidebarProvider,
-} from '@ferix/ui/components/shadcn/sidebar'
-import { DashboardLayout as PageDashboardLayout } from '@ferix/ui/components/dashboard/layout/dashboard-layout'
-import { auth } from '@ferix/api/lib/auth'
-import { headers as nextHeaders } from 'next/headers'
-import { redirect } from '@ferix/i18n/navigation'
-import { Onboarding } from '@ferix/ui/components/onboarding/onboarding'
-import { getLocale } from 'next-intl/server'
+} from '@ferix/ui/components/shadcn/sidebar';
+import { headers as nextHeaders } from 'next/headers';
+import { getLocale } from 'next-intl/server';
 
 export default async function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const [headers, locale] = await Promise.all([nextHeaders(), getLocale()])
+  const [headers, locale] = await Promise.all([nextHeaders(), getLocale()]);
   const [session, organizations] = await Promise.all([
     auth.api.getSession({
       headers,
@@ -23,14 +23,14 @@ export default async function DashboardLayout({
     auth.api.listOrganizations({
       headers,
     }),
-  ])
+  ]);
 
   if (!session) {
-    return redirect({ href: '/auth/sign-in', locale })
+    return redirect({ href: '/auth/sign-in', locale });
   }
 
   if (organizations.length === 0) {
-    return <Onboarding />
+    return <Onboarding />;
   }
 
   return (
@@ -40,5 +40,5 @@ export default async function DashboardLayout({
         <PageDashboardLayout>{children}</PageDashboardLayout>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

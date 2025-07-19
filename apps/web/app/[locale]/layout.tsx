@@ -1,36 +1,36 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import '@ferix/ui/styles/globals.css'
-import { hasLocale } from 'next-intl'
-import { notFound } from 'next/navigation'
-import { routing } from '@ferix/i18n/routing'
-import { Providers } from '@ferix/ui/providers'
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import '@ferix/ui/styles/globals.css';
+import { routing } from '@ferix/i18n/routing';
+import { Providers } from '@ferix/ui/providers';
+import { notFound } from 'next/navigation';
+import { hasLocale } from 'next-intl';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
-})
+});
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
-})
+});
 
 export const metadata: Metadata = {
   title: 'Ferix',
   description: 'Ferix',
-}
+};
 
 export default async function LocaleLayout({
   children,
   params,
 }: {
-  children: React.ReactNode
-  params: Promise<{ locale: string }>
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params
+  const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -41,5 +41,5 @@ export default async function LocaleLayout({
         <Providers>{children}</Providers>
       </body>
     </html>
-  )
+  );
 }

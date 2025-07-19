@@ -1,14 +1,14 @@
-import { Hono } from 'hono'
-import { auth } from './lib/auth'
+import { Hono } from 'hono';
+import { auth } from './lib/auth';
 
-const app = new Hono().basePath('/api')
+const app = new Hono().basePath('/api');
 
 app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+  return c.text('Hello Hono!');
+});
 
 app.on(['POST', 'GET'], '/auth/*', (c) => {
-  return auth.handler(c.req.raw)
-})
+  return auth.handler(c.req.raw);
+});
 
-export default app
+export default app;

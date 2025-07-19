@@ -1,18 +1,18 @@
-'use client'
+'use client';
 
-import { Button } from '@ferix/ui/components/shadcn/button'
+import DatePicker from '@ferix/ui/components/dashboard/date-picker';
+import { Button } from '@ferix/ui/components/shadcn/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@ferix/ui/components/shadcn/tooltip'
-import DatePicker from '@ferix/ui/components/dashboard/date-picker'
-import { RiAddLine } from '@remixicon/react'
-import { useIsMobile } from '@ferix/ui/hooks/use-mobile'
+} from '@ferix/ui/components/shadcn/tooltip';
+import { useIsMobile } from '@ferix/ui/hooks/use-mobile';
+import { RiAddLine } from '@remixicon/react';
 
 export function ActionButtons() {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile();
 
   return (
     <div className="flex gap-3">
@@ -22,9 +22,9 @@ export function ActionButtons() {
           <TooltipTrigger asChild>
             <Button className="aspect-square max-lg:p-0">
               <RiAddLine
-                className="lg:-ms-1 opacity-40 size-5"
-                size={20}
                 aria-hidden="true"
+                className="lg:-ms-1 size-5 opacity-40"
+                size={20}
               />
               <span className="max-lg:sr-only">Add Subscription</span>
             </Button>
@@ -35,5 +35,5 @@ export function ActionButtons() {
         </Tooltip>
       </TooltipProvider>
     </div>
-  )
+  );
 }

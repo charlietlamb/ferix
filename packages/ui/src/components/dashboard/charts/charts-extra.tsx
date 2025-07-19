@@ -1,12 +1,12 @@
-import { TooltipProps } from 'recharts'
+import type { TooltipProps } from 'recharts';
 
 interface CustomTooltipContentProps extends TooltipProps<number, string> {
-  colorMap?: Record<string, string>
-  labelMap?: Record<string, string>
+  colorMap?: Record<string, string>;
+  labelMap?: Record<string, string>;
   // Optional array to define display order
-  dataKeys?: string[]
+  dataKeys?: string[];
   // Optional formatter for values
-  valueFormatter?: (value: number) => string
+  valueFormatter?: (value: number) => string;
 }
 
 export function CustomTooltipContent({
@@ -18,18 +18,18 @@ export function CustomTooltipContent({
   dataKeys, // If provided, will be used to order the items
   valueFormatter = (value) => `$${value.toLocaleString()}`,
 }: CustomTooltipContentProps) {
-  if (!active || !payload || !payload.length) {
-    return null
+  if (!(active && payload && payload.length)) {
+    return null;
   }
 
   // Create a map of payload items by dataKey for easy lookup
   const payloadMap = payload.reduce(
     (acc, item) => {
-      acc[item.dataKey as string] = item
-      return acc
+      acc[item.dataKey as string] = item;
+      return acc;
     },
     {} as Record<string, (typeof payload)[0]>
-  )
+  );
 
   // If dataKeys is provided, use it to order the items
   // Otherwise, use the original payload order
@@ -37,27 +37,29 @@ export function CustomTooltipContent({
     ? dataKeys
         .filter((key) => payloadMap[key]) // Only include keys that exist in the payload
         .map((key) => payloadMap[key])
-    : payload
+    : payload;
 
   return (
-    <div className="bg-popover text-popover-foreground grid min-w-32 items-start gap-1.5 rounded-lg border px-3 py-1.5 text-xs">
+    <div className="grid min-w-32 items-start gap-1.5 rounded-lg border bg-popover px-3 py-1.5 text-popover-foreground text-xs">
       <div className="font-medium">{label}</div>
       <div className="grid gap-1.5">
-        {orderedPayload.map((entry, index) => {
+        {orderedPayload.map((entry) => {
           // Skip undefined entries
-          if (!entry) return null
+          if (!entry) {
+            return null;
+          }
 
-          const name = entry.dataKey as string
-          const value = entry.value as number
+          const name = entry.dataKey as string;
+          const value = entry.value as number;
 
           // Get color and label from maps, with fallbacks
-          const color = colorMap[name] || 'var(--chart-1)'
-          const displayLabel = labelMap[name] || name
+          const color = colorMap[name] || 'var(--chart-1)';
+          const displayLabel = labelMap[name] || name;
 
           return (
             <div
-              key={`item-${index}`}
               className="flex items-center justify-between gap-3"
+              key={`item-${name}`}
             >
               <div className="flex items-center gap-2">
                 <div
@@ -66,13 +68,13 @@ export function CustomTooltipContent({
                 />
                 <span className="text-muted-foreground">{displayLabel}</span>
               </div>
-              <span className="text-foreground font-mono font-medium tabular-nums">
+              <span className="font-medium font-mono text-foreground tabular-nums">
                 {valueFormatter(value)}
               </span>
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

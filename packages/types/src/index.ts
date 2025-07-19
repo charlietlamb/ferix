@@ -1,1 +1,1 @@
-export * from './organization-with-members'
+export * from './organization-with-members';

@@ -1,5 +1,4 @@
-import { useFormContext } from '@ferix/ui/hooks/form-context'
-import { AnyFormApi } from '@tanstack/react-form'
+import type { AnyFormApi } from '@tanstack/react-form';
 
 export function FormWrapper({
   form,
@@ -7,24 +6,24 @@ export function FormWrapper({
   subheading,
   children,
 }: {
-  form: AnyFormApi
-  heading: string
-  subheading: string
-  children: React.ReactNode
+  form: AnyFormApi;
+  heading: string;
+  subheading: string;
+  children: React.ReactNode;
 }) {
   return (
     <form
-      className="flex flex-col gap-4 w-full max-w-xl"
+      className="flex w-full max-w-xl flex-col gap-4"
       onSubmit={(e) => {
-        e.preventDefault()
-        form.handleSubmit()
+        e.preventDefault();
+        form.handleSubmit();
       }}
     >
       <div>
-        <h1 className="text-2xl font-bold">{heading}</h1>
+        <h1 className="font-bold text-2xl">{heading}</h1>
         <p className="text-muted-foreground">{subheading}</p>
       </div>
       {children}
     </form>
-  )
+  );
 }

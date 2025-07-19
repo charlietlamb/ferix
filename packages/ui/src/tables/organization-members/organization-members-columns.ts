@@ -1,5 +1,5 @@
-import type { ColumnDef } from '@tanstack/react-table'
-import type { Member } from 'better-auth/plugins/organization'
+import type { ColumnDef } from '@tanstack/react-table';
+import type { Member } from 'better-auth/plugins/organization';
 
 export const organizationMembersColumns: ColumnDef<Member>[] = [
   {
@@ -14,8 +14,8 @@ export const organizationMembersColumns: ColumnDef<Member>[] = [
     header: 'Date Joined',
     accessorKey: 'createdAt',
     cell: ({ getValue }) => {
-      const date = getValue<Date>()
-      return date.toLocaleDateString()
+      const date = getValue<Date>();
+      return date.toLocaleDateString();
     },
   },
-]
+];

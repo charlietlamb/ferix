@@ -1,7 +1,7 @@
-import { BetterAuthUIProvider } from './better-auth-ui-provider'
-import { ThemeProvider } from './theme-provider'
-import { NextIntlClientProvider } from 'next-intl'
-import { TanstackQueryProvider } from './tanstack-query-provider'
+import { NextIntlClientProvider } from 'next-intl';
+import { BetterAuthUIProvider } from './better-auth-ui-provider';
+import { TanstackQueryProvider } from './tanstack-query-provider';
+import { ThemeProvider } from './theme-provider';
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -12,5 +12,5 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
         </BetterAuthUIProvider>
       </NextIntlClientProvider>
     </ThemeProvider>
-  )
-}
+  );
+};

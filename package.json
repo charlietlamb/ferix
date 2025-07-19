@@ -4,18 +4,27 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "lint": "bunx ultracite lint",
+    "format": "bunx ultracite format",
     "check-types": "turbo run check-types",
     "sync:env": "./scripts/sync-env.sh",
     "db:generate": "cd packages/database && bun db:generate",
     "db:migrate": "cd packages/database && bun db:migrate",
-    "db:studio": "cd packages/database && bun db:studio"
+    "db:studio": "cd packages/database && bun db:studio",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "bunx ultracite format"
+    ]
   },
   "devDependencies": {
-    "prettier": "^3.6.2",
+    "@biomejs/biome": "2.1.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
     "turbo": "^2.5.4",
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "ultracite": "5.0.46"
   },
   "engines": {
     "node": ">=18"

@@ -1,4 +1,11 @@
-export * from './users'
-export * from './sessions'
-export * from './accounts'
-export * from './verification'
+import { accounts } from './accounts';
+import { sessions } from './sessions';
+import { users } from './users';
+import { verifications } from './verifications';
+
+export const authSchema = {
+  accounts,
+  sessions,
+  users,
+  verifications,
+};

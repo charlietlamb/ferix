@@ -1,15 +1,15 @@
-'use client'
+'use client';
 
-import type { OrganizationWithMembers } from '@ferix/types/organization-with-members'
-import { OrganizationMembersTable } from '@ferix/ui/tables/organization-members/organization-members-table'
+import type { OrganizationWithMembers } from '@ferix/types/organization-with-members';
+import { OrganizationMembersTable } from '@ferix/ui/tables/organization-members/organization-members-table';
 
 export function OrganizationDashboard({
   organization,
 }: {
-  organization: OrganizationWithMembers | null
+  organization: OrganizationWithMembers | null;
 }) {
   if (!organization) {
-    return <div>No organization found</div>
+    return <div>No organization found</div>;
   }
-  return <OrganizationMembersTable organization={organization} />
+  return <OrganizationMembersTable organization={organization} />;
 }

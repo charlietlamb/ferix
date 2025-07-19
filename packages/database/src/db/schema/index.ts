@@ -1,2 +1,7 @@
-export * from './auth'
-export * from './organizations'
+import { authSchema } from './auth';
+import { organizationSchema } from './organizations';
+
+export const schema = {
+  ...authSchema,
+  ...organizationSchema,
+};

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 export const verifications = pgTable('verifications', {
   id: text('id').primaryKey(),
@@ -11,4 +11,4 @@ export const verifications = pgTable('verifications', {
   updatedAt: timestamp('updated_at').$defaultFn(
     () => /* @__PURE__ */ new Date()
   ),
-})
+});

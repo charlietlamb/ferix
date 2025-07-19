@@ -1,5 +1,7 @@
-import { z } from 'zod'
-import { useTranslations } from 'next-intl'
+import type { useTranslations } from 'next-intl';
+import { z } from 'zod';
+
+const SLUG_PATTERN = /^[a-z0-9-]+$/;
 
 export const getCreateOrganizationSchema = (
   t: ReturnType<typeof useTranslations>
@@ -14,10 +16,10 @@ export const getCreateOrganizationSchema = (
     slug: z
       .string()
       .min(1, { message: t('slug.error.min') })
-      .regex(/^[a-z0-9-]+$/, { message: t('slug.error.regex') })
+      .regex(SLUG_PATTERN, { message: t('slug.error.regex') })
       .max(255, { message: t('slug.error.max') }),
-  })
+  });
 
 export type CreateOrganizationSchema = z.infer<
   ReturnType<typeof getCreateOrganizationSchema>
->
+>;

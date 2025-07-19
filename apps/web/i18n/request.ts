@@ -1,15 +1,15 @@
-import { getRequestConfig } from 'next-intl/server'
-import { hasLocale } from 'next-intl'
-import { routing } from '@ferix/i18n/routing'
+import { routing } from '@ferix/i18n/routing';
+import { hasLocale } from 'next-intl';
+import { getRequestConfig } from 'next-intl/server';
 
 export default getRequestConfig(async ({ requestLocale }) => {
-  const requested = await requestLocale
+  const requested = await requestLocale;
   const locale = hasLocale(routing.locales, requested)
     ? requested
-    : routing.defaultLocale
+    : routing.defaultLocale;
 
   return {
     locale,
     messages: (await import(`../locales/${locale}.json`)).default,
-  }
-})
+  };
+});

@@ -1,24 +1,20 @@
-'use client'
+'use client';
 
-import { AuthUIProvider } from '@daveyplate/better-auth-ui'
-import { authClient } from '@ferix/ui/lib/auth-client'
-import { useRouter } from '@ferix/i18n/navigation'
-import Link from 'next/link'
+import { AuthUIProvider } from '@daveyplate/better-auth-ui';
+import { useRouter } from '@ferix/i18n/navigation';
+import { authClient } from '@ferix/ui/lib/auth-client';
+import Link from 'next/link';
 
 export function BetterAuthUIProvider({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <AuthUIProvider
       authClient={authClient}
-      navigate={router.push}
-      replace={router.replace}
-      onSessionChange={() => router.refresh()}
-      Link={Link}
       credentials={{
         rememberMe: true,
         forgotPassword: true,
@@ -27,12 +23,16 @@ export function BetterAuthUIProvider({
           maxLength: 100,
         },
       }}
+      Link={Link}
+      navigate={router.push}
+      onSessionChange={() => router.refresh()}
+      organization={true}
+      replace={router.replace}
       social={{
         providers: ['google', 'github'],
       }}
-      organization={true}
     >
       {children}
     </AuthUIProvider>
-  )
+  );
 }
