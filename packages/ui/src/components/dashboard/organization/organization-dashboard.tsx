@@ -1,6 +1,6 @@
 'use client';
 
-import type { OrganizationWithMembers } from '@ferix/types/organization-with-members';
+import type { OrganizationWithMembers } from '@ferix/types/organizations/organization-with-members';
 import { OrganizationMembersTable } from '@ferix/ui/tables/organization-members/organization-members-table';
 
 export function OrganizationDashboard({

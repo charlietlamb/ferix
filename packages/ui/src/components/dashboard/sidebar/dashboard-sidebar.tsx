@@ -147,7 +147,7 @@ export function DashboardSidebar({
           size={open ? 'default' : 'icon'}
         />
       </SidebarFooter>
-      <SidebarRail />
+      <SidebarRail className="hover:after:bg-sidebar-transparent" />
     </Sidebar>
   );
 }

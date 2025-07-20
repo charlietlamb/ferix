@@ -16,18 +16,13 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [headers, locale] = await Promise.all([nextHeaders(), getLocale()]);
-  const [session, organizations] = await Promise.all([
-    auth.api.getSession({
-      headers,
-    }),
-    auth.api.listOrganizations({
-      headers,
-    }),
-  ]);
+
+  const session = await auth.api.getSession({ headers });
 
   if (!session) {
     return redirect({ href: '/auth/sign-in', locale });
   }
+  const organizations = await auth.api.listOrganizations({ headers });
 
   if (organizations.length === 0) {
     return <Onboarding />;

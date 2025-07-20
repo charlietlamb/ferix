@@ -1,3 +1,6 @@
+'use client';
+
+import { Checkbox } from '@ferix/ui/components/shadcn/checkbox';
 import {
   TableBody as ShadcnTableBody,
   TableCell,
@@ -6,14 +9,16 @@ import {
 import { flexRender, type Row } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
 
-interface TableBodyProps<TData> {
-  rows: Row<TData>[];
+interface TableBodyProps<T> {
+  rows: Row<T>[];
   numberOfColumns: number;
+  enableSelection: boolean;
 }
 
 export function TableBody<TData>({
   rows,
   numberOfColumns,
+  enableSelection,
 }: TableBodyProps<TData>) {
   const t = useTranslations('table');
 
@@ -32,9 +37,22 @@ export function TableBody<TData>({
   return (
     <ShadcnTableBody>
       {rows.map((row) => (
-        <TableRow data-state={row.getIsSelected() && 'selected'} key={row.id}>
+        <TableRow
+          className="min-h-10 hover:bg-muted/50"
+          data-state={row.getIsSelected() && 'selected'}
+          key={row.id}
+        >
+          {enableSelection && (
+            <TableCell className="w-[50px]">
+              <Checkbox
+                aria-label={t('selection.select-row')}
+                checked={row.getIsSelected()}
+                onCheckedChange={(checked) => row.toggleSelected(!!checked)}
+              />
+            </TableCell>
+          )}
           {row.getVisibleCells().map((cell) => (
-            <TableCell className="last:py-0" key={cell.id}>
+            <TableCell key={cell.id}>
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </TableCell>
           ))}

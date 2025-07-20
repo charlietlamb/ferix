@@ -5,11 +5,13 @@ export function FormWrapper({
   heading,
   subheading,
   children,
+  labels = true,
 }: {
   form: AnyFormApi;
   heading: string;
   subheading: string;
   children: React.ReactNode;
+  labels?: boolean;
 }) {
   return (
     <form
@@ -19,10 +21,12 @@ export function FormWrapper({
         form.handleSubmit();
       }}
     >
-      <div>
-        <h1 className="font-bold text-2xl">{heading}</h1>
-        <p className="text-muted-foreground">{subheading}</p>
-      </div>
+      {labels && (
+        <div>
+          <h1 className="font-bold text-2xl">{heading}</h1>
+          <p className="text-muted-foreground">{subheading}</p>
+        </div>
+      )}
       {children}
     </form>
   );

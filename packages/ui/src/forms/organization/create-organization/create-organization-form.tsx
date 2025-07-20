@@ -8,7 +8,7 @@ import { useCreateOrganizationForm } from './use-create-organization-form';
 
 export function CreateOrganizationForm() {
   const form = useCreateOrganizationForm();
-  const t = useTranslations('organization.create');
+  const t = useTranslations('organization.create.form');
 
   return (
     <FormWrapper

@@ -9,6 +9,10 @@ export const organizationMembersColumns: ColumnDef<Member>[] = [
   {
     header: 'Organization Role',
     accessorKey: 'role',
+    cell: ({ getValue }) => {
+      const role = getValue<string>();
+      return role.charAt(0).toUpperCase() + role.slice(1);
+    },
   },
   {
     header: 'Date Joined',

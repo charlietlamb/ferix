@@ -1,4 +1,5 @@
-import type { OrganizationWithMembers } from '@ferix/types/organization-with-members';
+import type { OrganizationWithMembers } from '@ferix/types/organizations/organization-with-members';
+import { InviteOrganizationMemberDialog } from '@ferix/ui/components/dialog/organization/invite-organization-member-dialog';
 import { Table } from '@ferix/ui/components/table/table';
 import { organizationMembersColumns as columns } from '@ferix/ui/tables/organization-members/organization-members-columns';
 import { OrganizationMembersFilter } from '@ferix/ui/tables/organization-members/organization-members-filter';
@@ -27,6 +28,7 @@ export function OrganizationMembersTable({
 
   return (
     <Table
+      actions={<InviteOrganizationMemberDialog />}
       filters={<OrganizationMembersFilter table={table} />}
       table={table}
     />

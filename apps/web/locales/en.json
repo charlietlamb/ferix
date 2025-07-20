@@ -18,7 +18,12 @@
       "go-to-next-page": "Go to next page",
       "go-to-last-page": "Go to last page"
     },
+    "selection": {
+      "select-all": "Select all",
+      "select-row": "Select row"
+    },
     "no-results": "No results.",
+    "column-visibility": "Toggle columns",
     "organization": {
       "members": {
         "filter": {
@@ -30,30 +35,67 @@
     }
   },
   "organization": {
+    "role": {
+      "member": "Member",
+      "admin": "Admin",
+      "owner": "Owner"
+    },
     "create": {
-      "heading": "Create Organization",
-      "subheading": "Create a new organization to get started.",
-      "name": {
-        "label": "Organization Name",
-        "placeholder": "Acme Inc",
-        "text-after": "You can always change this later.",
-        "error": {
-          "min": "Name must be at least 1 character",
-          "max": "Name must be less than 255 characters"
-        }
-      },
-      "slug": {
-        "label": "Organization Slug",
-        "placeholder": "acme-inc",
-        "text-after": "This is how your organization will be identified in the URL.",
-        "error": {
-          "min": "Slug must be at least 1 character",
-          "max": "Slug must be less than 255 characters",
-          "regex": "Slug must only contain lowercase letters, numbers, and hyphens",
-          "taken": "Slug is already taken"
+      "form": {
+        "heading": "Create Organization",
+        "subheading": "Create a new organization to get started.",
+        "name": {
+          "label": "Organization Name",
+          "placeholder": "Acme Inc",
+          "text-after": "You can always change this later.",
+          "error": {
+            "min": "Name must be at least 1 character",
+            "max": "Name must be less than 255 characters"
+          }
+        },
+        "slug": {
+          "label": "Organization Slug",
+          "placeholder": "acme-inc",
+          "text-after": "This is how your organization will be identified in the URL.",
+          "error": {
+            "min": "Slug must be at least 1 character",
+            "max": "Slug must be less than 255 characters",
+            "regex": "Slug must only contain lowercase letters, numbers, and hyphens",
+            "taken": "Slug is already taken"
+          }
         }
       },
       "submit": "Create Organization"
+    },
+    "invite": {
+      "dialog": {
+        "heading": "Invite Organization Member",
+        "subheading": "Invite a new member to your organization.",
+        "email": {
+          "label": "Email",
+          "placeholder": "Email"
+        },
+        "trigger": "Invite"
+      },
+      "form": {
+        "heading": "Invite Organization Member",
+        "subheading": "Invite a new member to your organization.",
+        "email": {
+          "label": "Email",
+          "placeholder": "Email",
+          "error": {
+            "invalid": "Invalid email address"
+          }
+        },
+        "role": {
+          "label": "Role",
+          "placeholder": "Role",
+          "error": {
+            "invalid": "Invalid role"
+          }
+        },
+        "submit": "Invite Member"
+      }
     }
   }
 }

@@ -21,6 +21,7 @@ export function TextField({
       <Label>{label}</Label>
       <div className="relative">
         <Input
+          className="text-sm"
           onChange={(e) => field.handleChange(e.target.value)}
           placeholder={placeholder}
           type={type}

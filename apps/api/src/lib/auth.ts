@@ -3,7 +3,7 @@ import { db } from '@ferix/database/index';
 import { env } from '@ferix/env';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { openAPI, organization } from 'better-auth/plugins';
+import { organization } from 'better-auth/plugins';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -15,7 +15,6 @@ export const auth = betterAuth({
     organization({
       teams: { enabled: true },
     }),
-    openAPI(),
   ],
   emailAndPassword: {
     enabled: true,

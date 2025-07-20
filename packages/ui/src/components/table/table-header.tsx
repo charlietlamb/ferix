@@ -1,3 +1,6 @@
+'use client';
+
+import { Checkbox } from '@ferix/ui/components/shadcn/checkbox';
 import {
   TableHeader as ShadcnTableHeader,
   TableHead,
@@ -5,10 +8,11 @@ import {
 } from '@ferix/ui/components/shadcn/table';
 import {
   flexRender,
-  type Header,
   type HeaderGroup,
+  type Table,
 } from '@tanstack/react-table';
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 function renderSortIcon(sortDirection: string | false) {
   if (!sortDirection) {
@@ -30,7 +34,7 @@ function renderSortIcon(sortDirection: string | false) {
   );
 }
 
-function renderHeaderContent<TData>(header: Header<TData, unknown>) {
+function renderHeaderContent<T>(header: HeaderGroup<T>['headers'][number]) {
   if (header.isPlaceholder) {
     return null;
   }
@@ -57,15 +61,33 @@ function renderHeaderContent<TData>(header: Header<TData, unknown>) {
   );
 }
 
-export function TableHeader<TData>({
+interface TableHeaderProps<T> {
+  headerGroups: HeaderGroup<T>[];
+  enableSelection?: boolean;
+  table?: Table<T>;
+}
+
+export function TableHeader<T>({
   headerGroups,
-}: {
-  headerGroups: HeaderGroup<TData>[];
-}) {
+  enableSelection = false,
+  table,
+}: TableHeaderProps<T>) {
+  const t = useTranslations('table');
   return (
     <ShadcnTableHeader>
       {headerGroups.map((headerGroup) => (
         <TableRow className="hover:bg-transparent" key={headerGroup.id}>
+          {enableSelection && table && (
+            <TableHead className="w-[50px]">
+              <Checkbox
+                aria-label={t('selection.select-all')}
+                checked={table.getIsAllPageRowsSelected()}
+                onCheckedChange={(checked) =>
+                  table.toggleAllPageRowsSelected(!!checked)
+                }
+              />
+            </TableHead>
+          )}
           {headerGroup.headers.map((header) => (
             <TableHead
               className="h-11"
