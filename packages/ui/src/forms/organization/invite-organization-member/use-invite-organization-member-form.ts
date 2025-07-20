@@ -7,7 +7,11 @@ import { toast } from 'sonner';
 import type { InviteOrganizationMemberSchema } from './invite-organization-member-schema';
 import { getInviteOrganizationMemberSchema } from './invite-organization-member-schema';
 
-export function useInviteOrganizationMemberForm() {
+export function useInviteOrganizationMemberForm({
+  onSuccess,
+}: {
+  onSuccess?: () => void;
+}) {
   const router = useRouter();
   const t = useTranslations('organization.invite.form');
   return useAppForm({
@@ -27,6 +31,7 @@ export function useInviteOrganizationMemberForm() {
       if (response.error) {
         toast.error(response.error.message);
       }
+      onSuccess?.();
       router.refresh();
     },
   });

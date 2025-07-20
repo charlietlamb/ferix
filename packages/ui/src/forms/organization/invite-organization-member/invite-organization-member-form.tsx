@@ -7,10 +7,12 @@ import { useInviteOrganizationMemberForm } from './use-invite-organization-membe
 
 export function InviteOrganizationMemberForm({
   labels = true,
+  onSuccess,
 }: {
   labels?: boolean;
+  onSuccess?: () => void;
 }) {
-  const form = useInviteOrganizationMemberForm();
+  const form = useInviteOrganizationMemberForm({ onSuccess });
   const t = useTranslations('organization.invite.form');
   const tRole = useTranslations('organization.role');
   const roleLabels = getUserRoleLabel(tRole);

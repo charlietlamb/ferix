@@ -8,7 +8,11 @@ export const NOTIFICATION_METHODS = {
 
 export type NotificationMethod = ValueOf<typeof NOTIFICATION_METHODS>;
 
-export const sendNotification = (
+export const sendNotification: (
+  method: NotificationMethod,
+  provider: EmailProvider,
+  message: Email
+) => Promise<void> | undefined = (
   method: NotificationMethod,
   provider: EmailProvider,
   message: Email

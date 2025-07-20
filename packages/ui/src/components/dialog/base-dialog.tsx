@@ -4,29 +4,33 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@ferix/ui/components/shadcn/dialog';
+import { useModal } from '@ferix/ui/hooks/use-modal';
+import type { ModalKey } from '@ferix/ui/store/modal';
 
 export function BaseDialog({
   title,
   description,
-  content,
+  modalKey,
   children,
 }: {
   title: string;
   description: string;
-  content: React.ReactNode;
+  modalKey: ModalKey;
   children: React.ReactNode;
 }) {
+  const { close, stack } = useModal();
+
+  const isOpen = stack.some((modal) => modal.key === modalKey);
+
   return (
-    <Dialog>
-      <DialogTrigger asChild={!!children}>{children}</DialogTrigger>
+    <Dialog onOpenChange={close} open={isOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {content}
+        {children}
       </DialogContent>
     </Dialog>
   );
