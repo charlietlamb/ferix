@@ -6,7 +6,7 @@
   },
   "dependencies": {
     "@ferix/notifications": "*",
-    "better-auth": "^1.2.9",
+    "better-auth": "^1.2.12",
     "hono": "^4.8.4",
     "pg": "^8.16.3",
     "resend": "^4.7.0"

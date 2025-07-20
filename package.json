@@ -7,6 +7,8 @@
     "lint": "bunx ultracite lint",
     "format": "bunx ultracite format",
     "check-types": "turbo run check-types",
+    "clean:all": "bunx rimraf --no-glob .turbo node_modules bun.lockb",
+    "clean:install": "bun clean:all && bun install",
     "sync:env": "./scripts/sync-env.sh",
     "db:generate": "cd packages/database && bun db:generate",
     "db:migrate": "cd packages/database && bun db:migrate",
@@ -33,9 +35,5 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "dependencies": {
-    "install": "^0.13.0",
-    "next-intl": "^4.3.4"
-  }
+  ]
 }

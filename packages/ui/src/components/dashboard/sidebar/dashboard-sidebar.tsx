@@ -138,7 +138,7 @@ export function DashboardSidebar({
         <UserButton
           classNames={{
             trigger: {
-              base: 'bg-transparent hover:bg-foreground/10 cursor-pointer',
+              base: ' cursor-pointer',
             },
             content: {
               menuItem: 'cursor-pointer',

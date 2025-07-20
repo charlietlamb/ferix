@@ -5,9 +5,9 @@ import { DashboardBreadcrumbs } from './dashboard-breadcrumbs';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="@container px-4 md:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
-        <header className="flex min-h-20 shrink-0 flex-wrap items-center gap-3 border-b py-4 transition-all ease-linear">
+    <div className="@container px-2 md:px-4 lg:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-2">
+        <header className="flex min-h-20 shrink-0 flex-wrap items-center gap-3 border-b px-2 py-4 transition-all ease-linear">
           {/* Left side */}
           <div className="flex flex-1 items-center gap-2">
             <SidebarTrigger className="-ms-1" />
@@ -22,7 +22,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {/* Right side */}
           <ActionButtons />
         </header>
-        <div className="overflow-hidden">{children}</div>
+        <div className="overflow-hidden p-2">{children}</div>
       </div>
     </div>
   );

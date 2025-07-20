@@ -1,9 +1,14 @@
 import { schema } from '@ferix/database/db/schema';
 import { db } from '@ferix/database/index';
 import { env } from '@ferix/env';
+import { EMAIL_PROVIDER_NAMES } from '@ferix/notifications/email/providers';
+import {
+  NOTIFICATION_METHODS,
+  sendNotification,
+} from '@ferix/notifications/index';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { organization } from 'better-auth/plugins';
+import { openAPI, organization } from 'better-auth/plugins';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -14,7 +19,15 @@ export const auth = betterAuth({
   plugins: [
     organization({
       teams: { enabled: true },
+      sendInvitationEmail: async (data) => {
+        await sendNotification(
+          NOTIFICATION_METHODS.EMAIL,
+          EMAIL_PROVIDER_NAMES.RESEND,
+          data
+        );
+      },
     }),
+    openAPI(),
   ],
   emailAndPassword: {
     enabled: true,

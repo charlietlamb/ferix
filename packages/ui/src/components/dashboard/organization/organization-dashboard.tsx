@@ -6,10 +6,7 @@ import { OrganizationMembersTable } from '@ferix/ui/tables/organization-members/
 export function OrganizationDashboard({
   organization,
 }: {
-  organization: OrganizationWithMembers | null;
+  organization: OrganizationWithMembers;
 }) {
-  if (!organization) {
-    return <div>No organization found</div>;
-  }
   return <OrganizationMembersTable organization={organization} />;
 }

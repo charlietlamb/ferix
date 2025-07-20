@@ -7,6 +7,6 @@
     "access": "public"
   },
   "devDependencies": {
-    "better-auth": "^1.2.9"
+    "better-auth": "^1.2.12"
   }
 }
