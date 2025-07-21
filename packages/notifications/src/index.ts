@@ -1,6 +1,6 @@
 import type { Email } from '@ferix/types/notifications/email';
 import type { ValueOf } from '@ferix/types/value-of';
-import { type EmailProvider, sendEmail } from './email/providers';
+import { type EmailProvider, sendEmail } from './methods/email';
 
 export const NOTIFICATION_METHODS = {
   EMAIL: 'EMAIL',

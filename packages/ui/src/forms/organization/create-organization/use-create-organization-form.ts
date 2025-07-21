@@ -10,7 +10,7 @@ import {
 
 export function useCreateOrganizationForm() {
   const router = useRouter();
-  const t = useTranslations('organization.create');
+  const t = useTranslations('organization.create.form');
   return useAppForm({
     defaultValues: {
       name: '',

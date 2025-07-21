@@ -6,7 +6,7 @@ export const resend = new Resend(env.RESEND_API_KEY);
 
 export async function sendEmailWithResend(email: Email) {
   await resend.emails.send({
-    from: email.from,
+    from: 'Ferix AI <no-reply@ferix.ai>',
     to: email.to,
     subject: email.subject,
     html: email.html,

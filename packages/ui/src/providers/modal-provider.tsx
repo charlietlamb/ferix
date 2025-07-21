@@ -4,6 +4,7 @@ import { useModal } from '@ferix/ui/hooks/use-modal';
 import {
   type ModalEntry,
   type ModalMap,
+  type ModalProps,
   modalRegistry,
 } from '@ferix/ui/store/modal';
 import { useEffect, useRef, useState } from 'react';
@@ -32,7 +33,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
         const props = debouncedStack.find(
           (modal: ModalEntry) => modal.key === key
         )?.props;
-        return <Modal key={key} {...(props as ModalMap[keyof ModalMap])} />;
+        return <Modal key={key} {...(props as ModalProps<keyof ModalMap>)} />;
       })}
       {children}
     </>

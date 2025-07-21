@@ -40,6 +40,11 @@
       "admin": "Admin",
       "owner": "Owner"
     },
+    "invitation": {
+      "accept-invitation": "Join Organization",
+      "reject": "Decline Invitation",
+      "accept": "Accept Invitation"
+    },
     "create": {
       "form": {
         "heading": "Create Organization",
@@ -63,9 +68,9 @@
             "regex": "Slug must only contain lowercase letters, numbers, and hyphens",
             "taken": "Slug is already taken"
           }
-        }
-      },
-      "submit": "Create Organization"
+        },
+        "submit": "Create Organization"
+      }
     },
     "invite": {
       "dialog": {
