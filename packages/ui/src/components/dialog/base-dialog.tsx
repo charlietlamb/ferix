@@ -20,7 +20,6 @@ export function BaseDialog({
   children: React.ReactNode;
 }) {
   const { close, stack } = useModal();
-
   const isOpen = stack.some((modal) => modal.key === modalKey);
 
   return (

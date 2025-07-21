@@ -1,9 +1,8 @@
 import { atom } from 'jotai';
+import { InviteOrganizationMemberDialog } from '../components/dialog/organization/invite-organization-member-dialog';
 
 export type ModalMap = {
-  inviteOrganizationMember: {
-    organizationId: string;
-  };
+  inviteOrganizationMember: undefined;
 };
 
 export type ModalKey = keyof ModalMap;
@@ -14,5 +13,11 @@ export type ModalEntry = {
     props: ModalMap[K];
   };
 }[keyof ModalMap];
+
+export const modalRegistry: {
+  [K in keyof ModalMap]: React.FC<ModalMap[K]>;
+} = {
+  inviteOrganizationMember: InviteOrganizationMemberDialog,
+};
 
 export const modalStackAtom = atom<ModalEntry[]>([]);

@@ -1,27 +1,39 @@
 'use client';
 
-import { InviteOrganizationMemberDialog } from '@ferix/ui/components/dialog/organization/invite-organization-member-dialog';
 import { useModal } from '@ferix/ui/hooks/use-modal';
-import type { ModalMap } from '@ferix/ui/store/modal';
-
-export const modalRegistry: {
-  [K in keyof ModalMap]: React.FC<ModalMap[K]>;
-} = {
-  inviteOrganizationMember: InviteOrganizationMemberDialog,
-};
+import {
+  type ModalEntry,
+  type ModalMap,
+  modalRegistry,
+} from '@ferix/ui/store/modal';
+import { useEffect, useRef, useState } from 'react';
 
 export function ModalProvider({ children }: { children: React.ReactNode }) {
-  const { current } = useModal();
+  const { stack } = useModal();
+  const [debouncedStack, setDebouncedStack] = useState<ModalEntry[]>([]);
+  const prevStackLengthRef = useRef(stack.length);
 
-  if (!current) {
-    return children;
-  }
+  useEffect(() => {
+    const isStackDecreasing = stack.length < prevStackLengthRef.current;
+    prevStackLengthRef.current = stack.length;
 
-  const Modal = modalRegistry[current.key];
+    if (isStackDecreasing) {
+      const timer = setTimeout(() => {
+        setDebouncedStack(stack);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+    setDebouncedStack(stack);
+  }, [stack]);
 
   return (
     <>
-      <Modal {...current.props} />
+      {Object.entries(modalRegistry).map(([key, Modal]) => {
+        const props = debouncedStack.find(
+          (modal: ModalEntry) => modal.key === key
+        )?.props;
+        return <Modal key={key} {...(props as ModalMap[keyof ModalMap])} />;
+      })}
       {children}
     </>
   );
