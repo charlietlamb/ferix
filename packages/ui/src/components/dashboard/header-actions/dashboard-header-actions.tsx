@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from '@ferix/i18n/navigation';
 import DatePicker from '@ferix/ui/components/dashboard/date-picker';
 import { Button } from '@ferix/ui/components/shadcn/button';
 import {
@@ -11,8 +12,13 @@ import {
 import { useIsMobile } from '@ferix/ui/hooks/use-mobile';
 import { RiAddLine } from '@remixicon/react';
 
-export function ActionButtons() {
+export function DashboardHeaderActions() {
   const isMobile = useIsMobile();
+  const pathname = usePathname();
+
+  if (pathname !== '/') {
+    return null;
+  }
 
   return (
     <div className="flex gap-3">
