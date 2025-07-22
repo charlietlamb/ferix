@@ -28,6 +28,9 @@ export function BetterAuthUIProvider({
       onSessionChange={() => router.refresh()}
       organization={true}
       replace={router.replace}
+      settings={{
+        url: '/settings',
+      }}
       social={{
         providers: ['google', 'github'],
       }}
