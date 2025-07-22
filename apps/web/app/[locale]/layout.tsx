@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   description: 'Ferix',
 };
 
+const renderReactScan = false;
+
 export default async function LocaleLayout({
   children,
   params,
@@ -35,6 +37,14 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        {renderReactScan && (
+          <script
+            crossOrigin="anonymous"
+            src="//unpkg.com/react-scan/dist/auto.global.js"
+          />
+        )}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
