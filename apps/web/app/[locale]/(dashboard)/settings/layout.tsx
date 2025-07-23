@@ -7,7 +7,7 @@ export default function SettingsLayout({
 }) {
   return (
     <div className="flex h-full flex-row">
-      <SettingsTabs />
+      <SettingsTabs>{children}</SettingsTabs>
     </div>
   );
 }
