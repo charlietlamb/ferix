@@ -23,16 +23,7 @@
       "select-row": "Select row"
     },
     "no-results": "No results.",
-    "column-visibility": "Toggle columns",
-    "organization": {
-      "members": {
-        "filter": {
-          "placeholder": "Filter by name or role...",
-          "placeholder-aria-label": "Filter by name or role",
-          "clear-filter-aria-label": "Clear filter"
-        }
-      }
-    }
+    "column-visibility": "Toggle columns"
   },
   "organization": {
     "role": {
@@ -101,6 +92,37 @@
         },
         "submit": "Invite Member"
       }
+    },
+    "table": {
+      "members": {
+        "filter": {
+          "placeholder": "Filter by name or role...",
+          "placeholder-aria-label": "Filter by name or role",
+          "clear-filter-aria-label": "Clear filter"
+        }
+      }
+    }
+  },
+  "settings": {
+    "overview": {
+      "label": "Overview",
+      "heading": "Overview",
+      "description": "Manage your overview settings"
+    },
+    "appearance": {
+      "label": "Appearance",
+      "heading": "Appearance",
+      "description": "Manage your appearance settings"
+    },
+    "account": {
+      "label": "Account",
+      "heading": "Account",
+      "description": "Manage your account settings"
+    },
+    "organization": {
+      "label": "Organization",
+      "heading": "Organization",
+      "description": "Manage your organization settings"
     }
   }
 }

@@ -1,12 +1,11 @@
-import { OrganizationSettingsCards } from '@daveyplate/better-auth-ui';
 import { useTranslations } from 'next-intl';
 import { SettingsWrapper } from './settings-wrapper';
 
-export function OrganizationSettings() {
-  const t = useTranslations('settings.organization');
+export function OverviewSettings() {
+  const t = useTranslations('settings.overview');
   return (
     <SettingsWrapper description={t('description')} title={t('heading')}>
-      <OrganizationSettingsCards />
+      Overview Settings Placeholder
     </SettingsWrapper>
   );
 }

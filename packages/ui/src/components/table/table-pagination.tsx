@@ -52,7 +52,7 @@ export function TablePagination<T>({ table }: { table: Table<T> }) {
       <div className="flex grow justify-end whitespace-nowrap text-muted-foreground text-sm">
         <p
           aria-live="polite"
-          className="whitespace-nowrap text-muted-foreground text-sm"
+          className="flex gap-1 whitespace-nowrap text-muted-foreground text-sm"
         >
           <span className="text-foreground">
             {table.getState().pagination.pageIndex *
@@ -115,7 +115,6 @@ export function TablePagination<T>({ table }: { table: Table<T> }) {
                 <ChevronRightIcon aria-hidden="true" size={16} />
               </Button>
             </PaginationItem>
-            {/* Last page button */}
             <PaginationItem>
               <Button
                 aria-label={t('go-to-last-page')}

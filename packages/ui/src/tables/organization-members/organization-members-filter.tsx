@@ -6,7 +6,7 @@ import { CircleXIcon, ListFilterIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 export function OrganizationMembersFilter({ table }: { table: Table<Member> }) {
-  const t = useTranslations('table.organization.members');
+  const t = useTranslations('organization.table.members');
   const globalFilter = table.getState().globalFilter;
 
   return (

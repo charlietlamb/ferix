@@ -2,10 +2,10 @@
 
 import { usePathname, useRouter } from '@ferix/i18n/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@ferix/ui/components/shadcn/tabs';
-import { BoxIcon, HouseIcon, UserIcon } from 'lucide-react';
+import { BoxIcon, HouseIcon, PaletteIcon, UserIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 type Tab = {
-  label: string;
   value: string;
   icon: React.ReactNode;
   route: string;
@@ -19,30 +19,34 @@ const iconProps = {
 
 const tabs: Tab[] = [
   {
-    label: 'Overview',
     value: 'overview',
     icon: <HouseIcon {...iconProps} />,
     route: '',
   },
   {
-    label: 'Organization',
     value: 'organization',
     icon: <BoxIcon {...iconProps} />,
     route: 'organization',
   },
   {
-    label: 'Account',
     value: 'account',
     icon: <UserIcon {...iconProps} />,
     route: 'account',
   },
+  {
+    value: 'appearance',
+    icon: <PaletteIcon {...iconProps} />,
+    route: 'appearance',
+  },
 ];
 
 export function SettingsTabs({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('settings');
   const router = useRouter();
   const pathname = usePathname();
   const currentTab =
     tabs.find((tab) => pathname.includes(tab.value)) || tabs[0];
+
   return (
     <Tabs
       className="h-full h-full w-full flex-row gap-4"
@@ -59,7 +63,7 @@ export function SettingsTabs({ children }: { children: React.ReactNode }) {
               value={tab.value}
             >
               {tab.icon}
-              <span className="text-base">{tab.label}</span>
+              <span className="text-base">{t(`${tab.value}.label`)}</span>
             </TabsTrigger>
           ))}
         </TabsList>
