@@ -5,14 +5,14 @@
     "./*": "./src/*"
   },
   "dependencies": {
-    "@ferix/notifications": "*",
-    "better-auth": "^1.2.12",
-    "hono": "^4.8.4",
-    "pg": "^8.16.3",
-    "resend": "^4.7.0"
+    "@ferix/notifications": "workspace:*",
+    "better-auth": "catalog:",
+    "hono": "catalog:",
+    "pg": "catalog:",
+    "resend": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "@types/pg": "^8.15.4"
+    "@types/bun": "catalog:",
+    "@types/pg": "catalog:"
   }
 }

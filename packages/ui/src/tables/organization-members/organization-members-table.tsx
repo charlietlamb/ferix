@@ -34,7 +34,7 @@ export function OrganizationMembersTable({
     <Table
       actions={
         <Button
-          onClick={() => open('inviteOrganizationMember')}
+          onClick={() => open('inviteOrganizationMember', undefined)}
           variant="outline"
         >
           {t('trigger')}

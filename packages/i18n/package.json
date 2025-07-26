@@ -6,11 +6,11 @@
     "check-types": "tsc --noEmit"
   },
   "devDependencies": {
-    "@ferix/typescript-config": "*",
-    "@types/node": "^22.15.3",
-    "typescript": "5.8.2"
+    "@ferix/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   },
   "dependencies": {
-    "next-intl": "^4.3.4"
+    "next-intl": "catalog:"
   }
 }

@@ -33,6 +33,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
         const props = debouncedStack.find(
           (modal: ModalEntry) => modal.key === key
         )?.props;
+        // @ts-expect-error doesn't like ... with undefined modal props
         return <Modal key={key} {...(props as ModalProps<keyof ModalMap>)} />;
       })}
       {children}

@@ -7,6 +7,6 @@
     "access": "public"
   },
   "devDependencies": {
-    "better-auth": "^1.2.12"
+    "better-auth": "catalog:"
   }
 }

@@ -7,7 +7,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@t3-oss/env-nextjs": "^0.13.8",
-    "zod": "^4.0.5"
+    "@t3-oss/env-nextjs": "catalog:",
+    "zod": "catalog:"
   }
 }

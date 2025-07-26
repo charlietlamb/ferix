@@ -35,7 +35,8 @@ export const auth = betterAuth({
           NOTIFICATION_METHODS.EMAIL,
           EMAIL_PROVIDER_NAMES.RESEND,
           {
-            to: data.email,
+            to: [data.email],
+            from: 'Ferix AI <no-reply@ferix.ai>',
             subject,
             html,
             text: content,

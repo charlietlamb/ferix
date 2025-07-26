@@ -10,5 +10,6 @@ export async function sendEmailWithResend(email: Email) {
     to: email.to,
     subject: email.subject,
     html: email.html,
+    text: email.text,
   });
 }

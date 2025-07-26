@@ -2,7 +2,7 @@ import { atom } from 'jotai';
 import { InviteOrganizationMemberDialog } from '../components/dialog/organization/invite-organization-member-dialog';
 
 export type ModalMap = {
-  inviteOrganizationMember: { test: string };
+  inviteOrganizationMember: undefined;
 };
 
 export type ModalKey = keyof ModalMap;

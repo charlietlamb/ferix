@@ -7,6 +7,6 @@
     "access": "public"
   },
   "dependencies": {
-    "resend": "^4.7.0"
+    "resend": "catalog:"
   }
 }
