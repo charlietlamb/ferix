@@ -4,9 +4,6 @@
       "title": "Ferix"
     }
   },
-  "sidebar": {
-    "logo": "Ferix"
-  },
   "table": {
     "pagination": {
       "rows-per-page": "Rows per page",
