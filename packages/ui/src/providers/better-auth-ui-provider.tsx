@@ -23,6 +23,15 @@ export function BetterAuthUIProvider({
           maxLength: 100,
         },
       }}
+      genericOAuth={{
+        providers: [
+          {
+            name: 'Atlassian',
+            icon: () => 'A',
+            provider: 'atlassian',
+          },
+        ],
+      }}
       Link={Link}
       navigate={router.push}
       onSessionChange={() => router.refresh()}
