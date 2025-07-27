@@ -71,6 +71,7 @@ export function DashboardSidebar({
   const { open } = useSidebar();
   const router = useRouter();
   const pathname = usePathname();
+
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader className="mb-2 h-16 justify-center max-md:mt-2">
@@ -88,7 +89,9 @@ export function DashboardSidebar({
                   <SidebarMenuItem key={menuItem.title}>
                     <SidebarMenuButton
                       asChild
-                      className="group/menu-button h-9 gap-3 font-medium group-data-[collapsible=icon]:px-[5px]! [&>svg]:size-auto"
+                      className={cn(
+                        'group/menu-button h-9 gap-3 font-medium data-[active=true]:border group-data-[collapsible=icon]:px-[5px]! [&>svg]:size-auto'
+                      )}
                       isActive={menuItem.url === pathname}
                       onClick={() => {
                         router.push(menuItem.url);
