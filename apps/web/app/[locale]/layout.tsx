@@ -46,7 +46,7 @@ export default async function LocaleLayout({
         )}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} font-geist-sans antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

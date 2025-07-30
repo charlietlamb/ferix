@@ -16,3 +16,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+@theme {
+  --font-geist-sans: var(--font-geist-sans), sans-serif;
+  --font-geist-mono: var(--font-geist-mono), monospace;
+}
