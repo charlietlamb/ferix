@@ -7,7 +7,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="@container h-full px-2 md:px-4 lg:px-6">
       <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-2">
-        <header className="flex min-h-20 shrink-0 flex-wrap items-center gap-3 border-b px-2 py-4 transition-all ease-linear">
+        <header className="flex min-h-16 shrink-0 flex-wrap items-center gap-3 border-b px-2 py-4 transition-all ease-linear">
           <div className="flex flex-1 items-center gap-2">
             <SidebarTrigger className="-ms-1" />
             <div className="max-sm:hidden sm:contents">
