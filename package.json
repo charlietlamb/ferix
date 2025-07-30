@@ -15,11 +15,6 @@
     "db:studio": "cd packages/database && bun db:studio",
     "prepare": "husky"
   },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
-      "bunx ultracite format"
-    ]
-  },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "husky": "catalog:",

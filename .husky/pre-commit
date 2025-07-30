@@ -1,3 +1,2 @@
 bun run format
 bun run build
-bunx lint-staged
