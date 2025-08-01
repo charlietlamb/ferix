@@ -15,9 +15,27 @@
   body {
     @apply bg-background text-foreground;
   }
+  pre::-webkit-scrollbar {
+    width: 5px;
+  }
+  pre::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  pre::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 5px;
+  }
+  pre {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
 }
 
 @theme {
   --font-geist-sans: var(--font-geist-sans), sans-serif;
   --font-geist-mono: var(--font-geist-mono), monospace;
+}
+
+.container {
+  @apply max-w-xl lg:max-w-2xl xl:max-w-3xl 2xl:max-w-4xl transition-all duration-300 ease-in-out;
 }

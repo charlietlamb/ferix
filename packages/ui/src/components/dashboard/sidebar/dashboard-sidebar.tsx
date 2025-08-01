@@ -17,7 +17,7 @@ import {
   useSidebar,
 } from '@ferix/ui/components/shadcn/sidebar';
 import { cn } from '@ferix/ui/lib/utils';
-import { CpuIcon, Gauge, Users, WalletCards } from 'lucide-react';
+import { CpuIcon, Gauge, MessageCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 
 const data = {
@@ -31,9 +31,9 @@ const data = {
           icon: Gauge,
         },
         {
-          title: 'Subscriptions',
-          url: '/subscriptions',
-          icon: WalletCards,
+          title: 'Chat',
+          url: '/chat',
+          icon: MessageCircle,
         },
         {
           title: 'Organization',
@@ -46,7 +46,7 @@ const data = {
 };
 
 function SidebarLogo() {
-  const { open } = useSidebar();
+  const { open, openMobile } = useSidebar();
   return (
     <div className="flex gap-2 px-2 transition-[padding] duration-200 ease-in-out group-data-[collapsible=icon]:px-0">
       <Link
@@ -57,7 +57,7 @@ function SidebarLogo() {
         href="/"
       >
         <CpuIcon strokeWidth={1.5} />
-        {open && (
+        {(open || openMobile) && (
           <span className="truncate font-medium font-mono">Ferix AI</span>
         )}
       </Link>
@@ -68,7 +68,7 @@ function SidebarLogo() {
 export function DashboardSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
-  const { open } = useSidebar();
+  const { open, openMobile } = useSidebar();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -126,7 +126,7 @@ export function DashboardSidebar({
               menuItem: 'cursor-pointer',
             },
           }}
-          size={open ? 'default' : 'icon'}
+          size={open || openMobile ? 'default' : 'icon'}
         />
       </SidebarFooter>
       <SidebarRail className="hover:after:bg-sidebar-transparent" />

@@ -16,6 +16,7 @@
     "includes": [
       "**",
       "!packages/ui/src/components/shadcn/**",
+      "!packages/ui/src/components/kibo-ui/**",
       "!packages/ui/src/styles/**"
     ]
   }

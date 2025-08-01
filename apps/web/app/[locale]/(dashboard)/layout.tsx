@@ -29,7 +29,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-screen">
       <DashboardSidebar />
       <SidebarInset>
         <PageDashboardLayout>{children}</PageDashboardLayout>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import '@ferix/ui/styles/globals.css';
 import { routing } from '@ferix/i18n/routing';
+import { TailwindIndicator } from '@ferix/ui/components/utility/development/tailwind-indicator';
 import { Providers } from '@ferix/ui/providers';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
@@ -46,9 +47,10 @@ export default async function LocaleLayout({
         )}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-geist-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} h-screen max-w-screen font-geist-sans antialiased`}
       >
         <Providers>{children}</Providers>
+        <TailwindIndicator />
       </body>
     </html>
   );

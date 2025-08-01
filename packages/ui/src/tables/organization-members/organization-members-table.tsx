@@ -1,4 +1,5 @@
 import type { OrganizationWithMembers } from '@ferix/types/organizations/organization-with-members';
+import { DashboardPage } from '@ferix/ui/components/dashboard/layout/dashboard-page';
 import { Button } from '@ferix/ui/components/shadcn/button';
 import { Table } from '@ferix/ui/components/table/table';
 import { useModal } from '@ferix/ui/hooks/use-modal';
@@ -31,17 +32,19 @@ export function OrganizationMembersTable({
   });
 
   return (
-    <Table
-      actions={
-        <Button
-          onClick={() => open('inviteOrganizationMember', undefined)}
-          variant="outline"
-        >
-          {t('trigger')}
-        </Button>
-      }
-      filters={<OrganizationMembersFilter table={table} />}
-      table={table}
-    />
+    <DashboardPage>
+      <Table
+        actions={
+          <Button
+            onClick={() => open('inviteOrganizationMember', undefined)}
+            variant="outline"
+          >
+            {t('trigger')}
+          </Button>
+        }
+        filters={<OrganizationMembersFilter table={table} />}
+        table={table}
+      />
+    </DashboardPage>
   );
 }
