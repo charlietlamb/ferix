@@ -9,6 +9,7 @@
     "@ferix/http": "workspace:*",
     "@ferix/notifications": "workspace:*",
     "@hono/zod-openapi": "catalog:",
+    "@openrouter/ai-sdk-provider": "catalog:",
     "@scalar/hono-api-reference": "catalog:",
     "ai": "catalog:",
     "better-auth": "catalog:",

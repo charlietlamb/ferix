@@ -12,15 +12,28 @@ export const chatRoute = createRoute({
   request: {
     body: jsonContent(
       z.object({
-        prompt: z.string().min(1, 'Prompt is required'),
+        id: z.string().optional(),
+        messages: z.array(
+          z.object({
+            id: z.string(),
+            role: z.enum(['user', 'assistant', 'system']),
+            parts: z.array(
+              z.object({
+                type: z.string(),
+                text: z.string().optional(),
+              })
+            ),
+          })
+        ),
+        trigger: z.string().optional(),
       }),
-      'Prompt for the AI.'
+      'Chat messages for the AI.'
     ),
   },
   responses: {
     [HttpStatusCodes.OK]: {
       content: {
-        'text/plain': {
+        'text/event-stream': {
           schema: z.string(),
           description: 'Streamed response from the AI.',
         },

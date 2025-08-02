@@ -1,30 +1,27 @@
-import { openai } from '@ai-sdk/openai';
+import { env } from '@ferix/env';
 import { HttpStatusCodes } from '@ferix/http/status-codes';
-import { streamText } from 'ai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { convertToModelMessages, streamText } from 'ai';
 import type { AppRouteHandler } from '../../../utils/bindings';
 import type { ChatRoute } from '../routes/chat.route';
 
 export const chatHandler: AppRouteHandler<ChatRoute> = async (c) => {
   try {
-    const { prompt } = await c.req.json();
-    c.var.logger.info('Getting response from the AI.');
+    const { messages } = await c.req.json();
+    const model = messages.at(-1)?.metadata?.model || 'gpt-4o';
+
+    const openrouter = createOpenRouter({
+      apiKey: env.OPENROUTER_API_KEY,
+    });
 
     const result = streamText({
-      model: openai('gpt-4o'),
-      prompt,
+      model: openrouter(model),
+      messages: convertToModelMessages(messages),
     });
 
-    c.var.logger.info('Response from the AI.', {
-      result,
-    });
-
-    return result.toTextStreamResponse({
-      headers: {
-        'Transfer-Encoding': 'chunked',
-        Connection: 'keep-alive',
-        'Content-Type': 'text/plain',
-      },
-    }) as unknown as ReturnType<AppRouteHandler<ChatRoute>>;
+    return result.toUIMessageStreamResponse() as unknown as ReturnType<
+      AppRouteHandler<ChatRoute>
+    >;
   } catch (error) {
     return c.json(
       { error: `Failed to get response from the AI: ${error}` },

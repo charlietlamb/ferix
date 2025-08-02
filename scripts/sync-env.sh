@@ -4,7 +4,7 @@
 set -e
 
 ROOT_ENV=".env"
-APPS=("apps/api" "apps/web" "packages/database")
+APPS=("packages/api" "apps/web" "packages/database")
 
 if [ ! -f "$ROOT_ENV" ]; then
   echo "No .env file found in the root directory. Aborting."
