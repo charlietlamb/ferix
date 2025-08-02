@@ -8,6 +8,7 @@
     "paths": {
       "@ferix/env": ["../../packages/env/src/index.ts"],
       "@ferix/database/*": ["../../packages/database/src/*"],
+      "@ferix/http/*": ["../../packages/http/src/*"],
       "@ferix/notifications/*": ["../../packages/notifications/src/*"],
       "@ferix/types/*": ["../../packages/types/src/*"]
     }

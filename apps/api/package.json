@@ -5,11 +5,19 @@
     "./*": "./src/*"
   },
   "dependencies": {
+    "@ai-sdk/openai": "catalog:",
+    "@ferix/http": "workspace:*",
     "@ferix/notifications": "workspace:*",
+    "@hono/zod-openapi": "catalog:",
+    "@scalar/hono-api-reference": "catalog:",
+    "ai": "catalog:",
     "better-auth": "catalog:",
     "hono": "catalog:",
+    "hono-pino": "catalog:",
+    "pino-pretty": "catalog:",
     "pg": "catalog:",
-    "resend": "catalog:"
+    "resend": "catalog:",
+    "stoker": "catalog:"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
