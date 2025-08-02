@@ -4,7 +4,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@ferix/api/*": ["../../apps/api/src/*"],
+      "@ferix/api/*": ["../../packages/api/src/*"],
       "@ferix/ui/*": ["../../packages/ui/src/*"],
       "@ferix/env": ["../../packages/env/src"],
       "@ferix/notifications/*": ["../../packages/notifications/src/*"],

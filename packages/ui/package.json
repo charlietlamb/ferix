@@ -17,6 +17,7 @@
     "typescript": "catalog:"
   },
   "dependencies": {
+    "@ai-sdk/react": "catalog:",
     "@daveyplate/better-auth-ui": "catalog:",
     "@hookform/resolvers": "catalog:",
     "@icons-pack/react-simple-icons": "catalog:",

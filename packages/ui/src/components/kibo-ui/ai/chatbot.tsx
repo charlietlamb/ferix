@@ -68,6 +68,8 @@ import {
 import Image from 'next/image';
 import { type FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 
 const messages: {
   id: string;
@@ -311,6 +313,13 @@ export function Chatbot() {
       setStatus('ready');
     }, 2000);
   };
+ const { messages: aiMessages, sendMessage, status: aiStatus } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
+  });
+
+  console.log(aiMessages);
   return (
     <div className="relative flex size-full flex-col max-w-full">
       <AIConversation>

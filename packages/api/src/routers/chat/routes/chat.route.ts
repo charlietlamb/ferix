@@ -2,12 +2,12 @@ import { HttpStatusCodes } from '@ferix/http/status-codes';
 import { createRoute, z } from '@hono/zod-openapi';
 import { jsonContent } from 'stoker/openapi/helpers';
 
-const tags = ['ai'];
+const tags = ['chat'];
 
-export const getResponseRoute = createRoute({
-  path: '/ai/get-response',
+export const chatRoute = createRoute({
+  path: '/chat',
   method: 'post',
-  summary: 'Get a streamed response from the OpenAI API',
+  summary: 'Get a streamed response from the AI',
   tags,
   request: {
     body: jsonContent(
@@ -35,3 +35,5 @@ export const getResponseRoute = createRoute({
     ),
   },
 });
+
+export type ChatRoute = typeof chatRoute;

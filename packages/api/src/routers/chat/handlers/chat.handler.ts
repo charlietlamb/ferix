@@ -1,10 +1,10 @@
 import { openai } from '@ai-sdk/openai';
 import { HttpStatusCodes } from '@ferix/http/status-codes';
 import { streamText } from 'ai';
-import type { Context, Handler } from 'hono';
-import type { AppBindings } from '../../../utils/bindings';
+import type { AppRouteHandler } from '../../../utils/bindings';
+import type { ChatRoute } from '../routes/chat.route';
 
-export const getResponseHandler: Handler = async (c: Context<AppBindings>) => {
+export const chatHandler: AppRouteHandler<ChatRoute> = async (c) => {
   try {
     const { prompt } = await c.req.json();
     c.var.logger.info('Getting response from the AI.');
@@ -24,7 +24,7 @@ export const getResponseHandler: Handler = async (c: Context<AppBindings>) => {
         Connection: 'keep-alive',
         'Content-Type': 'text/plain',
       },
-    });
+    }) as unknown as ReturnType<AppRouteHandler<ChatRoute>>;
   } catch (error) {
     return c.json(
       { error: `Failed to get response from the AI: ${error}` },
