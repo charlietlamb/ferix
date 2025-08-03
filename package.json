@@ -34,6 +34,7 @@
       "@ai-sdk/react": "^2.0.0",
       "@biomejs/biome": "2.1.2",
       "@convex-dev/better-auth": "^0.7.13",
+      "@convex-dev/persistent-text-streaming": "^0.2.3",
       "@convex-dev/react-query": "^0.0.0-alpha.11",
       "@daveyplate/better-auth-ui": "^2.1.2",
       "@hono/zod-openapi": "^1.0.2",

@@ -9,7 +9,11 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as chat from "../chat.js";
 import type * as http from "../http.js";
+import type * as messages from "../messages.js";
+import type * as streaming from "../streaming.js";
+import type * as threads from "../threads.js";
 
 import type {
   ApiFromModules,
@@ -27,7 +31,11 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  chat: typeof chat;
   http: typeof http;
+  messages: typeof messages;
+  streaming: typeof streaming;
+  threads: typeof threads;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 
@@ -2573,6 +2581,41 @@ export declare const components: {
                     | null;
                 }>;
               };
+        },
+        any
+      >;
+    };
+  };
+  persistentTextStreaming: {
+    lib: {
+      addChunk: FunctionReference<
+        "mutation",
+        "internal",
+        { final: boolean; streamId: string; text: string },
+        any
+      >;
+      createStream: FunctionReference<"mutation", "internal", {}, any>;
+      getStreamStatus: FunctionReference<
+        "query",
+        "internal",
+        { streamId: string },
+        "pending" | "streaming" | "done" | "error" | "timeout"
+      >;
+      getStreamText: FunctionReference<
+        "query",
+        "internal",
+        { streamId: string },
+        {
+          status: "pending" | "streaming" | "done" | "error" | "timeout";
+          text: string;
+        }
+      >;
+      setStreamStatus: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          status: "pending" | "streaming" | "done" | "error" | "timeout";
+          streamId: string;
         },
         any
       >;

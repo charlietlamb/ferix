@@ -15,15 +15,27 @@ import { useMemo } from 'react';
 
 export function OrganizationMembersTable({
   organization,
+  isLoading,
 }: {
-  organization: OrganizationWithMembers;
+  organization: OrganizationWithMembers | null;
+  isLoading: boolean;
 }) {
-  const organizationMembersColumns = useMemo(() => columns, []);
+  const organizationMembersColumns = useMemo(
+    () => columns(isLoading),
+    [isLoading]
+  );
+  const mockColumn = {
+    user: {
+      name: '',
+    },
+    role: '',
+    createdAt: 0,
+  };
   const t = useTranslations('organization.invite.dialog');
   const { open } = useModal();
 
   const table = useReactTable({
-    data: organization.members ?? [],
+    data: organization?.members ?? new Array(10).fill(mockColumn),
     columns: organizationMembersColumns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
