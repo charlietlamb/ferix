@@ -8,7 +8,7 @@ export default async function AuthPage({
   const { pathname } = await params;
 
   return (
-    <main className="container flex h-screen grow flex-col items-center justify-center gap-4 self-center p-4 md:p-6">
+    <main className="container mx-auto flex h-screen grow flex-col items-center justify-center gap-4 self-center p-4 md:p-6">
       <BetterAuthCard pathname={pathname} />
     </main>
   );
