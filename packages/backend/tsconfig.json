@@ -2,14 +2,15 @@
   "extends": "@ferix/typescript-config/base.json",
   "compilerOptions": {
     "strict": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
     "baseUrl": ".",
     "paths": {
+      "@ferix/api/*": ["../../packages/api/src/*"],
       "@ferix/env": ["../../packages/env/src/index.ts"],
       "@ferix/http/*": ["../../packages/http/src/*"],
       "@ferix/notifications/*": ["../../packages/notifications/src/*"],
       "@ferix/types/*": ["../../packages/types/src/*"]
     }
-  }
+  },
+  "include": ["./**/*"],
+  "exclude": ["./_generated"]
 }

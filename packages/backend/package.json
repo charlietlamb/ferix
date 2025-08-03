@@ -1,0 +1,16 @@
+{
+  "name": "@ferix/backend",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "convex dev",
+    "push": "npx convex dev --once",
+    "setup": "convex dev --until-success"
+  },
+  "dependencies": {
+    "@convex-dev/better-auth": "catalog:",
+    "convex": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

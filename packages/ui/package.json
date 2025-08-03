@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "catalog:",
+    "@convex-dev/react-query": "catalog:",
     "@daveyplate/better-auth-ui": "catalog:",
     "@hookform/resolvers": "catalog:",
     "@icons-pack/react-simple-icons": "catalog:",

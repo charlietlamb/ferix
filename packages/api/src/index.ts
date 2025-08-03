@@ -2,7 +2,6 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { notFound, onError, serveEmojiFavicon } from 'stoker/middlewares';
 import defaultHook from 'stoker/openapi/default-hook';
 import configure from './config';
-import { auth } from './lib/auth';
 import { pinoLogger } from './middleware/pino-logger';
 import { chatRouter } from './routers/chat/chat.router';
 
@@ -17,10 +16,6 @@ configure(app);
 
 app.get('/', (c) => {
   return c.text('Hello Hono!');
-});
-
-app.on(['POST', 'GET'], '/auth/*', (c) => {
-  return auth.handler(c.req.raw);
 });
 
 const routers = [chatRouter] as const;

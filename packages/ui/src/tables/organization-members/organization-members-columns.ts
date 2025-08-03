@@ -18,8 +18,8 @@ export const organizationMembersColumns: ColumnDef<Member>[] = [
     header: 'Date Joined',
     accessorKey: 'createdAt',
     cell: ({ getValue }) => {
-      const date = getValue<Date>();
-      return date.toLocaleDateString();
+      const date = getValue<number>();
+      return new Date(date).toLocaleDateString();
     },
   },
 ];

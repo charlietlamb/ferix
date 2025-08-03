@@ -6,7 +6,7 @@ export default function SettingsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-full flex-row">
+    <div className="flex h-full flex-row py-4">
       <SettingsTabs>{children}</SettingsTabs>
     </div>
   );

@@ -5,11 +5,11 @@
     "paths": {
       "@/*": ["./*"],
       "@ferix/api/*": ["../../packages/api/src/*"],
+      "@ferix/backend/*": ["../../packages/backend/src/*"],
       "@ferix/ui/*": ["../../packages/ui/src/*"],
       "@ferix/env": ["../../packages/env/src"],
       "@ferix/notifications/*": ["../../packages/notifications/src/*"],
       "@ferix/http/*": ["../../packages/http/src/*"],
-      "@ferix/database/*": ["../../packages/database/src/*"],
       "@ferix/i18n/*": ["../../packages/i18n/src/*"],
       "@ferix/types/*": ["../../packages/types/src/*"]
     },

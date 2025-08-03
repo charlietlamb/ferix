@@ -17,7 +17,8 @@
       "**",
       "!packages/ui/src/components/shadcn/**",
       "!packages/ui/src/components/kibo-ui/**",
-      "!packages/ui/src/styles/**"
+      "!packages/ui/src/styles/**",
+      "!packages/backend/convex/_generated/**"
     ]
   }
 }
