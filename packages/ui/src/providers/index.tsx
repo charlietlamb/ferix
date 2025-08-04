@@ -6,14 +6,14 @@ import { ThemeProvider } from './theme-provider';
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ThemeProvider>
-      <NextIntlClientProvider>
-        <ConvexProvider>
+    <ConvexProvider>
+      <ThemeProvider>
+        <NextIntlClientProvider>
           <BetterAuthUIProvider>
             <ModalProvider>{children}</ModalProvider>
           </BetterAuthUIProvider>
-        </ConvexProvider>
-      </NextIntlClientProvider>
-    </ThemeProvider>
+        </NextIntlClientProvider>
+      </ThemeProvider>
+    </ConvexProvider>
   );
 };

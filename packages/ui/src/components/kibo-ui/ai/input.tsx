@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2Icon, SendIcon, SquareIcon, XIcon } from 'lucide-react';
+import { ArrowUp, Loader2Icon, SendIcon, SquareIcon, XIcon } from 'lucide-react';
 import type {
   ComponentProps,
   HTMLAttributes,
@@ -79,6 +79,7 @@ export const AIInput = ({ className, ...props }: AIInputProps) => (
   <form
     className={cn(
       'w-full divide-y overflow-hidden rounded-xl border bg-background shadow-sm',
+      'focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 transition-all',
       className
     )}
     {...props}
@@ -198,7 +199,7 @@ export const AIInputSubmit = ({
   children,
   ...props
 }: AIInputSubmitProps) => {
-  let Icon = <SendIcon />;
+  let Icon = <ArrowUp />;
 
   if (status === 'submitted') {
     Icon = <Loader2Icon className="animate-spin" />;

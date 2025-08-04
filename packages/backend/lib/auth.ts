@@ -14,6 +14,7 @@ import { betterAuthComponent } from '../convex/auth';
 
 const createOptions = (ctx: GenericCtx) =>
   ({
+    baseURL: env.NEXT_PUBLIC_BASE_URL,
     database: convexAdapter(ctx, betterAuthComponent),
     plugins: [
       organization({

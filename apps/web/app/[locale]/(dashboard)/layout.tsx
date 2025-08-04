@@ -4,6 +4,7 @@ import {
   SidebarInset,
   SidebarProvider,
 } from '@ferix/ui/components/shadcn/sidebar';
+import { ConvexAuthenticatedProvider } from '@ferix/ui/providers/convex-authenticated-provider';
 
 export default function DashboardLayout({
   children,
@@ -11,11 +12,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider className="h-screen">
-      <DashboardSidebar />
-      <SidebarInset>
-        <PageDashboardLayout>{children}</PageDashboardLayout>
-      </SidebarInset>
-    </SidebarProvider>
+    <ConvexAuthenticatedProvider>
+      <SidebarProvider className="h-screen">
+        <DashboardSidebar />
+        <SidebarInset>
+          <PageDashboardLayout>{children}</PageDashboardLayout>
+        </SidebarInset>
+      </SidebarProvider>
+    </ConvexAuthenticatedProvider>
   );
 }
