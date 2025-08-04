@@ -17,7 +17,7 @@ import {
   useSidebar,
 } from '@ferix/ui/components/shadcn/sidebar';
 import { cn } from '@ferix/ui/lib/utils';
-import { CpuIcon, Gauge, MessageCircle, Users } from 'lucide-react';
+import { Book, CpuIcon, Gauge, MessageCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 
 const data = {
@@ -39,6 +39,11 @@ const data = {
           title: 'Organization',
           url: '/organization',
           icon: Users,
+        },
+        {
+          title: 'Knowledge Base',
+          url: '/knowledge-base',
+          icon: Book,
         },
       ],
     },

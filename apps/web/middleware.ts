@@ -15,8 +15,7 @@ const intlMiddleware = createMiddleware({
 });
 
 export default function middleware(request: NextRequest) {
-  const sessionCookie = getSessionCookie(request
-    , {
+  const sessionCookie = getSessionCookie(request, {
     cookiePrefix: 'ferix',
   });
   const { pathname } = request.nextUrl;

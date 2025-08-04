@@ -2,7 +2,6 @@ import type { StreamId } from '@convex-dev/persistent-text-streaming';
 import { v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { internalQuery, mutation, query } from './_generated/server';
-import { betterAuthComponent } from './auth';
 import { MessageRole } from './schema';
 import { streamingComponent } from './streaming';
 

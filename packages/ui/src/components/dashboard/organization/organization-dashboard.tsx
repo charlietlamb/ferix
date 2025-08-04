@@ -1,15 +1,15 @@
 'use client';
 
-import { authClient } from '@ferix/ui/lib/auth-client';
+import { useOrganizationMembers } from '@ferix/ui/hooks/use-organization-members';
 import { OrganizationMembersTable } from '@ferix/ui/tables/organization-members/organization-members-table';
 
 export function OrganizationDashboard() {
-  const { data: organization, isPending } = authClient.useActiveOrganization();
+  const { organizationMembers, isLoading } = useOrganizationMembers();
 
   return (
     <OrganizationMembersTable
-      isLoading={isPending}
-      organization={organization}
+      data={organizationMembers}
+      isLoading={isLoading}
     />
   );
 }

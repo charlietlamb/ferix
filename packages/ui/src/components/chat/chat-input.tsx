@@ -44,7 +44,7 @@ export function ChatInput({
   sendMessage,
   selectedModel,
   onModelChange,
-  className
+  className,
 }: {
   status: 'submitted' | 'streaming' | 'ready' | 'error';
   sendMessage: (message: string, model: string) => void;
@@ -75,9 +75,14 @@ export function ChatInput({
   };
 
   return (
-    <div className={cn("container sticky right-4 bottom-0 left-4 grid shrink-0 bg-gradient-to-t from-background via-50% via-background to-transparent pt-0", className)}>
+    <div
+      className={cn(
+        'container sticky right-4 bottom-0 left-4 grid shrink-0 bg-gradient-to-t from-background via-50% via-background to-transparent pt-0',
+        className
+      )}
+    >
       <div className="pointer-events-none absolute right-0 bottom-full left-0 h-8" />
-      <AIInput onSubmit={handleSubmit} className='my-2'>
+      <AIInput className="my-2" onSubmit={handleSubmit}>
         <AIInputTextarea
           onChange={(event) => setText(event.target.value)}
           value={text}

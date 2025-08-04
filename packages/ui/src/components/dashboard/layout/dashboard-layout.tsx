@@ -22,7 +22,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <div className="flex-1 overflow-auto">
-        <div className="container relative mx-auto px-4 md:px-0 h-full flex flex-col">
+        <div className="container relative mx-auto flex h-full flex-col px-4 md:px-0">
           {children}
         </div>
       </div>

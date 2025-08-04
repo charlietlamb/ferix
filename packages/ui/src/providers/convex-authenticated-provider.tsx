@@ -1,18 +1,13 @@
 'use client';
 
 import { Link } from '@ferix/i18n/navigation';
-import { Authenticated, Unauthenticated, useConvexAuth } from 'convex/react';
-import { authClient } from '../lib/auth-client';
+import { Authenticated, Unauthenticated } from 'convex/react';
 
 export function ConvexAuthenticatedProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session } = authClient.useSession();
-  console.log('betterAuth session', session);
-  const { isAuthenticated } = useConvexAuth();
-  console.log('has convex session', isAuthenticated);
   return children;
   return (
     <>

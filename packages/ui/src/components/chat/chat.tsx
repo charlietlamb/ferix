@@ -4,10 +4,10 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@ferix/backend/convex/_generated/api';
 import type { Id } from '@ferix/backend/convex/_generated/dataModel';
 import { ChatInput } from '@ferix/ui/components/chat/chat-input';
+import { cn } from '@ferix/ui/lib/utils';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ChatPreview } from './chat-preview';
-import { cn } from '@ferix/ui/lib/utils';
 import { Thread } from './thread';
 
 export function Chat({ threadId }: { threadId?: string }) {
@@ -36,15 +36,20 @@ export function Chat({ threadId }: { threadId?: string }) {
   };
 
   return (
-    <div className={cn("relative flex size-full max-w-full flex-col transition-all duration-500", 
-    !hasMessages && "h-full items-center justify-center gap-12 transition-all duration-500" )}>
+    <div
+      className={cn(
+        'relative flex size-full max-w-full flex-col transition-all duration-500',
+        !hasMessages &&
+          'h-full items-center justify-center gap-12 transition-all duration-500'
+      )}
+    >
       {hasMessages ? <Thread messages={messages} /> : <ChatPreview />}
       <ChatInput
+        className="transition-all duration-500"
         onModelChange={setModel}
         selectedModel={model}
         sendMessage={handleSendMessage}
         status={status}
-        className={cn("transition-all duration-500",!hasMessages && "")}
       />
     </div>
   );

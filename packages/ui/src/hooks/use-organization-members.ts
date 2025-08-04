@@ -1,47 +1,30 @@
-import { useQuery } from '@tanstack/react-query';
-import type { Member, Organization } from 'better-auth/plugins/organization';
-import { authClient } from '../lib/auth-client';
-
-interface ErrorResponse {
-  error: {
-    code?: string;
-    message: string;
-  };
-}
-
-interface SuccessResponse {
-  data: Organization & {
-    members: Member[];
-  };
-}
-
-type OrganizationResponse = ErrorResponse | SuccessResponse;
+import { authClient } from '@ferix/ui/lib/auth-client';
+import { useMemo } from 'react';
 
 export function useOrganizationMembers() {
-  const { data: activeOrg } = authClient.useActiveOrganization();
+  const { data: organization, isPending } = authClient.useActiveOrganization();
 
-  return useQuery({
-    queryKey: ['organization-members', activeOrg?.id],
-    queryFn: async () => {
-      if (!activeOrg?.id) {
-        throw new Error('No active organization');
-      }
+  const hasNoActiveOrganization = !(organization || isPending);
 
-      // Get the full organization details
-      const response = (await authClient.organization.getFullOrganization({
-        query: { organizationId: activeOrg.id },
-      })) as OrganizationResponse;
+  async function handleSetActiveOrganization() {
+    const organizations = await authClient.organization.list();
+    const firstOrganization = organizations.data?.[0];
+    await authClient.organization.setActive({
+      organizationId: firstOrganization?.id,
+    });
+  }
 
-      if ('error' in response) {
-        throw new Error(
-          response.error?.message || 'Failed to fetch organization members'
-        );
-      }
+  if (hasNoActiveOrganization) {
+    handleSetActiveOrganization();
+  }
 
-      return (response as SuccessResponse).data.members;
-    },
-    enabled: !!activeOrg?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 15, // 15 minutes
-  });
+  const organizationMembers = useMemo(() => {
+    return organization?.members ?? [];
+  }, [organization?.members]);
+
+  return {
+    organization,
+    isLoading: isPending,
+    organizationMembers,
+  };
 }

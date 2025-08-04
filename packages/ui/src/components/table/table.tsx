@@ -12,6 +12,7 @@ export interface TableProps<T> {
   filters?: React.ReactNode;
   actions?: React.ReactNode;
   enableSelection?: boolean;
+  isLoading?: boolean;
 }
 
 export function Table<T>({
@@ -19,8 +20,10 @@ export function Table<T>({
   filters,
   actions,
   enableSelection = true,
+  isLoading = false,
 }: TableProps<T>) {
-  const numberOfColumns = table.getAllColumns().length;
+  const numberOfColumns =
+    table.getAllColumns().length + (enableSelection ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -39,6 +42,7 @@ export function Table<T>({
           />
           <TableBody
             enableSelection={enableSelection}
+            isLoading={isLoading}
             numberOfColumns={numberOfColumns}
             rows={table.getRowModel().rows}
           />
