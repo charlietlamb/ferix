@@ -121,5 +121,22 @@
       "heading": "Organization",
       "description": "Manage your organization settings"
     }
+  },
+  "chat": {
+    "preview": {
+      "title": {
+        "before-name": "Hey",
+        "after-name": "what's on your mind?"
+      }
+    },
+    "input": {
+      "placeholder": "What would you like to know?",
+      "actions": {
+        "add-attachment": "Add attachment",
+        "upload-file": "Upload file",
+        "search": "Search",
+        "microphone": "Microphone"
+      }
+    }
   }
 }

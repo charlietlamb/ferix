@@ -25,7 +25,10 @@ export function BetterAuthUIProvider({
       }}
       Link={Link}
       navigate={router.push}
-      onSessionChange={() => router.refresh()}
+      onSessionChange={() => {
+        localStorage.removeItem('userData');
+        router.refresh();
+      }}
       organization={true}
       replace={router.replace}
       settings={{

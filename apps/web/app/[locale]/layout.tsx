@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description: 'Ferix',
 };
 
-const renderReactScan = false;
+const renderReactScan = true;
 
 export default async function LocaleLayout({
   children,

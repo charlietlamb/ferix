@@ -19,6 +19,7 @@ import {
 } from '@ferix/ui/components/shadcn/dropdown-menu';
 import { cn } from '@ferix/ui/lib/utils';
 import { FileIcon, GlobeIcon, MicIcon, PlusIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { type FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -55,6 +56,7 @@ export function ChatInput({
   const [text, setText] = useState<string>('');
   const [useWebSearch, setUseWebSearch] = useState<boolean>(false);
   const [useMicrophone, setUseMicrophone] = useState<boolean>(false);
+  const t = useTranslations('chat.input');
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
@@ -63,9 +65,6 @@ export function ChatInput({
     }
     sendMessage(text, selectedModel);
     setText('');
-    toast.success('Message submitted', {
-      description: text,
-    });
   };
 
   const handleFileAction = (action: string) => {
@@ -85,6 +84,7 @@ export function ChatInput({
       <AIInput className="my-2" onSubmit={handleSubmit}>
         <AIInputTextarea
           onChange={(event) => setText(event.target.value)}
+          placeholder={t('placeholder')}
           value={text}
         />
         <AIInputToolbar>
@@ -93,7 +93,7 @@ export function ChatInput({
               <DropdownMenuTrigger asChild>
                 <AIInputButton>
                   <PlusIcon size={16} />
-                  <span className="sr-only">Add attachment</span>
+                  <span className="sr-only">{t('actions.add-attachment')}</span>
                 </AIInputButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
@@ -101,7 +101,7 @@ export function ChatInput({
                   onClick={() => handleFileAction('upload-file')}
                 >
                   <FileIcon className="mr-2" size={16} />
-                  Upload file
+                  {t('actions.upload-file')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -110,14 +110,14 @@ export function ChatInput({
               variant={useMicrophone ? 'default' : 'ghost'}
             >
               <MicIcon size={16} />
-              <span className="sr-only">Microphone</span>
+              <span className="sr-only">{t('actions.microphone')}</span>
             </AIInputButton>
             <AIInputButton
               onClick={() => setUseWebSearch(!useWebSearch)}
               variant={useWebSearch ? 'default' : 'ghost'}
             >
               <GlobeIcon size={16} />
-              <span>Search</span>
+              <span>{t('actions.search')}</span>
             </AIInputButton>
             <AIInputModelSelect
               onValueChange={onModelChange}

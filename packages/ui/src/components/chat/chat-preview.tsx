@@ -1,9 +1,14 @@
-import { authClient } from '@ferix/ui/lib/auth-client';
+'use client';
 
-export function ChatPreview() {
-  const { data: session } = authClient.useSession();
-  const firstName = session?.user?.name?.split(' ')[0];
-  const displayString = `Hey ${firstName ?? 'there'}, what's on your mind?`;
+import type { User } from 'better-auth';
+import { useTranslations } from 'next-intl';
+
+export function ChatPreview({ user }: { user: User | null }) {
+  const t = useTranslations('chat.preview');
+  const firstName = user?.name?.split(' ')[0];
+  const displayString = firstName
+    ? `${t('title.before-name')} ${firstName || 'there'}, ${t('title.after-name')}`
+    : ' ';
 
   return <div className="text-center text-2xl">{displayString}</div>;
 }

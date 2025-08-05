@@ -4,13 +4,16 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@ferix/backend/convex/_generated/api';
 import type { Id } from '@ferix/backend/convex/_generated/dataModel';
 import { ChatInput } from '@ferix/ui/components/chat/chat-input';
+import { useUser } from '@ferix/ui/hooks/use-user';
 import { cn } from '@ferix/ui/lib/utils';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Loading } from '../utility/loading/loading';
 import { ChatPreview } from './chat-preview';
 import { Thread } from './thread';
 
 export function Chat({ threadId }: { threadId?: string }) {
+  const { user, isLoading } = useUser();
   const [model, setModel] = useState<string>('gpt-4o');
   const status: 'error' | 'streaming' | 'submitted' | 'ready' = 'ready';
 
@@ -35,6 +38,10 @@ export function Chat({ threadId }: { threadId?: string }) {
     });
   };
 
+  if (isLoading) {
+    return <Loading />;
+  }
+
   return (
     <div
       className={cn(
@@ -43,7 +50,11 @@ export function Chat({ threadId }: { threadId?: string }) {
           'h-full items-center justify-center gap-12 transition-all duration-500'
       )}
     >
-      {hasMessages ? <Thread messages={messages} /> : <ChatPreview />}
+      {hasMessages ? (
+        <Thread messages={messages} />
+      ) : (
+        <ChatPreview user={user} />
+      )}
       <ChatInput
         className="transition-all duration-500"
         onModelChange={setModel}
