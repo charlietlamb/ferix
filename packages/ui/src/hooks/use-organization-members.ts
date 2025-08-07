@@ -3,12 +3,16 @@ import { useMemo } from 'react';
 
 export function useOrganizationMembers() {
   const { data: organization, isPending } = authClient.useActiveOrganization();
+  const { data: organizations } = authClient.useListOrganizations();
 
-  const hasNoActiveOrganization = !(organization || isPending);
+  const hasNoActiveOrganization =
+    !(organization || isPending) && organizations?.length;
 
   async function handleSetActiveOrganization() {
-    const organizations = await authClient.organization.list();
-    const firstOrganization = organizations.data?.[0];
+    if (!organizations?.length) {
+      return;
+    }
+    const firstOrganization = organizations[0];
     await authClient.organization.setActive({
       organizationId: firstOrganization?.id,
     });

@@ -1,3 +1,5 @@
+'use client';
+
 import type { User } from 'better-auth';
 import { useRef, useState } from 'react';
 import { authClient } from '../lib/auth-client';
@@ -5,6 +7,9 @@ import { authClient } from '../lib/auth-client';
 export const useUser = (): { user: User | null; isLoading: boolean } => {
   const loading = useRef(false);
   const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
     const localData = localStorage.getItem('userData');
     if (localData) {
       return JSON.parse(localData);

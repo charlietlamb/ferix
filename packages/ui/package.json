@@ -66,6 +66,7 @@
     "lucide-react": "catalog:",
     "next-intl": "catalog:",
     "next-themes": "catalog:",
+    "nuqs": "^2.4.3",
     "react": "catalog:",
     "react-day-picker": "catalog:",
     "react-dom": "catalog:",

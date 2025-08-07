@@ -52,7 +52,7 @@ export const sendMessage = mutation({
     }
 
     const responseStreamId = await streamingComponent.createStream(ctx);
-    const chatId = await ctx.db.insert('messages', {
+    const messageId = await ctx.db.insert('messages', {
       text: args.text,
       model: args.model,
       responseStreamId,
@@ -60,7 +60,7 @@ export const sendMessage = mutation({
       role: args.role,
       sentByUserId: userId as Id<'users'>,
     });
-    return chatId;
+    return { messageId, threadId: args.threadId };
   },
 });
 

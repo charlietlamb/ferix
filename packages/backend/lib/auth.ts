@@ -53,6 +53,7 @@ const createOptions = (ctx: GenericCtx) =>
     },
     advanced: {
       cookiePrefix: 'ferix',
+      useSecureCookies: true,
     },
     trustedOrigins: [env.NEXT_PUBLIC_BASE_URL, 'http://localhost:3003'],
   }) satisfies BetterAuthOptions;
