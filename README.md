@@ -1,132 +1,94 @@
-# Turborepo starter
+# Ferix Monorepo
 
-This Turborepo starter is maintained by the Turborepo core team.
+A Turbo monorepo using Bun, Convex (backend), and Next.js (frontend).
 
-## Using this example
+## Quick start
 
-Run the following command:
+1. Set up your environment file(s) as below.
+2. Install dependencies at the repo root:
+   
+   ```bash
+   bun i
+   ```
+3. Run the Convex backend:
+   
+   ```bash
+   cd packages/backend
+   bun dev
+   ```
+   - If you previously authenticated Convex with another account or project and see errors, logout locally and retry:
+     
+     ```bash
+     npx convex logout
+     ```
+4. Run the Next.js app:
+   
+   ```bash
+   cd apps/web
+   bun dev
+   ```
+5. Open the app at `http://localhost:3003`.
 
-```sh
-npx create-turbo@latest
+> Tip: You can also try running everything via Turborepo from the root with `bun dev`, but local development is usually clearer by running backend and frontend separately as shown above.
+
+## Prerequisites
+
+- Bun `>= 1.1.29`
+- Node.js `>= 18`
+- Git
+
+## Environment setup
+
+Create a `.env` file at the repo root with the following variables. Then sync it to subprojects using the provided script.
+
+```bash
+# Client
+NEXT_PUBLIC_BASE_URL=http://localhost:3003
+# Convex URLs (use the ones printed by `bun dev` in packages/backend or your Convex dashboard)
+NEXT_PUBLIC_CONVEX_URL=
+NEXT_PUBLIC_CONVEX_SITE_URL=
+
+# Server
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=
+RESEND_API_KEY=
+OPENAI_API_KEY=
+OPENROUTER_API_KEY=
+
+# Optional
+LOG_LEVEL=info
 ```
 
-## What's inside?
+Sync the root `.env` into each app:
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@ferix/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@ferix/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```bash
+./scripts/sync-env.sh
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+This copies to:
+- `packages/api/.env`
+- `apps/web/.env`
+- `packages/backend/.env.local`
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+## Project structure
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+- `apps/web`: Next.js web app
+- `packages/backend`: Convex backend
+- `packages/*`: Shared packages (env, api, ui, etc.)
 
-### Develop
+## Common issues
 
-To develop all apps and packages, run the following command:
+- Convex auth/session issues locally: run `npx convex logout` and start the backend again.
+- Environment variables out of sync: re-run `./scripts/sync-env.sh` after updating the root `.env`.
 
-```
-cd my-turborepo
+## Scripts (selected)
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+- Root
+  - `bun i`: install dependencies
+  - `bun dev`: run `turbo run dev` across workspaces
+- Backend (`packages/backend`)
+  - `bun dev`: start Convex (`convex dev`)
+  - `bun run push`: one-off Convex dev boot (`npx convex dev --once`)
+- Web (`apps/web`)
+  - `bun dev`: start Next.js on port 3003
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
