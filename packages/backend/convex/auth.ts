@@ -3,6 +3,8 @@ import {
   BetterAuth,
   type PublicAuthFunctions,
 } from '@convex-dev/better-auth';
+import { createAuth } from '@ferix/backend/lib/auth';
+import { v } from 'convex/values';
 import { api, components, internal } from './_generated/api';
 import type { DataModel, Id } from './_generated/dataModel';
 import { query } from './_generated/server';
@@ -53,5 +55,31 @@ export const getCurrentUser = query({
       ...user,
       ...userMetadata,
     };
+  },
+});
+
+export const getActiveOrganizationId = query({
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args): Promise<string | undefined> => {
+    try {
+      const auth = createAuth(ctx);
+      const headers = await betterAuthComponent.getHeaders(ctx);
+      const data = await auth.api.listMembers({
+        query: {
+          filterField: 'userId',
+          filterValue: args.userId,
+        },
+        headers,
+      });
+      if (!data.members.length) {
+        return;
+      }
+      const activeMember = data.members[0];
+      return activeMember.organizationId;
+    } catch (error) {
+      throw new Error(`Error getting active organization id: ${error}`);
+    }
   },
 });

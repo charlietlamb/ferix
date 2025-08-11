@@ -1,49 +1,38 @@
-import { useConvexMutation } from '@convex-dev/react-query';
+import {
+  optimisticallySendMessage,
+  useThreadMessages,
+} from '@convex-dev/agent/react';
 import { api } from '@ferix/backend/convex/_generated/api';
-import type { Id } from '@ferix/backend/convex/_generated/dataModel';
-import { useMutation } from '@tanstack/react-query';
-import { useQuery } from 'convex/react';
-import { useQueryState } from 'nuqs';
+import { useMutation } from 'convex/react';
 import { useState } from 'react';
 
-export function useChat(initThreadId?: string) {
-  const defaultThreadId = initThreadId ?? null;
-  const queryThreadId = defaultThreadId?.length ? defaultThreadId : undefined;
-  const [threadId, setThreadId] = useQueryState<string | null>('threadId', {
-    defaultValue: defaultThreadId,
-    parse(value) {
-      return value ?? defaultThreadId;
-    },
-  });
+export function useChat(threadId: string) {
   const [model, setModel] = useState<string>('gpt-4o');
   const status: 'error' | 'streaming' | 'submitted' | 'ready' = 'ready';
 
-  const messages = useQuery(api.messages.listMessages, {
-    threadId: queryThreadId as Id<'threads'>,
-  });
+  const messages = useThreadMessages(
+    api.chat.streaming.listMessages,
+    { threadId },
+    { initialNumItems: 10, stream: true }
+  );
   const isLoadingMessages = threadId?.length && messages === undefined;
-  const hasMessages = messages?.length;
+  const hasMessages = messages?.results?.length;
 
-  const { mutate: sendMessage } = useMutation({
-    mutationFn: useConvexMutation(api.messages.sendMessage),
-    onSuccess: (result: { threadId: string; messageId: string }) => {
-      if (!threadId) {
-        setThreadId(result?.threadId);
-      }
-    },
-  });
+  const sendMessage = useMutation(
+    api.chat.streaming.initiateAsyncStreaming
+  ).withOptimisticUpdate(
+    optimisticallySendMessage(api.messages.listThreadMessages)
+  );
 
   const handleSendMessage = (message: string) => {
     sendMessage({
-      text: message,
-      model,
-      threadId: queryThreadId as Id<'threads'>,
-      role: 'user',
+      prompt: message,
+      threadId,
     });
   };
 
   return {
-    messages: messages ?? [],
+    messages: messages?.results ?? [],
     isLoadingMessages,
     hasMessages,
     handleSendMessage,

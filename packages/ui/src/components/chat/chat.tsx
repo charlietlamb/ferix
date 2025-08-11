@@ -1,5 +1,6 @@
 'use client';
 
+import { toUIMessages } from '@convex-dev/agent/react';
 import { ChatInput } from '@ferix/ui/components/chat/chat-input';
 import { useChat } from '@ferix/ui/hooks/use-chat';
 import { useUser } from '@ferix/ui/hooks/use-user';
@@ -8,7 +9,7 @@ import { Loading } from '../utility/loading/loading';
 import { ChatPreview } from './chat-preview';
 import { Thread } from './thread';
 
-export function Chat({ initThreadId }: { initThreadId?: string }) {
+export function Chat({ threadId }: { threadId: string }) {
   const { user, isLoading: isLoadingUser } = useUser();
   const {
     messages,
@@ -18,7 +19,7 @@ export function Chat({ initThreadId }: { initThreadId?: string }) {
     model,
     setModel,
     status,
-  } = useChat(initThreadId);
+  } = useChat(threadId);
 
   if (isLoadingUser || isLoadingMessages) {
     return <Loading />;
@@ -33,7 +34,7 @@ export function Chat({ initThreadId }: { initThreadId?: string }) {
       )}
     >
       {hasMessages ? (
-        <Thread messages={messages} />
+        <Thread messages={toUIMessages(messages)} />
       ) : (
         <ChatPreview user={user} />
       )}

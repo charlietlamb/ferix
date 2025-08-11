@@ -8,7 +8,6 @@ export function ConvexAuthenticatedProvider({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
   return (
     <>
       <Authenticated>{children}</Authenticated>

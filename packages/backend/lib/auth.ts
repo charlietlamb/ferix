@@ -1,5 +1,7 @@
 import { convexAdapter } from '@convex-dev/better-auth';
 import { convex } from '@convex-dev/better-auth/plugins';
+import { api } from '@ferix/backend/convex/_generated/api';
+import type { Id } from '@ferix/backend/convex/_generated/dataModel';
 import { env } from '@ferix/env';
 import {
   NOTIFICATION_METHODS,
@@ -56,6 +58,25 @@ const createOptions = (ctx: GenericCtx) =>
       useSecureCookies: true,
     },
     trustedOrigins: [env.NEXT_PUBLIC_BASE_URL, 'http://localhost:3003'],
+    databaseHooks: {
+      session: {
+        create: {
+          before: async (session) => {
+            return {
+              data: {
+                ...session,
+                activeOrganizationId: await ctx.runQuery(
+                  api.auth.getActiveOrganizationId,
+                  {
+                    userId: session.userId as Id<'users'>,
+                  }
+                ),
+              },
+            };
+          },
+        },
+      },
+    },
   }) satisfies BetterAuthOptions;
 
 export const createAuth = (ctx: GenericCtx) => {
@@ -64,4 +85,10 @@ export const createAuth = (ctx: GenericCtx) => {
     ...options,
     plugins: [...options.plugins, convex({ options })],
   });
+};
+
+export const getAuthUserId = async (ctx: GenericCtx) => {
+  const identity = await ctx.auth.getUserIdentity();
+  const userId = identity?.subject as Id<'users'>;
+  return userId;
 };
