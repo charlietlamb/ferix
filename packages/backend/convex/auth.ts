@@ -78,8 +78,19 @@ export const getActiveOrganizationId = query({
       }
       const activeMember = data.members[0];
       return activeMember.organizationId;
-    } catch (error) {
-      throw new Error(`Error getting active organization id: ${error}`);
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'statusCode' in error &&
+        error.statusCode === 401
+      ) {
+        return;
+      }
+      throw new Error(
+        'Error getting active organization id: ' +
+          JSON.stringify(error, null, 2)
+      );
     }
   },
 });
