@@ -2,7 +2,10 @@
   "extends": "@ferix/typescript-config/react-library.json",
   "compilerOptions": {
     "outDir": "dist",
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "paths": {
+      "@ferix/ui/*": ["./src/*"]
+    }
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

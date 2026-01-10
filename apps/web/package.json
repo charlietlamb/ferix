@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ferix/ui": "*",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
