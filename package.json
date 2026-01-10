@@ -4,12 +4,18 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "check-types": "turbo run check-types"
+    "lint": "bunx biome lint",
+    "format": "bunx biome format --write",
+    "check-types": "turbo run check-types",
+    "prepare": "husky",
+    "test": "echo 'No tests yet'"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.11",
+    "husky": "^9.1.7",
     "turbo": "^2.7.3",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "ultracite": "7.0.11"
   },
   "engines": {
     "node": ">=18"
