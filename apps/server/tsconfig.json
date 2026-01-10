@@ -1,0 +1,13 @@
+{
+  "extends": "@ferix/typescript-config/base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "paths": {
+      "@ferix/server/*": ["./convex/*"],
+      "@ferix/env/convex": ["../../packages/env/src/convex.ts"]
+    }
+  },
+  "include": ["convex"],
+  "exclude": ["node_modules", "dist"]
+}

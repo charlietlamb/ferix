@@ -20,7 +20,9 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@ferix/ui/*": ["../../packages/ui/src/*"]
+      "@ferix/env/nextjs": ["../../packages/env/src/nextjs.ts"],
+      "@ferix/ui/*": ["../../packages/ui/src/*"],
+      "@ferix/server/*": ["../../apps/server/convex/*"]
     }
   },
   "include": [

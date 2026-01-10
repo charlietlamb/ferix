@@ -1,0 +1,20 @@
+{
+  "name": "@ferix/env",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./nextjs": "./src/nextjs.ts",
+    "./convex": "./src/convex.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@t3-oss/env-nextjs": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@ferix/typescript-config": "*",
+    "typescript": "catalog:"
+  }
+}

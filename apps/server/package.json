@@ -1,0 +1,26 @@
+{
+  "name": "@ferix/server",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./_generated/api": "./convex/_generated/api.js",
+    "./_generated/dataModel": "./convex/_generated/dataModel.js"
+  },
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@convex-dev/better-auth": "catalog:",
+    "@ferix/env": "*",
+    "better-auth": "catalog:",
+    "convex": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@ferix/typescript-config": "*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

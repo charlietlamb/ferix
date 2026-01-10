@@ -8,7 +8,12 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ferix/env": "*",
+    "@ferix/server": "*",
     "@ferix/ui": "*",
+    "convex": "catalog:",
+    "@convex-dev/better-auth": "catalog:",
+    "better-auth": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
