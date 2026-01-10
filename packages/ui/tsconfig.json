@@ -2,6 +2,7 @@
   "extends": "@ferix/typescript-config/react-library.json",
   "compilerOptions": {
     "outDir": "dist",
+    "rootDir": "src",
     "strictNullChecks": true,
     "paths": {
       "@ferix/ui/*": ["./src/*"]
