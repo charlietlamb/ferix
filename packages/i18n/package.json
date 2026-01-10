@@ -1,0 +1,21 @@
+{
+  "name": "@ferix/i18n",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./routing": "./src/routing.ts",
+    "./navigation": "./src/navigation.ts"
+  },
+  "dependencies": {
+    "next-intl": "catalog:"
+  },
+  "devDependencies": {
+    "@ferix/typescript-config": "*",
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "next": "catalog:",
+    "react": "catalog:"
+  }
+}
