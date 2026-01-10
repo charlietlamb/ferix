@@ -16,7 +16,7 @@ interface FormCardProps {
 export function FormCard({ title, description, children }: FormCardProps) {
   return (
     <Card className="w-full max-w-sm">
-      <CardHeader className="text-center">
+      <CardHeader>
         <CardTitle className="text-2xl">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>

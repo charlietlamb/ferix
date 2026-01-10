@@ -1,12 +1,13 @@
 "use client";
 
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
+import { authClient } from "@ferix/auth/client";
 import { env } from "@ferix/env/nextjs";
 import { ConvexReactClient } from "convex/react";
 import type { AbstractIntlMessages } from "next-intl";
 import { NextIntlClientProvider } from "next-intl";
+import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
-import { authClient } from "@/lib/auth-client";
 
 const convex = new ConvexReactClient(env.NEXT_PUBLIC_CONVEX_URL);
 
@@ -18,10 +19,12 @@ interface ProvidersProps {
 
 export function Providers({ children, messages, locale }: ProvidersProps) {
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      <ConvexBetterAuthProvider authClient={authClient} client={convex}>
-        {children}
-      </ConvexBetterAuthProvider>
-    </NextIntlClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        <ConvexBetterAuthProvider authClient={authClient} client={convex}>
+          {children}
+        </ConvexBetterAuthProvider>
+      </NextIntlClientProvider>
+    </ThemeProvider>
   );
 }

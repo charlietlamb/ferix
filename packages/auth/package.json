@@ -1,0 +1,24 @@
+{
+  "name": "@ferix/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts"
+  },
+  "dependencies": {
+    "@convex-dev/better-auth": "catalog:",
+    "@ferix/env": "*",
+    "better-auth": "catalog:",
+    "convex": "catalog:",
+    "convex-helpers": "catalog:"
+  },
+  "devDependencies": {
+    "@ferix/typescript-config": "*",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:"
+  }
+}

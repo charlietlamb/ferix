@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ferix/auth": "*",
     "@ferix/env": "*",
     "@ferix/server": "*",
     "@ferix/ui": "*",
@@ -18,6 +19,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "next-intl": "catalog:",
+    "next-themes": "catalog:",
     "@ferix/i18n": "*"
   },
   "devDependencies": {

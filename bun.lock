@@ -33,6 +33,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@convex-dev/better-auth": "catalog:",
+        "@ferix/auth": "*",
         "@ferix/env": "*",
         "@ferix/i18n": "*",
         "@ferix/server": "*",
@@ -41,6 +42,7 @@
         "convex": "catalog:",
         "next": "catalog:",
         "next-intl": "catalog:",
+        "next-themes": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
       },
@@ -51,6 +53,24 @@
         "@types/react-dom": "catalog:",
         "tailwindcss": "catalog:",
         "typescript": "catalog:",
+      },
+    },
+    "packages/auth": {
+      "name": "@ferix/auth",
+      "version": "0.0.0",
+      "dependencies": {
+        "@convex-dev/better-auth": "catalog:",
+        "@ferix/env": "*",
+        "better-auth": "catalog:",
+        "convex": "catalog:",
+        "convex-helpers": "catalog:",
+      },
+      "devDependencies": {
+        "@ferix/typescript-config": "*",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "react": "catalog:",
       },
     },
     "packages/env": {
@@ -90,6 +110,8 @@
       "version": "0.0.0",
       "dependencies": {
         "@base-ui/react": "catalog:",
+        "@ferix/auth": "*",
+        "@ferix/i18n": "*",
         "@phosphor-icons/react": "catalog:",
         "@tanstack/react-form": "catalog:",
         "class-variance-authority": "catalog:",
@@ -140,6 +162,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "convex": "^1.25.0",
+    "convex-helpers": "^0.1.109",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
@@ -257,6 +280,8 @@
     "@esbuild/win32-ia32": ["@esbuild/win32-ia32@0.27.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-30z1aKL9h22kQhilnYkORFYt+3wp7yZsHWus+wSKAJR8JtdfI76LJ4SBdMsCopTR3z/ORqVu5L1vtnHZWVj4cQ=="],
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.27.0", "", { "os": "win32", "cpu": "x64" }, "sha512-aIitBcjQeyOhMTImhLZmtxfdOcuNRpwlPNmlFKPcHQYPhEssw75Cl1TSXJXpMkzaua9FUetx/4OQKq7eJul5Cg=="],
+
+    "@ferix/auth": ["@ferix/auth@workspace:packages/auth"],
 
     "@ferix/env": ["@ferix/env@workspace:packages/env"],
 
