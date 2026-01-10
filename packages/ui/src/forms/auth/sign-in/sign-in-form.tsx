@@ -10,12 +10,16 @@ import { GithubLogoIcon } from "@phosphor-icons/react";
 import { Result } from "better-result";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { signInFormSchema } from "./sign-in-form-schema";
 
 export function SignInForm({ onSuccess }: { onSuccess?: () => void }) {
   const t = useTranslations("auth.signIn");
 
   const form = useAppForm({
     defaultValues: { email: "", password: "" },
+    validators: {
+      onChange: signInFormSchema,
+    },
     onSubmit: async ({ value }) => {
       const result = await Result.tryPromise(() =>
         signIn.email({
