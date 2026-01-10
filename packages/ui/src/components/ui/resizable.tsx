@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+//@ts-expect-error - shadcn/ui type error
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
 
 import { cn } from "@ferix/ui/lib/utils"
