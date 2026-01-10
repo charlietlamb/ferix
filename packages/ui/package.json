@@ -25,10 +25,22 @@
   "dependencies": {
     "@base-ui/react": "catalog:",
     "@phosphor-icons/react": "catalog:",
+    "@tanstack/react-form": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
+    "cmdk": "catalog:",
+    "date-fns": "catalog:",
+    "embla-carousel-react": "catalog:",
+    "input-otp": "catalog:",
+    "next-themes": "catalog:",
     "react": "catalog:",
+    "react-day-picker": "catalog:",
     "react-dom": "catalog:",
-    "tailwind-merge": "catalog:"
+    "react-resizable-panels": "catalog:",
+    "recharts": "catalog:",
+    "sonner": "catalog:",
+    "tailwind-merge": "catalog:",
+    "vaul": "catalog:",
+    "zod": "catalog:"
   }
 }
