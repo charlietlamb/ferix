@@ -296,6 +296,10 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
         "hover:group-data-[collapsible=offExamples]:bg-sidebar group-data-[collapsible=offExamples]:translate-x-0 group-data-[collapsible=offExamples]:after:left-full",
         "[[data-side=left][data-collapsible=offExamples]_&]:-right-2",
         "[[data-side=right][data-collapsible=offExamples]_&]:-left-2",
+        // Vertical padding for inset variant to align with curved dashboard
+        "group-data-[variant=inset]:top-8 group-data-[variant=inset]:bottom-8 group-data-[variant=inset]:after:top-0 group-data-[variant=inset]:after:bottom-0",
+        // Move rail slightly left when sidebar is expanded (inset variant)
+        "group-data-[variant=inset]:group-data-[state=expanded]:group-data-[side=left]:-right-2.5",
         className
       )}
       {...props}
@@ -308,7 +312,16 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
     <main
       data-slot="sidebar-inset"
       className={cn(
-        "bg-background md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2 relative flex w-full flex-1 flex-col",
+        "bg-background relative flex w-full flex-1 flex-col",
+        // Inset variant styles - curved floating panel effect
+        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0",
+        "md:peer-data-[variant=inset]:rounded-2xl",
+        "md:peer-data-[variant=inset]:shadow-[0_0_0_1px_var(--border),0_1px_2px_rgba(0,0,0,0.03),0_4px_8px_rgba(0,0,0,0.04),0_12px_24px_rgba(0,0,0,0.05)]",
+        "dark:md:peer-data-[variant=inset]:shadow-[0_0_0_1px_var(--border),0_2px_4px_rgba(0,0,0,0.2),0_8px_16px_rgba(0,0,0,0.25),0_16px_32px_rgba(0,0,0,0.15)]",
+        // Collapsed state
+        "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
+        // Smooth transition for all properties
+        "transition-[margin,border-radius,box-shadow] duration-200 ease-linear",
         className
       )}
       {...props}

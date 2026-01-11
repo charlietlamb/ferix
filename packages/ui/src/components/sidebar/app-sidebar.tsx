@@ -10,7 +10,7 @@ import { SidebarHeaderContent } from "./header/sidebar-header";
 
 export function AppSidebar() {
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" variant="inset">
       <SidebarHeaderContent />
       <SidebarContent>
         <SidebarMainContent />
