@@ -62,7 +62,8 @@
       "convex-helpers": "^0.1.109",
       "better-result": "^1.0.0",
       "jotai": "^2.12.5",
-      "resend": "^4.0.0"
+      "resend": "^4.0.0",
+      "slugify": "^1.6.6"
     }
   }
 }

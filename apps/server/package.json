@@ -17,6 +17,7 @@
     "@ferix/notifications": "*",
     "better-auth": "catalog:",
     "convex": "catalog:",
+    "slugify": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

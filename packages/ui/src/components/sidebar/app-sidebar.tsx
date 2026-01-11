@@ -2,7 +2,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
   SidebarRail,
 } from "@ferix/ui/components/ui/sidebar";
 import { SidebarMainContent } from "./content/sidebar-content";
@@ -12,9 +11,7 @@ import { SidebarHeaderContent } from "./header/sidebar-header";
 export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <SidebarHeaderContent />
-      </SidebarHeader>
+      <SidebarHeaderContent />
       <SidebarContent>
         <SidebarMainContent />
       </SidebarContent>

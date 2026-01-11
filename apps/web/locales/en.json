@@ -4,6 +4,20 @@
       "loading": "Loading..."
     }
   },
+  "prompts": {
+    "newPrompt": "Create",
+    "create": {
+      "title": "Create Prompt",
+      "description": "Create a new prompt",
+      "titleLabel": "Title",
+      "titlePlaceholder": "My prompt",
+      "contentLabel": "Content",
+      "contentPlaceholder": "Enter your prompt...",
+      "submit": "Create",
+      "success": "Prompt created",
+      "error": "Failed to create prompt"
+    }
+  },
   "settings": {
     "title": "Settings",
     "description": "Manage your account settings and preferences",
