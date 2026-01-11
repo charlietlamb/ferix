@@ -8,6 +8,7 @@ import type { AbstractIntlMessages } from "next-intl";
 import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
+import { DialogProvider } from "./dialog-provider";
 import { ToastProvider } from "./toast-provider";
 
 const convex = new ConvexReactClient(env.NEXT_PUBLIC_CONVEX_URL);
@@ -23,7 +24,7 @@ export function Providers({ children, messages, locale }: ProvidersProps) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <NextIntlClientProvider locale={locale} messages={messages}>
         <ConvexBetterAuthProvider authClient={authClient} client={convex}>
-          {children}
+          <DialogProvider>{children}</DialogProvider>
           <ToastProvider />
         </ConvexBetterAuthProvider>
       </NextIntlClientProvider>

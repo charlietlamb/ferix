@@ -1,7 +1,7 @@
 import { SidebarMenu, SidebarMenuItem } from "@ferix/ui/components/ui/sidebar";
 import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 
-export function SidebarFooterSkeleton() {
+export function FooterSkeleton() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>

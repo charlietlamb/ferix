@@ -60,7 +60,8 @@
       "vaul": "^1.1.2",
       "next-intl": "^4.1.0",
       "convex-helpers": "^0.1.109",
-      "better-result": "^1.0.0"
+      "better-result": "^1.0.0",
+      "jotai": "^2.12.5"
     }
   }
 }

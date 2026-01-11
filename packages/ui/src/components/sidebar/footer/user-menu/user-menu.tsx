@@ -1,6 +1,5 @@
 "use client";
 
-import { signOut } from "@ferix/auth/client";
 import {
   Avatar,
   AvatarFallback,
@@ -9,7 +8,6 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@ferix/ui/components/ui/dropdown-menu";
 import {
@@ -17,12 +15,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@ferix/ui/components/ui/sidebar";
-import { CaretUpDownIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
+import { CaretUpDownIcon } from "@phosphor-icons/react";
 import type { User } from "better-auth";
-import { Result } from "better-result";
-import { toast } from "sonner";
+import { EditProfileItem } from "./edit-profile-item";
+import { SignOutItem } from "./sign-out-item";
 
-export function SidebarFooterUserMenu({ user }: { user: User }) {
+export function UserMenu({ user }: { user: User }) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -46,22 +44,8 @@ export function SidebarFooterUserMenu({ user }: { user: User }) {
             )}
           />
           <DropdownMenuContent side="top">
-            <DropdownMenuItem>
-              <UserIcon className="size-4" />
-              Edit Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={async () => {
-                const result = await Result.tryPromise(() => signOut());
-                result.match({
-                  ok: () => toast.success("Signed out successfully"),
-                  err: (e) => toast.error(e.message ?? "Failed to sign out"),
-                });
-              }}
-            >
-              <SignOutIcon className="size-4" />
-              Sign Out
-            </DropdownMenuItem>
+            <EditProfileItem />
+            <SignOutItem />
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
