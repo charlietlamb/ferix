@@ -31,7 +31,7 @@ export function BaseDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {children}
+        <div>{children}</div>
       </DialogContent>
     </Dialog>
   );

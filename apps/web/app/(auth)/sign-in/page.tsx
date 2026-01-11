@@ -1,5 +1,5 @@
-import { SignInForm } from "@ferix/ui/forms/auth/sign-in/sign-in-form";
+import { SignInCard } from "@ferix/ui/components/auth/sign-in/sign-in-card";
 
 export default function SignInPage() {
-  return <SignInForm />;
+  return <SignInCard />;
 }

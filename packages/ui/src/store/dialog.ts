@@ -1,11 +1,11 @@
 import { atom } from "jotai";
+import { SignInDialog } from "../components/auth/sign-in/sign-in-dialog";
+import { SignUpDialog } from "../components/auth/sign-up/sign-up-dialog";
 
-// Add dialog components here as they are created
-// Example: import { ExampleDialog } from "../components/dialog/example-dialog";
-
-// biome-ignore lint/complexity/noBannedTypes: Empty type is intentional - dialogs are added here as they are created
-// biome-ignore lint/style/useConsistentTypeDefinitions: Using type for extensibility with augmentation
-export type DialogMap = {};
+export interface DialogMap {
+  signInDialog: undefined;
+  signUpDialog: undefined;
+}
 
 export type DialogKey = keyof DialogMap;
 
@@ -21,8 +21,8 @@ export type DialogProps<K extends DialogKey> = DialogMap[K];
 export const dialogRegistry: {
   [K in keyof DialogMap]: React.FC<DialogMap[K]>;
 } = {
-  // Register dialog components here
-  // Example: exampleDialog: ExampleDialog,
+  signInDialog: SignInDialog,
+  signUpDialog: SignUpDialog,
 };
 
 export const dialogStackAtom = atom<DialogEntry[]>([]);

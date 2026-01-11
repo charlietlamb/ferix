@@ -5,7 +5,12 @@ import { useAtom } from "jotai";
 export function useDialog() {
   const [stack, setStack] = useAtom(dialogStackAtom);
 
-  function open<K extends keyof DialogMap>(key: K, props: DialogMap[K]) {
+  function open<K extends keyof DialogMap>(
+    ...args: DialogMap[K] extends undefined
+      ? [key: K]
+      : [key: K, props: DialogMap[K]]
+  ) {
+    const [key, props] = args as [K, DialogMap[K]];
     setStack((prev) => [...prev, { key, props } as DialogEntry]);
   }
 

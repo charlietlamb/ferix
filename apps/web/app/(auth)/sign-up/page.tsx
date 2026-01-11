@@ -1,5 +1,5 @@
-import { SignUpForm } from "@ferix/ui/forms/auth/sign-up/sign-up-form";
+import { SignUpCard } from "@ferix/ui/components/auth/sign-up/sign-up-card";
 
 export default function SignUpPage() {
-  return <SignUpForm />;
+  return <SignUpCard />;
 }
