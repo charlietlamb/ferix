@@ -115,6 +115,7 @@
         "@ferix/i18n": "*",
         "@phosphor-icons/react": "catalog:",
         "@tanstack/react-form": "catalog:",
+        "better-auth": "catalog:",
         "better-result": "catalog:",
         "class-variance-authority": "catalog:",
         "clsx": "catalog:",

@@ -26,6 +26,7 @@
   "dependencies": {
     "@base-ui/react": "catalog:",
     "@ferix/auth": "*",
+    "better-auth": "catalog:",
     "better-result": "catalog:",
     "@ferix/i18n": "*",
     "@phosphor-icons/react": "catalog:",
