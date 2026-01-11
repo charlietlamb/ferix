@@ -18,6 +18,10 @@ export function SignInDialog() {
       title={t("title")}
     >
       <SignInForm
+        onForgotPassword={() => {
+          close();
+          open("forgotPasswordDialog");
+        }}
         onSuccess={() => {
           close();
           toast.success(t("success"));

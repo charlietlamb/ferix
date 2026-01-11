@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { existingPasswordSchema } from "../../schemas/password";
 
 export const signInFormSchema = z.object({
   email: z.email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: existingPasswordSchema,
 });
 
 export type SignInFormValues = z.infer<typeof signInFormSchema>;

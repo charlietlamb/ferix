@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { passwordSchema } from "../../schemas/password";
 
 export const signUpFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: passwordSchema,
 });
 
 export type SignUpFormValues = z.infer<typeof signUpFormSchema>;

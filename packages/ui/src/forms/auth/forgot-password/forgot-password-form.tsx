@@ -1,24 +1,28 @@
 "use client";
 
-import { signUp } from "@ferix/auth/client";
+import { requestPasswordReset } from "@ferix/auth/client";
 import { useAppForm } from "@ferix/ui/hooks/use-app-form";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { signUpFormDefaults, signUpFormSchema } from "./sign-up-form-schema";
+import {
+  forgotPasswordFormDefaults,
+  forgotPasswordFormSchema,
+} from "./forgot-password-form-schema";
 
-export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
-  const t = useTranslations("auth.signUp");
+interface ForgotPasswordFormProps {
+  onSuccess?: () => void;
+}
+
+export function ForgotPasswordForm({ onSuccess }: ForgotPasswordFormProps) {
+  const t = useTranslations("auth.forgotPassword");
 
   const form = useAppForm({
-    defaultValues: signUpFormDefaults,
-    validators: {
-      onChange: signUpFormSchema,
-    },
+    defaultValues: forgotPasswordFormDefaults,
+    validators: { onChange: forgotPasswordFormSchema },
     onSubmit: async ({ value }) => {
-      const { error } = await signUp.email({
-        name: value.name,
+      const { error } = await requestPasswordReset({
         email: value.email,
-        password: value.password,
+        redirectTo: "/reset-password",
       });
 
       if (error) {
@@ -26,6 +30,7 @@ export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
         return;
       }
 
+      toast.success(t("success"));
       onSuccess?.();
     },
   });
@@ -38,9 +43,6 @@ export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
         form.handleSubmit();
       }}
     >
-      <form.AppField name="name">
-        {(field) => <field.TextField label={t("name")} type="text" />}
-      </form.AppField>
       <form.AppField name="email">
         {(field) => (
           <field.TextField
@@ -49,9 +51,6 @@ export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
             type="email"
           />
         )}
-      </form.AppField>
-      <form.AppField name="password">
-        {(field) => <field.PasswordField label={t("password")} />}
       </form.AppField>
       <form.AppForm>
         <form.SubmitButton label={t("submit")} />

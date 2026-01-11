@@ -1,18 +1,13 @@
-"use client";
+import { isAuthenticated } from "@ferix/auth/server";
+import { redirect } from "next/navigation";
 
-import { useRouter } from "@ferix/i18n/navigation";
-import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
-
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated } = useAuthenticated();
-  const router = useRouter();
-
-  if (isAuthenticated) {
-    router.push("/");
+  if (await isAuthenticated()) {
+    redirect("/");
   }
 
   return (

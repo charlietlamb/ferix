@@ -19,7 +19,7 @@ import {
 import { cn } from "@ferix/ui/lib/utils";
 import { CaretUpDownIcon } from "@phosphor-icons/react";
 import type { User } from "better-auth";
-import { EditProfileItem } from "./edit-profile-item";
+import { SettingsItem } from "./settings-item";
 import { SignOutItem } from "./sign-out-item";
 
 export function UserMenu({ user }: { user: User }) {
@@ -55,7 +55,7 @@ export function UserMenu({ user }: { user: User }) {
             )}
           />
           <DropdownMenuContent side="top">
-            <EditProfileItem />
+            <SettingsItem />
             <SignOutItem />
           </DropdownMenuContent>
         </DropdownMenu>

@@ -14,9 +14,18 @@ export function SubmitButton({ label, loadingLabel }: SubmitButtonProps) {
   const t = useTranslations("ui.form");
 
   return (
-    <form.Subscribe selector={(state) => state.isSubmitting}>
-      {(isSubmitting) => (
-        <Button className="w-full" disabled={isSubmitting} type="submit">
+    <form.Subscribe
+      selector={(state) => ({
+        isSubmitting: state.isSubmitting,
+        canSubmit: state.canSubmit,
+      })}
+    >
+      {({ isSubmitting, canSubmit }) => (
+        <Button
+          className="w-full"
+          disabled={isSubmitting || !canSubmit}
+          type="submit"
+        >
           {isSubmitting ? (loadingLabel ?? t("loading")) : label}
         </Button>
       )}

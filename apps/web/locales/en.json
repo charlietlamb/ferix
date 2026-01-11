@@ -4,6 +4,33 @@
       "loading": "Loading..."
     }
   },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your account settings and preferences",
+    "editUser": {
+      "title": "Edit User",
+      "description": "Update your profile information",
+      "name": "Name",
+      "submit": "Save",
+      "success": "Profile updated",
+      "error": "Failed to update profile",
+      "changePassword": "Change Password",
+      "changePasswordDescription": "Update your account password"
+    },
+    "changePassword": {
+      "title": "Change Password",
+      "description": "Enter your current password and choose a new one",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Change Password",
+      "success": "Password changed successfully",
+      "error": "Failed to change password"
+    },
+    "linkedAccounts": {
+      "title": "Linked Accounts"
+    }
+  },
   "auth": {
     "signIn": {
       "title": "Sign In",
@@ -16,9 +43,21 @@
       "continueWithGithub": "Continue with GitHub",
       "noAccount": "Don't have an account?",
       "signUp": "Sign up",
+      "success": "Signed in successfully",
       "error": "Failed to sign in",
       "githubSuccess": "Signed in with GitHub",
-      "githubError": "Failed to sign in with GitHub"
+      "githubError": "Failed to sign in with GitHub",
+      "forgotPassword": "Forgot password?"
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "description": "Enter your email to receive a reset link",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send Reset Link",
+      "success": "Check your email for reset link",
+      "error": "Failed to send reset email",
+      "backToSignIn": "Back to sign in"
     },
     "signUp": {
       "title": "Sign Up",
@@ -35,6 +74,17 @@
       "error": "Failed to sign up",
       "githubSuccess": "Signed up with GitHub",
       "githubError": "Failed to sign up with GitHub"
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "description": "Enter your new password",
+      "password": "New Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Reset Password",
+      "success": "Password reset successfully",
+      "error": "Failed to reset password",
+      "invalidToken": "Invalid or expired reset link",
+      "backToSignIn": "Back to sign in"
     }
   }
 }

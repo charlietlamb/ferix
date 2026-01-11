@@ -2,12 +2,16 @@
 
 import { signIn } from "@ferix/auth/client";
 import { useAppForm } from "@ferix/ui/hooks/use-app-form";
-import { Result } from "better-result";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { signInFormDefaults, signInFormSchema } from "./sign-in-form-schema";
 
-export function SignInForm({ onSuccess }: { onSuccess?: () => void }) {
+interface SignInFormProps {
+  onSuccess?: () => void;
+  onForgotPassword?: () => void;
+}
+
+export function SignInForm({ onSuccess, onForgotPassword }: SignInFormProps) {
   const t = useTranslations("auth.signIn");
 
   const form = useAppForm({
@@ -16,19 +20,17 @@ export function SignInForm({ onSuccess }: { onSuccess?: () => void }) {
       onChange: signInFormSchema,
     },
     onSubmit: async ({ value }) => {
-      const result = await Result.tryPromise(() =>
-        signIn.email({
-          email: value.email,
-          password: value.password,
-        })
-      );
-
-      result.match({
-        ok: () => onSuccess?.(),
-        err: (e) => {
-          toast.error(e.message ?? t("error"));
-        },
+      const { error } = await signIn.email({
+        email: value.email,
+        password: value.password,
       });
+
+      if (error) {
+        toast.error(error.message ?? t("error"));
+        return;
+      }
+
+      onSuccess?.();
     },
   });
 
@@ -50,8 +52,19 @@ export function SignInForm({ onSuccess }: { onSuccess?: () => void }) {
         )}
       </form.AppField>
       <form.AppField name="password">
-        {(field) => <field.TextField label={t("password")} type="password" />}
+        {(field) => <field.PasswordField label={t("password")} />}
       </form.AppField>
+      {onForgotPassword && (
+        <div className="text-right">
+          <button
+            className="text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
+            onClick={onForgotPassword}
+            type="button"
+          >
+            {t("forgotPassword")}
+          </button>
+        </div>
+      )}
       <form.AppForm>
         <form.SubmitButton label={t("submit")} />
       </form.AppForm>

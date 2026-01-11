@@ -8,6 +8,7 @@ import type { AbstractIntlMessages } from "next-intl";
 import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
+import { AuthProvider } from "./auth-provider";
 import { DialogProvider } from "./dialog-provider";
 import { ToastProvider } from "./toast-provider";
 
@@ -24,7 +25,9 @@ export function Providers({ children, messages, locale }: ProvidersProps) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <NextIntlClientProvider locale={locale} messages={messages}>
         <ConvexBetterAuthProvider authClient={authClient} client={convex}>
-          <DialogProvider>{children}</DialogProvider>
+          <AuthProvider>
+            <DialogProvider>{children}</DialogProvider>
+          </AuthProvider>
           <ToastProvider />
         </ConvexBetterAuthProvider>
       </NextIntlClientProvider>

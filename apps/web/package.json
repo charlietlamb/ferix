@@ -21,7 +21,8 @@
     "next-intl": "catalog:",
     "next-themes": "catalog:",
     "sonner": "catalog:",
-    "@ferix/i18n": "*"
+    "@ferix/i18n": "*",
+    "jotai": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "catalog:",
