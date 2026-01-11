@@ -4,7 +4,6 @@ import { signIn } from "@ferix/auth/client";
 import { Button } from "@ferix/ui/components/ui/button";
 import { Separator } from "@ferix/ui/components/ui/separator";
 import { GithubLogoIcon } from "@phosphor-icons/react";
-import { Result } from "better-result";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -29,13 +28,10 @@ export function AuthFormFooter({ mode, onSwitchForm }: AuthFormFooterProps) {
       <Button
         className="w-full"
         onClick={async () => {
-          const result = await Result.tryPromise(() =>
-            signIn.social({ provider: "github" })
-          );
-          result.match({
-            ok: () => toast.success(t("githubSuccess")),
-            err: (e) => toast.error(e.message ?? t("githubError")),
-          });
+          const { error } = await signIn.social({ provider: "github" });
+          if (error) {
+            toast.error(error.message ?? t("githubError"));
+          }
         }}
         variant="outline"
       >
