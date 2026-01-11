@@ -14,13 +14,17 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@ferix/ui/components/ui/sidebar";
+import { cn } from "@ferix/ui/lib/utils";
 import { CaretUpDownIcon } from "@phosphor-icons/react";
 import type { User } from "better-auth";
 import { EditProfileItem } from "./edit-profile-item";
 import { SignOutItem } from "./sign-out-item";
 
 export function UserMenu({ user }: { user: User }) {
+  const { open } = useSidebar();
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -29,7 +33,10 @@ export function UserMenu({ user }: { user: User }) {
             render={(props) => (
               <SidebarMenuButton
                 {...props}
-                className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+                className={cn(
+                  "data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground",
+                  !open && "justify-center"
+                )}
                 size="lg"
               >
                 <Avatar size="sm">
@@ -38,8 +45,12 @@ export function UserMenu({ user }: { user: User }) {
                     {user.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="truncate font-medium">{user.name}</span>
-                <CaretUpDownIcon className="ml-auto size-4" />
+                {open && (
+                  <>
+                    <span className="truncate font-medium">{user.name}</span>
+                    <CaretUpDownIcon className="ml-auto size-4" />
+                  </>
+                )}
               </SidebarMenuButton>
             )}
           />
