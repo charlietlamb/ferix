@@ -38,6 +38,7 @@ export const create = mutation({
       slug,
       type: args.type,
       tags: args.tags,
+      downloads: 0,
       createdAt: now,
       updatedAt: now,
     });
@@ -190,5 +191,53 @@ export const remove = mutation({
     }
 
     await ctx.db.delete(args.promptId);
+  },
+});
+
+export const getBySlug = query({
+  args: {
+    slug: v.string(),
+    commitId: v.optional(v.id("commits")),
+  },
+  handler: async (ctx, args) => {
+    const prompt = await ctx.db
+      .query("prompts")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .first();
+
+    if (!prompt) {
+      return null;
+    }
+
+    const commit = args.commitId
+      ? await ctx.db.get(args.commitId)
+      : await ctx.db
+          .query("commits")
+          .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+          .order("desc")
+          .first();
+
+    if (!commit || commit.promptId !== prompt._id) {
+      return null;
+    }
+
+    return {
+      ...prompt,
+      content: commit.content,
+      commitId: commit._id,
+    };
+  },
+});
+
+export const recordDownload = mutation({
+  args: { promptId: v.id("prompts") },
+  handler: async (ctx, args) => {
+    const prompt = await ctx.db.get(args.promptId);
+    if (!prompt) {
+      return;
+    }
+    await ctx.db.patch(args.promptId, {
+      downloads: (prompt.downloads ?? 0) + 1,
+    });
   },
 });
