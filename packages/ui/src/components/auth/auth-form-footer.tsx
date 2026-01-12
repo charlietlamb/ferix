@@ -3,8 +3,10 @@
 import { signIn } from "@ferix/auth/client";
 import { Button } from "@ferix/ui/components/ui/button";
 import { Separator } from "@ferix/ui/components/ui/separator";
+import { Spinner } from "@ferix/ui/components/ui/spinner";
 import { GithubLogoIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface AuthFormFooterProps {
@@ -14,6 +16,7 @@ interface AuthFormFooterProps {
 
 export function AuthFormFooter({ mode, onSwitchForm }: AuthFormFooterProps) {
   const t = useTranslations(`auth.${mode}`);
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <>
@@ -27,15 +30,22 @@ export function AuthFormFooter({ mode, onSwitchForm }: AuthFormFooterProps) {
 
       <Button
         className="w-full"
+        disabled={isLoading}
         onClick={async () => {
+          setIsLoading(true);
           const { error } = await signIn.social({ provider: "github" });
           if (error) {
             toast.error(error.message ?? t("githubError"));
+            setIsLoading(false);
           }
         }}
         variant="outline"
       >
-        <GithubLogoIcon className="mr-2 size-4" />
+        {isLoading ? (
+          <Spinner className="mr-2" />
+        ) : (
+          <GithubLogoIcon className="mr-2 size-4" />
+        )}
         {t("continueWithGithub")}
       </Button>
 

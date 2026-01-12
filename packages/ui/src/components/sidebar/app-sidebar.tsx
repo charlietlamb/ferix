@@ -10,7 +10,7 @@ import { SidebarHeaderContent } from "./header/sidebar-header";
 
 export function AppSidebar() {
   return (
-    <Sidebar collapsible="icon" variant="inset">
+    <Sidebar collapsible="offExamples" variant="inset">
       <SidebarHeaderContent />
       <SidebarContent>
         <SidebarMainContent />
@@ -18,7 +18,7 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarFooterContent />
       </SidebarFooter>
-      <SidebarRail />
+      <SidebarRail className="group-data-[state=collapsed]:hidden" />
     </Sidebar>
   );
 }
