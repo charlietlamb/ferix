@@ -2,6 +2,7 @@
 
 import { api } from "@ferix/server/_generated/api";
 import { useAppForm } from "@ferix/ui/hooks/use-app-form";
+import { tagsToOptions } from "@ferix/ui/lib/tags";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ export function CreatePromptForm({ onSuccess }: CreatePromptFormProps) {
           title: value.title,
           content: value.content,
           type: "subagent",
+          tags: value.tags,
         });
         toast.success(t("success"));
         onSuccess?.();
@@ -57,6 +59,16 @@ export function CreatePromptForm({ onSuccess }: CreatePromptFormProps) {
           <field.TextAreaField
             label={t("contentLabel")}
             placeholder={t("contentPlaceholder")}
+          />
+        )}
+      </form.AppField>
+      <form.AppField name="tags">
+        {(field) => (
+          <field.MultiSelectField
+            groupBy
+            label={t("tagsLabel")}
+            options={tagsToOptions()}
+            placeholder={t("tagsPlaceholder")}
           />
         )}
       </form.AppField>

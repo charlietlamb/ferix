@@ -16,6 +16,8 @@
       "titlePlaceholder": "My prompt",
       "contentLabel": "Content",
       "contentPlaceholder": "Enter your prompt...",
+      "tagsLabel": "Tags",
+      "tagsPlaceholder": "Select tags...",
       "submit": "Create",
       "success": "Prompt created",
       "error": "Failed to create prompt"

@@ -33,6 +33,7 @@
     "better-auth": "catalog:",
     "better-result": "catalog:",
     "@ferix/i18n": "*",
+    "@icons-pack/react-simple-icons": "catalog:",
     "@phosphor-icons/react": "catalog:",
     "@tanstack/react-form": "catalog:",
     "class-variance-authority": "catalog:",

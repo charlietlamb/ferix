@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 
 export function PopularPrompts() {
   const t = useTranslations("prompts.popular");
-  const prompts = useQuery(api.prompts.listPopular, { limit: 6 });
+  const prompts = useQuery(api.prompts.listPopular, { limit: 10 });
 
   if (!prompts || prompts.length === 0) {
     return null;
@@ -24,16 +24,10 @@ export function PopularPrompts() {
         <h2 className="font-semibold text-xl">{t("title")}</h2>
       </div>
       <ScrollArea className="w-full">
-        <div className="flex gap-4 p-2 pl-0.5">
+        <div className="flex gap-4 p-2 px-0.5">
           {prompts.map((prompt) => (
             <div className="w-80 shrink-0" key={prompt._id}>
-              <PromptCard
-                content={prompt.content}
-                creator={prompt.creator}
-                downloads={prompt.downloads}
-                title={prompt.title}
-                type={prompt.type}
-              />
+              <PromptCard prompt={prompt} />
             </div>
           ))}
         </div>

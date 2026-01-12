@@ -1,3 +1,4 @@
+import { MultiSelectField } from "@ferix/ui/components/form/multi-select-field";
 import { PasswordField } from "@ferix/ui/components/form/password-field";
 import { SubmitButton } from "@ferix/ui/components/form/submit-button";
 import { TextAreaField } from "@ferix/ui/components/form/text-area-field";
@@ -9,6 +10,7 @@ export const { useAppForm, withForm } = createFormHook({
   fieldContext,
   formContext,
   fieldComponents: {
+    MultiSelectField,
     PasswordField,
     TextAreaField,
     TextField,

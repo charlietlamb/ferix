@@ -8,15 +8,21 @@ import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 interface CopyButtonProps {
   value: string;
   className?: string;
+  onCopy?: () => void;
 }
 
-export function CopyButton({ value, className }: CopyButtonProps) {
+export function CopyButton({ value, className, onCopy }: CopyButtonProps) {
   const { copied, copy } = useCopy();
 
   return (
     <Button
       className={cn(className)}
-      onClick={() => copy(value)}
+      onClick={() => {
+        if (!copied) {
+          onCopy?.();
+        }
+        copy(value);
+      }}
       size="icon-xs"
       variant="ghost"
     >
