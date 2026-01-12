@@ -6,6 +6,9 @@
   },
   "prompts": {
     "newPrompt": "Create",
+    "popular": {
+      "title": "Popular"
+    },
     "create": {
       "title": "Create Prompt",
       "description": "Create a new prompt",

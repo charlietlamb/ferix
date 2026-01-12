@@ -37,7 +37,7 @@ export const create = mutation({
       title: args.title,
       slug,
       type: args.type,
-      tags: args.tags,
+      tags: args.tags ?? [],
       downloads: 0,
       createdAt: now,
       updatedAt: now,
@@ -239,5 +239,34 @@ export const recordDownload = mutation({
     await ctx.db.patch(args.promptId, {
       downloads: (prompt.downloads ?? 0) + 1,
     });
+  },
+});
+
+export const listPopular = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 6;
+    const prompts = await ctx.db.query("prompts").collect();
+
+    const sorted = prompts
+      .sort((a, b) => (b.downloads ?? 0) - (a.downloads ?? 0))
+      .slice(0, limit);
+
+    return Promise.all(
+      sorted.map(async (prompt) => {
+        const latestCommit = await ctx.db
+          .query("commits")
+          .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+          .order("desc")
+          .first();
+
+        return {
+          ...prompt,
+          content: latestCommit?.content ?? "",
+        };
+      })
+    );
   },
 });

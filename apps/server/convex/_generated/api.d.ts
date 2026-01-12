@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as migrations from "../migrations.js";
 import type * as prompts from "../prompts.js";
 
 import type {
@@ -21,6 +22,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
+  migrations: typeof migrations;
   prompts: typeof prompts;
 }>;
 
@@ -2026,6 +2028,97 @@ export declare const components: {
     adapterTest: {
       runCustomTests: FunctionReference<"action", "internal", any, any>;
       runTests: FunctionReference<"action", "internal", any, any>;
+    };
+  };
+  migrations: {
+    public: {
+      cancel: FunctionReference<
+        "mutation",
+        "internal",
+        { name: string },
+        {
+          batchSize?: number;
+          cursor?: string | null;
+          isDone: boolean;
+          latestStart?: number;
+          name: string;
+          next?: Array<string>;
+          processed: number;
+          workerStatus?:
+            | "pending"
+            | "inProgress"
+            | "success"
+            | "failed"
+            | "canceled";
+        }
+      >;
+      cancelAll: FunctionReference<
+        "mutation",
+        "internal",
+        { sinceTs?: number },
+        Array<{
+          batchSize?: number;
+          cursor?: string | null;
+          isDone: boolean;
+          latestStart?: number;
+          name: string;
+          next?: Array<string>;
+          processed: number;
+          workerStatus?:
+            | "pending"
+            | "inProgress"
+            | "success"
+            | "failed"
+            | "canceled";
+        }>
+      >;
+      getStatus: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number; migrationNames?: Array<string> },
+        Array<{
+          batchSize?: number;
+          cursor?: string | null;
+          isDone: boolean;
+          latestStart?: number;
+          name: string;
+          next?: Array<string>;
+          processed: number;
+          workerStatus?:
+            | "pending"
+            | "inProgress"
+            | "success"
+            | "failed"
+            | "canceled";
+        }>
+      >;
+      runMigration: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          batchSize?: number;
+          cursor?: string | null;
+          dryRun: boolean;
+          fnHandle: string;
+          name: string;
+          next?: Array<{ fnHandle: string; name: string }>;
+        },
+        {
+          batchSize?: number;
+          cursor?: string | null;
+          isDone: boolean;
+          latestStart?: number;
+          name: string;
+          next?: Array<string>;
+          processed: number;
+          workerStatus?:
+            | "pending"
+            | "inProgress"
+            | "success"
+            | "failed"
+            | "canceled";
+        }
+      >;
     };
   };
 };

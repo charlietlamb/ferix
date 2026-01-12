@@ -17,6 +17,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@convex-dev/better-auth": "catalog:",
+        "@convex-dev/migrations": "catalog:",
         "@ferix/env": "*",
         "@ferix/notifications": "*",
         "better-auth": "catalog:",
@@ -179,6 +180,7 @@
   "catalog": {
     "@base-ui/react": "^1.0.0",
     "@convex-dev/better-auth": "^0.10.9",
+    "@convex-dev/migrations": "^0.1.4",
     "@phosphor-icons/react": "^2.1.7",
     "@t3-oss/env-nextjs": "^0.11.1",
     "@tailwindcss/postcss": "^4",
@@ -258,6 +260,8 @@
     "@clack/prompts": ["@clack/prompts@0.11.0", "", { "dependencies": { "@clack/core": "0.5.0", "picocolors": "^1.0.0", "sisteransi": "^1.0.5" } }, "sha512-pMN5FcrEw9hUkZA4f+zLlzivQSeQf5dRGJjSUbvVYDLvpKCdQx5OaknvKzgbtXOizhP+SJJJjqEbOe55uKKfAw=="],
 
     "@convex-dev/better-auth": ["@convex-dev/better-auth@0.10.9", "", { "dependencies": { "@better-auth/passkey": "1.4.9", "@better-fetch/fetch": "^1.1.18", "common-tags": "^1.8.2", "convex-helpers": "^0.1.95", "jose": "^6.1.0", "remeda": "^2.32.0", "semver": "^7.7.3", "type-fest": "^4.39.1", "zod": "^4.0.0" }, "peerDependencies": { "better-auth": "1.4.9", "convex": "^1.25.0", "react": "^18.3.1 || ^19.0.0", "react-dom": "^18.3.1 || ^19.0.0" } }, "sha512-GxLQv4oKh9vLAn/LadN8NqY/naAcyP3qmhSli3P5nObtDH1aq/EI/PZ/WpbdJCDrelL0TXg1JvGaWJueuGLXIA=="],
+
+    "@convex-dev/migrations": ["@convex-dev/migrations@0.1.6", "", { "peerDependencies": { "convex": "~1.16.5 || ~1.17.0" } }, "sha512-/Lg25fVYN8cf+impEuunPgzO+11JYIHuUs3+6/5TRJk++zRwlkpaowDj+XBictN3QLR1x7Y6k3qIfILLUhZa6A=="],
 
     "@date-fns/tz": ["@date-fns/tz@1.4.1", "", {}, "sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA=="],
 

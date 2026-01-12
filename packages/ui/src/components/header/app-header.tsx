@@ -1,13 +1,10 @@
 "use client";
 
-import { Button } from "@ferix/ui/components/ui/button";
+import { CreatePromptButton } from "@ferix/ui/components/prompts/create-prompt-button";
 import { SidebarTrigger, useSidebar } from "@ferix/ui/components/ui/sidebar";
-import { useDialog } from "@ferix/ui/hooks/use-dialog";
-import { PlusIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 
 export function AppHeader() {
-  const { open: openDialog } = useDialog();
   const { open } = useSidebar();
 
   return (
@@ -22,13 +19,7 @@ export function AppHeader() {
             key="create-button"
             transition={{ duration: 0.15 }}
           >
-            <Button
-              onClick={() => openDialog("createPromptDialog")}
-              size="icon"
-              variant="ghost"
-            >
-              <PlusIcon className="size-4" />
-            </Button>
+            <CreatePromptButton size="icon" />
           </motion.div>
         )}
       </AnimatePresence>

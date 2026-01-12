@@ -9,7 +9,7 @@ export default defineSchema({
     title: v.string(),
     slug: v.string(),
     type: promptTypes,
-    tags: v.optional(v.array(v.string())),
+    tags: v.array(v.string()),
     downloads: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
