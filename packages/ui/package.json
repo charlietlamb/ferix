@@ -53,6 +53,7 @@
     "vaul": "catalog:",
     "zod": "catalog:",
     "next-intl": "catalog:",
-    "motion": "catalog:"
+    "motion": "catalog:",
+    "@tanstack/react-virtual": "catalog:"
   }
 }

@@ -1,8 +1,10 @@
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import slugify from "slugify";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 import { promptTypes } from "./schema";
+import { enrichWithCreator } from "./utils";
 
 export const create = mutation({
   args: {
@@ -36,6 +38,7 @@ export const create = mutation({
       userId: user._id,
       title: args.title,
       slug,
+      content: args.content,
       type: args.type,
       tags: args.tags ?? [],
       downloads: 0,
@@ -54,34 +57,22 @@ export const create = mutation({
 });
 
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
-      return [];
+      return { page: [], isDone: true, continueCursor: "" as string };
     }
 
-    const prompts = await ctx.db
+    const results = await ctx.db
       .query("prompts")
       .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .collect();
+      .order("desc")
+      .paginate(args.paginationOpts);
 
-    const promptsWithContent = await Promise.all(
-      prompts.map(async (prompt) => {
-        const latestCommit = await ctx.db
-          .query("commits")
-          .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-          .order("desc")
-          .first();
-
-        return {
-          ...prompt,
-          content: latestCommit?.content ?? "",
-        };
-      })
-    );
-
-    return promptsWithContent;
+    return { ...results, page: await enrichWithCreator(ctx, results.page) };
   },
 });
 
@@ -98,16 +89,7 @@ export const get = query({
       return null;
     }
 
-    const latestCommit = await ctx.db
-      .query("commits")
-      .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-      .order("desc")
-      .first();
-
-    return {
-      ...prompt,
-      content: latestCommit?.content ?? "",
-    };
+    return prompt;
   },
 });
 
@@ -130,6 +112,7 @@ export const update = mutation({
     const now = Date.now();
 
     await ctx.db.patch(args.promptId, {
+      content: args.content,
       updatedAt: now,
     });
 
@@ -209,23 +192,15 @@ export const getBySlug = query({
       return null;
     }
 
-    const commit = args.commitId
-      ? await ctx.db.get(args.commitId)
-      : await ctx.db
-          .query("commits")
-          .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-          .order("desc")
-          .first();
-
-    if (!commit || commit.promptId !== prompt._id) {
-      return null;
+    if (args.commitId) {
+      const commit = await ctx.db.get(args.commitId);
+      if (!commit || commit.promptId !== prompt._id) {
+        return null;
+      }
+      return { ...prompt, content: commit.content, commitId: commit._id };
     }
 
-    return {
-      ...prompt,
-      content: commit.content,
-      commitId: commit._id,
-    };
+    return { ...prompt, commitId: null };
   },
 });
 
@@ -244,72 +219,62 @@ export const recordDownload = mutation({
 
 export const listPopular = query({
   args: {
-    limit: v.optional(v.number()),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const limit = args.limit ?? 6;
-    const prompts = await ctx.db.query("prompts").collect();
+    const results = await ctx.db
+      .query("prompts")
+      .withIndex("by_downloads")
+      .order("desc")
+      .paginate(args.paginationOpts);
 
-    const sorted = prompts
-      .sort((a, b) => (b.downloads ?? 0) - (a.downloads ?? 0))
-      .slice(0, limit);
-
-    return Promise.all(
-      sorted.map(async (prompt) => {
-        const [latestCommit, user] = await Promise.all([
-          ctx.db
-            .query("commits")
-            .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-            .order("desc")
-            .first(),
-          authComponent.getAnyUserById(ctx, prompt.userId),
-        ]);
-
-        return {
-          ...prompt,
-          content: latestCommit?.content ?? "",
-          creator: user
-            ? {
-                name: user.name,
-                image: user.image ?? null,
-              }
-            : null,
-        };
-      })
-    );
+    return { ...results, page: await enrichWithCreator(ctx, results.page) };
   },
 });
 
 export const listRecent = query({
   args: {
-    limit: v.optional(v.number()),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const limit = args.limit ?? 10;
-    const prompts = await ctx.db.query("prompts").order("desc").take(limit);
+    const results = await ctx.db
+      .query("prompts")
+      .order("desc")
+      .paginate(args.paginationOpts);
 
-    return Promise.all(
-      prompts.map(async (prompt) => {
-        const [latestCommit, user] = await Promise.all([
-          ctx.db
-            .query("commits")
-            .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-            .order("desc")
-            .first(),
-          authComponent.getAnyUserById(ctx, prompt.userId),
-        ]);
+    return { ...results, page: await enrichWithCreator(ctx, results.page) };
+  },
+});
 
-        return {
-          ...prompt,
-          content: latestCommit?.content ?? "",
-          creator: user
-            ? {
-                name: user.name,
-                image: user.image ?? null,
-              }
-            : null,
-        };
-      })
+export const listByTag = query({
+  args: {
+    tag: v.string(),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const prompts = await ctx.db.query("prompts").order("desc").collect();
+
+    const filtered = prompts.filter((prompt) => prompt.tags.includes(args.tag));
+
+    const startIndex = args.paginationOpts.cursor
+      ? filtered.findIndex(
+          (p) => p._id === (args.paginationOpts.cursor as unknown)
+        ) + 1
+      : 0;
+
+    const pageData = filtered.slice(
+      startIndex,
+      startIndex + args.paginationOpts.numItems
     );
+    const hasMore = startIndex + args.paginationOpts.numItems < filtered.length;
+    const nextCursor = hasMore ? pageData.at(-1)?._id : null;
+
+    const enriched = await enrichWithCreator(ctx, pageData);
+
+    return {
+      page: enriched,
+      isDone: !hasMore,
+      continueCursor: (nextCursor ?? "") as string,
+    };
   },
 });

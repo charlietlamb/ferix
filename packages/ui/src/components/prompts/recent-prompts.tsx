@@ -3,16 +3,20 @@
 import { api } from "@ferix/server/_generated/api";
 import { PromptList } from "@ferix/ui/components/prompts/prompt-list";
 import { ClockIcon } from "@phosphor-icons/react";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import { useTranslations } from "next-intl";
 
 export function RecentPrompts() {
   const t = useTranslations("prompts.recent");
-  const prompts = useQuery(api.prompts.listRecent, { limit: 10 });
+  const { results } = usePaginatedQuery(
+    api.prompts.listRecent,
+    {},
+    { initialNumItems: 10 }
+  );
 
-  if (!prompts) {
+  if (!results || results.length === 0) {
     return null;
   }
 
-  return <PromptList icon={ClockIcon} prompts={prompts} title={t("title")} />;
+  return <PromptList icon={ClockIcon} prompts={results} title={t("title")} />;
 }

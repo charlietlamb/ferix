@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
-import type { PromptWithContent } from "@ferix/server/types";
+import type { Prompt } from "@ferix/server/types";
 import {
   Avatar,
   AvatarFallback,
@@ -24,7 +24,7 @@ import {
 import { useMutation } from "convex/react";
 
 interface PromptCardProps {
-  prompt: PromptWithContent;
+  prompt: Prompt;
 }
 
 const typeIcons = {
@@ -48,7 +48,9 @@ export function PromptCard({ prompt }: PromptCardProps) {
             ) : (
               <TypeIcon className="size-4 shrink-0 text-muted-foreground" />
             )}
-            <CardTitle className="line-clamp-1">{prompt.title}</CardTitle>
+            <CardTitle className="line-clamp-1 font-normal">
+              {prompt.title}
+            </CardTitle>
           </div>
           <span className="shrink-0 rounded-full border px-2 py-0.5 text-muted-foreground text-xs">
             {prompt.type}

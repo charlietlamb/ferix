@@ -3,16 +3,20 @@
 import { api } from "@ferix/server/_generated/api";
 import { PromptList } from "@ferix/ui/components/prompts/prompt-list";
 import { TrendUpIcon } from "@phosphor-icons/react";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import { useTranslations } from "next-intl";
 
 export function PopularPrompts() {
   const t = useTranslations("prompts.popular");
-  const prompts = useQuery(api.prompts.listPopular, { limit: 10 });
+  const { results } = usePaginatedQuery(
+    api.prompts.listPopular,
+    {},
+    { initialNumItems: 10 }
+  );
 
-  if (!prompts) {
+  if (!results || results.length === 0) {
     return null;
   }
 
-  return <PromptList icon={TrendUpIcon} prompts={prompts} title={t("title")} />;
+  return <PromptList icon={TrendUpIcon} prompts={results} title={t("title")} />;
 }

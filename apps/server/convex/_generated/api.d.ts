@@ -13,6 +13,7 @@ import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
 import type * as prompts from "../prompts.js";
 import type * as types from "../types.js";
+import type * as utils from "../utils.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   migrations: typeof migrations;
   prompts: typeof prompts;
   types: typeof types;
+  utils: typeof utils;
 }>;
 
 /**

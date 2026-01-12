@@ -7,10 +7,10 @@
   "prompts": {
     "newPrompt": "Create",
     "popular": {
-      "title": "Popular"
+      "title": "Popular Subagents"
     },
     "recent": {
-      "title": "Recent"
+      "title": "Recent Subagents"
     },
     "create": {
       "title": "Create Prompt",
