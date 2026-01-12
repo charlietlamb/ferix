@@ -4,6 +4,20 @@
       "loading": "Loading..."
     }
   },
+  "sidebar": {
+    "browse": "Browse",
+    "popular": "Popular",
+    "recent": "Recent",
+    "topCategories": "Top Categories"
+  },
+  "pages": {
+    "popular": {
+      "title": "Popular Prompts"
+    },
+    "recent": {
+      "title": "Recent Prompts"
+    }
+  },
   "prompts": {
     "newPrompt": "Create",
     "popular": {

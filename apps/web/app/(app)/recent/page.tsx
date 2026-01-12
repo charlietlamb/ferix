@@ -2,36 +2,23 @@
 
 import { api } from "@ferix/server/_generated/api";
 import { PromptGrid } from "@ferix/ui/components/prompts/prompt-grid";
-import { getTagById } from "@ferix/ui/lib/tags";
+import { ClockIcon } from "@phosphor-icons/react";
 import { usePaginatedQuery } from "convex/react";
-import { notFound } from "next/navigation";
-import { use } from "react";
+import { useTranslations } from "next-intl";
 
-interface TagPageProps {
-  params: Promise<{ tag: string }>;
-}
-
-export default function TagPage({ params }: TagPageProps) {
-  const { tag: tagId } = use(params);
-  const tag = getTagById(tagId);
-
+export default function RecentPage() {
+  const t = useTranslations("pages.recent");
   const { results, status, loadMore } = usePaginatedQuery(
-    api.prompts.listByTag,
-    { tag: tagId },
+    api.prompts.listRecent,
+    {},
     { initialNumItems: 20 }
   );
-
-  if (!tag) {
-    notFound();
-  }
-
-  const Icon = tag.icon;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Icon color="default" size={24} />
-        <h1 className="text-lg">{tag.label}</h1>
+        <ClockIcon className="size-6" />
+        <h1 className="text-lg">{t("title")}</h1>
       </div>
       <PromptGrid
         hasMore={status === "CanLoadMore"}

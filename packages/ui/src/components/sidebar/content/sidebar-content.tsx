@@ -1,5 +1,11 @@
-import { TopCategories } from "./top-categories";
+import { NavCategories } from "./nav-categories";
+import { NavMain } from "./nav-main";
 
 export function SidebarMainContent() {
-  return <TopCategories />;
+  return (
+    <>
+      <NavMain />
+      <NavCategories />
+    </>
+  );
 }

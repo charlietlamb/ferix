@@ -1,5 +1,4 @@
 import { Link } from "@ferix/i18n/navigation";
-import { CirclesThreeIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 
 export function Logo({ showText }: { showText: boolean }) {
@@ -8,7 +7,6 @@ export function Logo({ showText }: { showText: boolean }) {
       className="group/logo flex h-9 items-center justify-center gap-1"
       href="/"
     >
-      <CirclesThreeIcon className="mt-0.5 size-4" weight="bold" />
       <AnimatePresence>
         {showText && (
           <motion.span
