@@ -256,15 +256,24 @@ export const listPopular = query({
 
     return Promise.all(
       sorted.map(async (prompt) => {
-        const latestCommit = await ctx.db
-          .query("commits")
-          .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-          .order("desc")
-          .first();
+        const [latestCommit, user] = await Promise.all([
+          ctx.db
+            .query("commits")
+            .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+            .order("desc")
+            .first(),
+          authComponent.getAnyUserById(ctx, prompt.userId),
+        ]);
 
         return {
           ...prompt,
           content: latestCommit?.content ?? "",
+          creator: user
+            ? {
+                name: user.name,
+                image: user.image ?? null,
+              }
+            : null,
         };
       })
     );

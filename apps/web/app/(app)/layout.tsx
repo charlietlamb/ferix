@@ -4,11 +4,11 @@ import { SidebarInset, SidebarProvider } from "@ferix/ui/components/ui/sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider className="overflow-hidden" defaultOpen>
       <AppSidebar />
       <SidebarInset>
         <AppHeader />
-        <main className="flex-1 p-4">{children}</main>
+        <div className="flex-1 overflow-hidden p-4">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

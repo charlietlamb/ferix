@@ -2,7 +2,7 @@
 
 import { api } from "@ferix/server/_generated/api";
 import { PromptCard } from "@ferix/ui/components/prompts/prompt-card";
-import { FlaskIcon } from "@phosphor-icons/react";
+import { TrendUpIcon } from "@phosphor-icons/react";
 import { useQuery } from "convex/react";
 import { useTranslations } from "next-intl";
 
@@ -15,22 +15,24 @@ export function PopularPrompts() {
   }
 
   return (
-    <section>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 rounded-md border-border bg-muted px-2 py-1">
-          <FlaskIcon className="size-4" />
-          <h2 className="text-lg">{t("title")}</h2>
+    <section className="flex flex-col gap-2">
+      <div className="flex items-center gap-3">
+        <div className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
+          <TrendUpIcon className="size-4 text-muted-foreground" />
         </div>
+        <h2 className="font-semibold text-xl">{t("title")}</h2>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="scrollbar-none flex gap-4 overflow-x-auto p-2 pl-0.5">
         {prompts.map((prompt) => (
-          <PromptCard
-            content={prompt.content}
-            downloads={prompt.downloads}
-            key={prompt._id}
-            title={prompt.title}
-            type={prompt.type}
-          />
+          <div className="w-80 shrink-0" key={prompt._id}>
+            <PromptCard
+              content={prompt.content}
+              creator={prompt.creator}
+              downloads={prompt.downloads}
+              title={prompt.title}
+              type={prompt.type}
+            />
+          </div>
         ))}
       </div>
     </section>
