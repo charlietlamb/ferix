@@ -1,5 +1,6 @@
 "use client";
 
+import { ThemeToggle } from "@ferix/ui/components/theme/theme-toggle";
 import { Button } from "@ferix/ui/components/ui/button";
 import { useSidebar } from "@ferix/ui/components/ui/sidebar";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
@@ -10,13 +11,16 @@ export function FooterUnauthenticated() {
   const { open } = useSidebar();
 
   return (
-    <Button
-      className="w-full"
-      onClick={() => openDialog("signInDialog")}
-      size={open ? "default" : "icon"}
-    >
-      <SignInIcon className="size-4" />
-      {open && "Sign in"}
-    </Button>
+    <div className="flex items-center justify-between gap-2">
+      <Button
+        onClick={() => openDialog("signInDialog")}
+        size={open ? "sm" : "icon-sm"}
+        variant="secondary"
+      >
+        <SignInIcon className="size-4" />
+        {open && "Log in"}
+      </Button>
+      {open && <ThemeToggle />}
+    </div>
   );
 }
