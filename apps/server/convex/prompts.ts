@@ -279,3 +279,37 @@ export const listPopular = query({
     );
   },
 });
+
+export const listRecent = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 10;
+    const prompts = await ctx.db.query("prompts").order("desc").take(limit);
+
+    return Promise.all(
+      prompts.map(async (prompt) => {
+        const [latestCommit, user] = await Promise.all([
+          ctx.db
+            .query("commits")
+            .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+            .order("desc")
+            .first(),
+          authComponent.getAnyUserById(ctx, prompt.userId),
+        ]);
+
+        return {
+          ...prompt,
+          content: latestCommit?.content ?? "",
+          creator: user
+            ? {
+                name: user.name,
+                image: user.image ?? null,
+              }
+            : null,
+        };
+      })
+    );
+  },
+});

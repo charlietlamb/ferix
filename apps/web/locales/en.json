@@ -9,6 +9,9 @@
     "popular": {
       "title": "Popular"
     },
+    "recent": {
+      "title": "Recent"
+    },
     "create": {
       "title": "Create Prompt",
       "description": "Create a new prompt",
