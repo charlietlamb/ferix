@@ -2,6 +2,7 @@
 
 import { api } from "@ferix/server/_generated/api";
 import { PromptCard } from "@ferix/ui/components/prompts/prompt-card";
+import { ScrollArea } from "@ferix/ui/components/ui/scroll-area";
 import { TrendUpIcon } from "@phosphor-icons/react";
 import { useQuery } from "convex/react";
 import { useTranslations } from "next-intl";
@@ -22,19 +23,21 @@ export function PopularPrompts() {
         </div>
         <h2 className="font-semibold text-xl">{t("title")}</h2>
       </div>
-      <div className="scrollbar-none flex gap-4 overflow-x-auto p-2 pl-0.5">
-        {prompts.map((prompt) => (
-          <div className="w-80 shrink-0" key={prompt._id}>
-            <PromptCard
-              content={prompt.content}
-              creator={prompt.creator}
-              downloads={prompt.downloads}
-              title={prompt.title}
-              type={prompt.type}
-            />
-          </div>
-        ))}
-      </div>
+      <ScrollArea className="w-full">
+        <div className="flex gap-4 p-2 pl-0.5">
+          {prompts.map((prompt) => (
+            <div className="w-80 shrink-0" key={prompt._id}>
+              <PromptCard
+                content={prompt.content}
+                creator={prompt.creator}
+                downloads={prompt.downloads}
+                title={prompt.title}
+                type={prompt.type}
+              />
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
     </section>
   );
 }
