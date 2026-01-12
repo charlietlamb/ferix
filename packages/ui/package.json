@@ -51,6 +51,7 @@
     "tailwind-merge": "catalog:",
     "vaul": "catalog:",
     "zod": "catalog:",
-    "next-intl": "catalog:"
+    "next-intl": "catalog:",
+    "motion": "catalog:"
   }
 }

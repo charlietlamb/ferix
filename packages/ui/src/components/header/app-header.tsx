@@ -1,38 +1,30 @@
 "use client";
 
 import { Button } from "@ferix/ui/components/ui/button";
-import { SidebarHeader, useSidebar } from "@ferix/ui/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@ferix/ui/components/ui/sidebar";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
-import { cn } from "@ferix/ui/lib/utils";
 import { PlusIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { Logo } from "../../brand/logo";
 
-export function SidebarHeaderContent() {
+export function AppHeader() {
   const { open: openDialog } = useDialog();
   const { open } = useSidebar();
 
   return (
-    <SidebarHeader
-      className={cn(
-        "flex flex-row items-center gap-2",
-        open ? "justify-between" : "justify-center"
-      )}
-    >
-      <Logo showText={open} />
+    <header className="flex h-12 items-center justify-between gap-2 border-b px-4 md:rounded-t-2xl">
+      <SidebarTrigger />
       <AnimatePresence>
-        {open && (
+        {!open && (
           <motion.div
-            animate={{ opacity: 1, width: "auto" }}
-            className="overflow-hidden"
-            exit={{ opacity: 0, width: 0 }}
-            initial={{ opacity: 0, width: 0 }}
-            key="sidebar-create-button"
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            key="create-button"
             transition={{ duration: 0.15 }}
           >
             <Button
               onClick={() => openDialog("createPromptDialog")}
-              size="default"
+              size="icon"
               variant="ghost"
             >
               <PlusIcon className="size-4" />
@@ -40,6 +32,6 @@ export function SidebarHeaderContent() {
           </motion.div>
         )}
       </AnimatePresence>
-    </SidebarHeader>
+    </header>
   );
 }
