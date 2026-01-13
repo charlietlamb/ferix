@@ -120,6 +120,16 @@
     "tagsSaved": "Tags updated",
     "tagsError": "Failed to update tags"
   },
+  "commandPalette": {
+    "title": "Command Palette",
+    "description": "Search for tags, pages, or actions",
+    "placeholder": "Search...",
+    "noResults": "No results found",
+    "noResultsHint": "Try searching for tags, pages, or actions",
+    "tags": "Tags",
+    "pages": "Pages",
+    "actions": "Actions"
+  },
   "auth": {
     "signIn": {
       "title": "Sign In",

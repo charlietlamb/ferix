@@ -2,6 +2,7 @@ import { atom } from "jotai";
 import { ForgotPasswordDialog } from "../components/auth/forgot-password/forgot-password-dialog";
 import { SignInDialog } from "../components/auth/sign-in/sign-in-dialog";
 import { SignUpDialog } from "../components/auth/sign-up/sign-up-dialog";
+import { CommandPalette } from "../components/command-palette/command-palette";
 import { ConfirmDialog } from "../components/dialog/confirm-dialog";
 import { CreatePromptDialog } from "../components/prompts/create/create-prompt-dialog";
 import { ChangePasswordDialog } from "../components/settings/change-password-dialog";
@@ -14,6 +15,7 @@ export interface DialogMap {
   changePasswordDialog: undefined;
   forgotPasswordDialog: undefined;
   createPromptDialog: undefined;
+  commandPaletteDialog: undefined;
   confirmDialog: ConfirmDialogProps;
 }
 
@@ -37,6 +39,7 @@ export const dialogRegistry: {
   changePasswordDialog: ChangePasswordDialog,
   forgotPasswordDialog: ForgotPasswordDialog,
   createPromptDialog: CreatePromptDialog,
+  commandPaletteDialog: CommandPalette,
   confirmDialog: ConfirmDialog,
 };
 

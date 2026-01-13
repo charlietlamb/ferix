@@ -1,15 +1,19 @@
 "use client";
 
+import { CommandPaletteTrigger } from "@ferix/ui/components/command-palette/command-palette-trigger";
+import { useCommandK } from "@ferix/ui/components/command-palette/hooks/use-command-k";
 import { CreatePromptButton } from "@ferix/ui/components/prompts/create/create-prompt-button";
 import { SidebarTrigger, useSidebar } from "@ferix/ui/components/ui/sidebar";
 import { AnimatePresence, motion } from "motion/react";
 
 export function DashboardHeader() {
   const { open } = useSidebar();
+  useCommandK();
 
   return (
     <header className="flex h-12 items-center justify-between gap-2 border-b px-4 md:rounded-t-2xl">
       <SidebarTrigger />
+      <CommandPaletteTrigger />
       <AnimatePresence>
         {!open && (
           <motion.div
