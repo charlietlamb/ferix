@@ -413,3 +413,33 @@ export const listSaved = query({
     };
   },
 });
+
+export const search = query({
+  args: { query: v.string() },
+  handler: async (ctx, args) => {
+    const normalizedQuery = args.query.toLowerCase().trim();
+
+    if (!normalizedQuery) {
+      const popular = await ctx.db
+        .query("prompts")
+        .withIndex("by_downloads")
+        .order("desc")
+        .take(6);
+      return enrichPrompts(ctx, popular);
+    }
+
+    const allPrompts = await ctx.db.query("prompts").order("desc").take(100);
+
+    const filtered = allPrompts
+      .filter((prompt) => {
+        const matchesTitle = prompt.title
+          .toLowerCase()
+          .includes(normalizedQuery);
+        const matchesSlug = prompt.slug.toLowerCase().includes(normalizedQuery);
+        return matchesTitle || matchesSlug;
+      })
+      .slice(0, 8);
+
+    return enrichPrompts(ctx, filtered);
+  },
+});

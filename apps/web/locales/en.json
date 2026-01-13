@@ -122,10 +122,12 @@
   },
   "commandPalette": {
     "title": "Command Palette",
-    "description": "Search for tags, pages, or actions",
+    "description": "Search for prompts, tags, pages, or actions",
     "placeholder": "Search...",
     "noResults": "No results found",
-    "noResultsHint": "Try searching for tags, pages, or actions",
+    "noResultsHint": "Try searching for prompts, tags, pages, or actions",
+    "loading": "Loading prompts...",
+    "prompts": "Prompts",
     "tags": "Tags",
     "pages": "Pages",
     "actions": "Actions"

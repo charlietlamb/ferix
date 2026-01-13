@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { commandSources } from "../sources";
-import type { CommandGroup } from "../types";
+import type { CommandGroup, CommandItemData } from "../types";
 
-export function useCommandPalette() {
-  const [query, setQuery] = useState("");
-
+export function useCommandPalette(
+  promptItems: CommandItemData[] | undefined,
+  query: string
+) {
   const groups = useMemo<CommandGroup[]>(() => {
-    return commandSources
+    const staticGroups = commandSources
       .map((source) => {
         const items = source.getItems(query);
         if (items instanceof Promise) {
@@ -25,17 +26,23 @@ export function useCommandPalette() {
         };
       })
       .filter((group): group is CommandGroup => group !== null);
-  }, [query]);
+
+    if (promptItems && promptItems.length > 0) {
+      staticGroups.push({
+        id: "prompts",
+        label: "Prompts",
+        priority: 100,
+        items: promptItems,
+      });
+    }
+
+    return staticGroups.sort((a, b) => a.priority - b.priority);
+  }, [query, promptItems]);
 
   const isEmpty = groups.length === 0;
 
-  const resetQuery = () => setQuery("");
-
   return {
-    query,
-    setQuery,
     groups,
     isEmpty,
-    resetQuery,
   };
 }
