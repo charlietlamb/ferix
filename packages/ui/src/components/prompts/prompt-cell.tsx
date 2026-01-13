@@ -1,18 +1,19 @@
 "use client";
 
+import { Link } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Prompt } from "@ferix/server/types";
+import { TypeBadge } from "@ferix/ui/components/prompts/type-badge";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@ferix/ui/components/ui/avatar";
-import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
+import { SaveButton } from "@ferix/ui/components/utils/save-button";
 import { useCopy } from "@ferix/ui/hooks/use-copy";
-import { useDialog } from "@ferix/ui/hooks/use-dialog";
+import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
 import { getTagById } from "@ferix/ui/lib/tags";
 import {
-  BookmarkSimpleIcon,
   CheckIcon,
   CopyIcon,
   DownloadIcon,
@@ -20,7 +21,6 @@ import {
   UserRectangleIcon,
 } from "@phosphor-icons/react";
 import { useMutation } from "convex/react";
-import { useState } from "react";
 
 interface PromptCellProps {
   prompt: Prompt;
@@ -33,22 +33,19 @@ const typeIcons = {
 
 export function PromptCell({ prompt }: PromptCellProps) {
   const recordDownload = useMutation(api.prompts.recordDownload);
-  const toggleSave = useMutation(api.prompts.toggleSave);
   const { copy, copied } = useCopy();
-  const { isAuthenticated } = useAuthenticated();
-  const { open: openDialog } = useDialog();
   const firstTagId = prompt.tags[0];
   const firstTag = firstTagId ? getTagById(firstTagId) : null;
   const TypeIcon = firstTag?.icon ?? typeIcons[prompt.type];
 
-  const [optimisticSaved, setOptimisticSaved] = useState<boolean | null>(null);
-  const [optimisticDownloads, setOptimisticDownloads] = useState<number | null>(
-    null
-  );
-  const isSaved = optimisticSaved ?? prompt.isSaved;
-  const downloads = optimisticDownloads ?? prompt.downloads;
+  const { current: isSaved, setOptimistic: setOptimisticSaved } =
+    useOptimisticState(prompt.isSaved);
+  const { current: downloads, setOptimistic: setOptimisticDownloads } =
+    useOptimisticState(prompt.downloads);
 
-  const handleClick = () => {
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!copied) {
       setOptimisticDownloads(prompt.downloads + 1);
       recordDownload({ promptId: prompt._id });
@@ -56,18 +53,11 @@ export function PromptCell({ prompt }: PromptCellProps) {
     }
   };
 
-  const handleSave = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isAuthenticated) {
-      openDialog("signInDialog");
-      return;
-    }
-    setOptimisticSaved(!isSaved);
-    toggleSave({ promptId: prompt._id });
-  };
-
   return (
-    <div className="group flex h-full w-full flex-col gap-3 p-4 text-left transition-colors hover:bg-muted/50">
+    <Link
+      className="group flex h-full w-full flex-col gap-3 p-4 text-left transition-colors hover:bg-muted/50"
+      href={`/prompt/${prompt.slug}`}
+    >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           {firstTag ? (
@@ -78,10 +68,8 @@ export function PromptCell({ prompt }: PromptCellProps) {
           <span className="line-clamp-1 text-sm">{prompt.title}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="shrink-0 rounded-full border px-2 py-0.5 text-muted-foreground text-xs">
-            {prompt.type}
-          </span>
-          <button onClick={handleClick} type="button">
+          <TypeBadge type={prompt.type} />
+          <button onClick={handleCopy} type="button">
             {copied ? (
               <CheckIcon className="size-4 text-green-500" />
             ) : (
@@ -128,22 +116,14 @@ export function PromptCell({ prompt }: PromptCellProps) {
             <DownloadIcon className="size-3" />
             <span>{downloads.toLocaleString()}</span>
           </div>
-          <button
-            className="cursor-pointer hover:text-foreground"
-            onClick={handleSave}
-            onKeyDown={(e) =>
-              e.key === "Enter" && handleSave(e as unknown as React.MouseEvent)
-            }
-            tabIndex={0}
-            type="button"
-          >
-            <BookmarkSimpleIcon
-              className="size-4"
-              weight={isSaved ? "fill" : "regular"}
-            />
-          </button>
+          <SaveButton
+            isSaved={isSaved}
+            onOptimisticUpdate={setOptimisticSaved}
+            promptId={prompt._id}
+            variant="icon"
+          />
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

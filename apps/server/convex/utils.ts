@@ -6,6 +6,10 @@ export async function enrichPrompts<T extends Doc<"prompts">>(
   ctx: QueryCtx,
   prompts: T[]
 ) {
+  if (prompts.length === 0) {
+    return [];
+  }
+
   const currentUser = await authComponent.safeGetAuthUser(ctx);
 
   let savedPromptIds = new Set<string>();
@@ -17,7 +21,7 @@ export async function enrichPrompts<T extends Doc<"prompts">>(
     savedPromptIds = new Set(userSaves.map((s) => s.promptId.toString()));
   }
 
-  return await Promise.all(
+  return Promise.all(
     prompts.map(async (prompt) => {
       const creator = await authComponent.getAnyUserById(ctx, prompt.userId);
       return {

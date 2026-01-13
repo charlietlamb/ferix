@@ -4,6 +4,7 @@ import slugify from "slugify";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
+import { generateUniqueSlug, validateSlugUnique } from "./lib/slug";
 import { promptTypes } from "./schema";
 import { enrichPrompts } from "./utils";
 
@@ -22,18 +23,7 @@ export const create = mutation({
 
     const now = Date.now();
     const baseSlug = slugify(args.title, { lower: true, strict: true });
-    let slug = baseSlug;
-    let counter = 1;
-
-    while (
-      await ctx.db
-        .query("prompts")
-        .withIndex("by_slug", (q) => q.eq("slug", slug))
-        .first()
-    ) {
-      slug = `${baseSlug}-${counter}`;
-      counter++;
-    }
+    const slug = await generateUniqueSlug(ctx, baseSlug);
 
     const promptId = await ctx.db.insert("prompts", {
       userId: user._id,
@@ -134,6 +124,7 @@ export const rename = mutation({
   args: {
     promptId: v.id("prompts"),
     title: v.string(),
+    slug: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
@@ -146,8 +137,13 @@ export const rename = mutation({
       throw new Error("Prompt not found");
     }
 
+    if (args.slug && args.slug !== prompt.slug) {
+      await validateSlugUnique(ctx, args.slug, args.promptId);
+    }
+
     await ctx.db.patch(args.promptId, {
       title: args.title,
+      ...(args.slug && { slug: args.slug }),
       updatedAt: Date.now(),
     });
 
@@ -196,15 +192,39 @@ export const getBySlug = query({
       return null;
     }
 
+    const currentUser = await authComponent.safeGetAuthUser(ctx);
+
+    const creator = await authComponent.getAnyUserById(ctx, prompt.userId);
+
+    const saves = await ctx.db
+      .query("saves")
+      .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+      .collect();
+
+    let isSaved = false;
+    if (currentUser) {
+      isSaved = saves.some((s) => s.userId === currentUser._id);
+    }
+
+    const basePrompt = {
+      ...prompt,
+      creator: creator
+        ? { name: creator.name, image: creator.image ?? null }
+        : null,
+      isCreator: currentUser ? currentUser._id === prompt.userId : false,
+      isSaved,
+      saveCount: saves.length,
+    };
+
     if (args.commitId) {
       const commit = await ctx.db.get(args.commitId);
       if (!commit || commit.promptId !== prompt._id) {
         return null;
       }
-      return { ...prompt, content: commit.content, commitId: commit._id };
+      return { ...basePrompt, content: commit.content, commitId: commit._id };
     }
 
-    return { ...prompt, commitId: null };
+    return { ...basePrompt, commitId: null };
   },
 });
 
@@ -256,16 +276,28 @@ export const listRecent = query({
   },
 });
 
+/**
+ * Lists prompts filtered by a specific tag with pagination.
+ *
+ * @limitation Convex does not support "array contains" filtering in queries,
+ * so we must collect all prompts and filter in JavaScript. This is the
+ * recommended approach from Convex docs but doesn't scale well.
+ *
+ * @todo If this becomes a performance issue, create a `prompt_tags` junction
+ * table with an index on `tag` to enable proper indexed queries.
+ */
 export const listByTag = query({
   args: {
     tag: v.string(),
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const prompts = await ctx.db.query("prompts").order("desc").collect();
+    const allPrompts = await ctx.db.query("prompts").order("desc").collect();
+    const filtered = allPrompts.filter((prompt) =>
+      prompt.tags.includes(args.tag)
+    );
 
-    const filtered = prompts.filter((prompt) => prompt.tags.includes(args.tag));
-
+    // Manual pagination on filtered results
     const startIndex = args.paginationOpts.cursor
       ? filtered.findIndex(
           (p) => p._id === (args.paginationOpts.cursor as unknown)
@@ -279,13 +311,36 @@ export const listByTag = query({
     const hasMore = startIndex + args.paginationOpts.numItems < filtered.length;
     const nextCursor = hasMore ? pageData.at(-1)?._id : null;
 
-    const enriched = await enrichPrompts(ctx, pageData);
-
     return {
-      page: enriched,
+      page: await enrichPrompts(ctx, pageData),
       isDone: !hasMore,
       continueCursor: (nextCursor ?? "") as string,
     };
+  },
+});
+
+export const updateTags = mutation({
+  args: {
+    promptId: v.id("prompts"),
+    tags: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    const prompt = await ctx.db.get(args.promptId);
+    if (!prompt || prompt.userId !== user._id) {
+      throw new Error("Prompt not found");
+    }
+
+    await ctx.db.patch(args.promptId, {
+      tags: args.tags,
+      updatedAt: Date.now(),
+    });
+
+    return args.promptId;
   },
 });
 

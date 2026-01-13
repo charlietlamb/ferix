@@ -6,7 +6,8 @@
   "ui": {
     "form": {
       "loading": "Loading..."
-    }
+    },
+    "cancel": "Cancel"
   },
   "sidebar": {
     "browse": "Browse",
@@ -81,6 +82,42 @@
     "linkedAccounts": {
       "title": "Linked Accounts"
     }
+  },
+  "promptDetail": {
+    "author": "Author",
+    "unknownAuthor": "Unknown",
+    "stats": "Stats",
+    "downloads": "downloads",
+    "saves": "saves",
+    "details": "Details",
+    "lastEdited": "Last edited",
+    "created": "Created",
+    "tags": "Tags",
+    "actions": "Actions",
+    "save": "Save",
+    "unsave": "Unsave",
+    "delete": "Delete",
+    "saveChanges": "Save Changes",
+    "draftSaved": "Draft saved locally",
+    "noChanges": "No unsaved changes",
+    "contentPlaceholder": "Enter your prompt content...",
+    "titlePlaceholder": "Prompt title",
+    "titleSaved": "Title updated",
+    "titleError": "Failed to update title",
+    "saveSuccess": "Changes saved",
+    "saveError": "Failed to save changes",
+    "deleteSuccess": "Prompt deleted",
+    "deleteError": "Failed to delete prompt",
+    "deleteConfirm": {
+      "title": "Delete Prompt",
+      "description": "Are you sure you want to delete this prompt? This action cannot be undone."
+    },
+    "url": "URL",
+    "slugSaved": "URL updated",
+    "slugError": "Failed to update URL",
+    "selectTags": "Select tags...",
+    "tagsSaved": "Tags updated",
+    "tagsError": "Failed to update tags"
   },
   "auth": {
     "signIn": {
