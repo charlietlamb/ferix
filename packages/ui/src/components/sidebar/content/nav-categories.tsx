@@ -54,7 +54,7 @@ export function NavCategories() {
                     <SidebarMenuButton
                       render={<Link href={`/tag/${tag.id}`} />}
                     >
-                      <Icon color="default" size={16} />
+                      <Icon className="text-foreground" size={16} />
                       <span>{tag.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

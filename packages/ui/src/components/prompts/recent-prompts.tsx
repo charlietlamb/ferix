@@ -2,7 +2,6 @@
 
 import { api } from "@ferix/server/_generated/api";
 import { PromptList } from "@ferix/ui/components/prompts/prompt-list";
-import { ClockIcon } from "@phosphor-icons/react";
 import { usePaginatedQuery } from "convex/react";
 import { useTranslations } from "next-intl";
 
@@ -18,5 +17,7 @@ export function RecentPrompts() {
     return null;
   }
 
-  return <PromptList icon={ClockIcon} prompts={results} title={t("title")} />;
+  return (
+    <PromptList prompts={results} title={t("title")} viewMorePath="recent" />
+  );
 }

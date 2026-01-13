@@ -1,38 +1,52 @@
 "use client";
 
+import { Link } from "@ferix/i18n/navigation";
 import type { Prompt } from "@ferix/server/types";
-import { PromptCard } from "@ferix/ui/components/prompts/prompt-card";
-import { ScrollArea } from "@ferix/ui/components/ui/scroll-area";
-import type { ComponentType } from "react";
+import { PromptCell } from "@ferix/ui/components/prompts/prompt-cell";
+import { cn } from "@ferix/ui/lib/utils";
+import { ArrowRightIcon } from "@phosphor-icons/react";
+import { useTranslations } from "next-intl";
 
 interface PromptListProps {
   prompts: Prompt[];
   title: string;
-  icon: ComponentType<{ className?: string }>;
+  viewMorePath: string;
 }
 
-export function PromptList({ prompts, title, icon: Icon }: PromptListProps) {
+export function PromptList({ prompts, title, viewMorePath }: PromptListProps) {
+  const t = useTranslations("prompts");
+
   if (prompts.length === 0) {
     return null;
   }
 
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center gap-3">
-        <div className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
-          <Icon className="size-4 text-muted-foreground" />
+    <section className="flex flex-col">
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1 px-4 py-2">
+          <h2 className="text-lg tracking-tight">{title}</h2>
         </div>
-        <h2 className="text-xl">{title}</h2>
+        <Link
+          className="flex h-full items-center gap-1 pr-2 text-muted-foreground text-xs hover:text-foreground"
+          href={`/${viewMorePath}`}
+        >
+          {t("viewAll")}
+          <ArrowRightIcon className="size-4" />
+        </Link>
       </div>
-      <ScrollArea className="w-full">
-        <div className="flex gap-4 p-2 px-0.5">
-          {prompts.map((prompt) => (
-            <div className="w-80 shrink-0" key={prompt._id}>
-              <PromptCard prompt={prompt} />
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
+      <div className="scrollbar-none flex overflow-x-auto border-border border-t">
+        {prompts.map((prompt, index) => (
+          <div
+            className={cn(
+              "w-80 shrink-0 border-border border-b",
+              index < prompts.length - 1 && "border-r"
+            )}
+            key={prompt._id}
+          >
+            <PromptCell prompt={prompt} />
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

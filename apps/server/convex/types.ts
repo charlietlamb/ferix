@@ -2,6 +2,7 @@ import type { Doc } from "./_generated/dataModel";
 
 export type Prompt = Doc<"prompts"> & {
   creator: { name: string; image: string | null } | null;
+  isSaved: boolean;
 };
 
 export interface PaginatedResponse<T> {

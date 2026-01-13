@@ -1,10 +1,11 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import slugify from "slugify";
+import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 import { promptTypes } from "./schema";
-import { enrichWithCreator } from "./utils";
+import { enrichPrompts } from "./utils";
 
 export const create = mutation({
   args: {
@@ -72,7 +73,10 @@ export const list = query({
       .order("desc")
       .paginate(args.paginationOpts);
 
-    return { ...results, page: await enrichWithCreator(ctx, results.page) };
+    return {
+      ...results,
+      page: await enrichPrompts(ctx, results.page),
+    };
   },
 });
 
@@ -228,7 +232,10 @@ export const listPopular = query({
       .order("desc")
       .paginate(args.paginationOpts);
 
-    return { ...results, page: await enrichWithCreator(ctx, results.page) };
+    return {
+      ...results,
+      page: await enrichPrompts(ctx, results.page),
+    };
   },
 });
 
@@ -242,7 +249,10 @@ export const listRecent = query({
       .order("desc")
       .paginate(args.paginationOpts);
 
-    return { ...results, page: await enrichWithCreator(ctx, results.page) };
+    return {
+      ...results,
+      page: await enrichPrompts(ctx, results.page),
+    };
   },
 });
 
@@ -269,7 +279,77 @@ export const listByTag = query({
     const hasMore = startIndex + args.paginationOpts.numItems < filtered.length;
     const nextCursor = hasMore ? pageData.at(-1)?._id : null;
 
-    const enriched = await enrichWithCreator(ctx, pageData);
+    const enriched = await enrichPrompts(ctx, pageData);
+
+    return {
+      page: enriched,
+      isDone: !hasMore,
+      continueCursor: (nextCursor ?? "") as string,
+    };
+  },
+});
+
+export const toggleSave = mutation({
+  args: { promptId: v.id("prompts") },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    const existing = await ctx.db
+      .query("saves")
+      .withIndex("by_user_prompt", (q) =>
+        q.eq("userId", user._id).eq("promptId", args.promptId)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.delete(existing._id);
+      return false;
+    }
+
+    await ctx.db.insert("saves", {
+      userId: user._id,
+      promptId: args.promptId,
+      createdAt: Date.now(),
+    });
+    return true;
+  },
+});
+
+export const listSaved = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return { page: [], isDone: true, continueCursor: "" as string };
+    }
+
+    const saves = await ctx.db
+      .query("saves")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .collect();
+
+    const startIndex = args.paginationOpts.cursor
+      ? saves.findIndex(
+          (s) => s._id === (args.paginationOpts.cursor as unknown)
+        ) + 1
+      : 0;
+    const pageData = saves.slice(
+      startIndex,
+      startIndex + args.paginationOpts.numItems
+    );
+    const hasMore = startIndex + args.paginationOpts.numItems < saves.length;
+    const nextCursor = hasMore ? pageData.at(-1)?._id : null;
+
+    const prompts = await Promise.all(
+      pageData.map((save) => ctx.db.get(save.promptId))
+    );
+    const validPrompts = prompts.filter((p): p is Doc<"prompts"> => p !== null);
+
+    const enriched = await enrichPrompts(ctx, validPrompts);
 
     return {
       page: enriched,

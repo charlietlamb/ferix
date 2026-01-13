@@ -138,7 +138,7 @@ function SidebarProvider({
           } as React.CSSProperties
         }
         className={cn(
-          "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+          "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex h-svh w-full",
           className
         )}
         {...props}
@@ -312,7 +312,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
     <main
       data-slot="sidebar-inset"
       className={cn(
-        "bg-background relative flex w-full flex-1 flex-col overflow-hidden",
+        "bg-background relative flex min-h-0 w-full flex-1 flex-col overflow-hidden",
         // Inset variant styles - curved floating panel effect
         "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0",
         "md:peer-data-[variant=inset]:rounded-2xl",

@@ -229,7 +229,7 @@ export function MultiSelect({
                           }
                         }}
                       >
-                        {Icon && <Icon size={16} color="default" />}
+                        {Icon && <Icon className="text-foreground" size={16} />}
                         {option.label}
                       </CommandItem>
                     );

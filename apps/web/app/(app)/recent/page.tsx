@@ -1,8 +1,12 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
+import {
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderTitle,
+} from "@ferix/ui/components/header/page-header";
 import { PromptGrid } from "@ferix/ui/components/prompts/prompt-grid";
-import { ClockIcon } from "@phosphor-icons/react";
 import { usePaginatedQuery } from "convex/react";
 import { useTranslations } from "next-intl";
 
@@ -15,11 +19,11 @@ export default function RecentPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <ClockIcon className="size-6" />
-        <h1 className="text-lg">{t("title")}</h1>
-      </div>
+    <div className="h-full">
+      <PageHeader>
+        <PageHeaderTitle>{t("title")}</PageHeaderTitle>
+        <PageHeaderDescription>{t("description")}</PageHeaderDescription>
+      </PageHeader>
       <PromptGrid
         hasMore={status === "CanLoadMore"}
         isLoading={status === "LoadingMore"}

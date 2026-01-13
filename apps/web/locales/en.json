@@ -1,4 +1,8 @@
 {
+  "hero": {
+    "title": "A directory of high quailty subagents for",
+    "description": "Explore the latest and most popular subagents created by our community."
+  },
   "ui": {
     "form": {
       "loading": "Loading..."
@@ -12,14 +16,21 @@
   },
   "pages": {
     "popular": {
-      "title": "Popular Prompts"
+      "title": "Popular Prompts",
+      "description": "Explore the most popular prompts created by our community."
     },
     "recent": {
-      "title": "Recent Prompts"
+      "title": "Recent Prompts",
+      "description": "Explore the latest prompts created by our community."
+    },
+    "tag": {
+      "title": "Tag",
+      "description": "Explore prompts tagged with"
     }
   },
   "prompts": {
     "newPrompt": "Create",
+    "viewAll": "View All",
     "popular": {
       "title": "Popular Subagents"
     },

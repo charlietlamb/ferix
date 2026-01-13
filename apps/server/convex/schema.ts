@@ -25,4 +25,13 @@ export default defineSchema({
     content: v.string(),
     createdAt: v.number(),
   }).index("by_promptId", ["promptId"]),
+
+  saves: defineTable({
+    userId: v.string(),
+    promptId: v.id("prompts"),
+    createdAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_promptId", ["promptId"])
+    .index("by_user_prompt", ["userId", "promptId"]),
 });

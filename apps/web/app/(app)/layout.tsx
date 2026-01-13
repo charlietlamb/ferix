@@ -8,7 +8,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AppSidebar />
       <SidebarInset>
         <AppHeader />
-        <div className="scrollbar-none flex-1 overflow-x-auto p-4">
+        <div className="scrollbar-none min-h-0 flex-1 overflow-auto">
           {children}
         </div>
       </SidebarInset>

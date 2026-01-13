@@ -1,7 +1,7 @@
 "use client";
 
 import type { Prompt } from "@ferix/server/types";
-import { PromptCard } from "@ferix/ui/components/prompts/prompt-card";
+import { PromptCell } from "@ferix/ui/components/prompts/prompt-cell";
 import { useEffect, useRef } from "react";
 
 interface PromptGridProps {
@@ -47,11 +47,15 @@ export function PromptGrid({
   }
 
   return (
-    <div className="scrollbar-minimal h-[calc(100vh-200px)] overflow-auto p-1">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {prompts.map((prompt) => (
-          <PromptCard key={prompt._id} prompt={prompt} />
-        ))}
+    <div className="scrollbar-minimal h-full overflow-auto">
+      <div className="overflow-hidden">
+        <div className="-mr-px grid grid-cols-1 border-border border-t md:grid-cols-2 lg:grid-cols-3">
+          {prompts.map((prompt) => (
+            <div className="border-border border-r border-b" key={prompt._id}>
+              <PromptCell prompt={prompt} />
+            </div>
+          ))}
+        </div>
       </div>
       {hasMore && (
         <div
