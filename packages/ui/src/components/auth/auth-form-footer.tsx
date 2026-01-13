@@ -18,6 +18,19 @@ export function AuthFormFooter({ mode, onSwitchForm }: AuthFormFooterProps) {
   const t = useTranslations(`auth.${mode}`);
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleGithubSignIn = async () => {
+    setIsLoading(true);
+    const callbackURL = window.location.pathname + window.location.search;
+    const { error } = await signIn.social({
+      provider: "github",
+      callbackURL,
+    });
+    if (error) {
+      toast.error(error.message ?? t("githubError"));
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="relative my-4 flex items-center">
@@ -31,14 +44,7 @@ export function AuthFormFooter({ mode, onSwitchForm }: AuthFormFooterProps) {
       <Button
         className="w-full"
         disabled={isLoading}
-        onClick={async () => {
-          setIsLoading(true);
-          const { error } = await signIn.social({ provider: "github" });
-          if (error) {
-            toast.error(error.message ?? t("githubError"));
-            setIsLoading(false);
-          }
-        }}
+        onClick={handleGithubSignIn}
         variant="outline"
       >
         {isLoading ? (

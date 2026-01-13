@@ -3,24 +3,26 @@
 import { useRouter } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
-import { PromptDetailSection } from "@ferix/ui/components/prompts/detail/prompt-detail-section";
 import { Button } from "@ferix/ui/components/ui/button";
 import { SaveButton } from "@ferix/ui/components/utils/save-button";
+import { useCopy } from "@ferix/ui/hooks/use-copy";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
 import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
-import { TrashIcon } from "@phosphor-icons/react";
+import { CheckIcon, CopyIcon, TrashIcon } from "@phosphor-icons/react";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 interface PromptDetailActionsProps {
   promptId: Id<"prompts">;
+  content: string;
   isSaved: boolean;
   isCreator: boolean;
 }
 
 export function PromptDetailActions({
   promptId,
+  content,
   isSaved,
   isCreator,
 }: PromptDetailActionsProps) {
@@ -28,9 +30,18 @@ export function PromptDetailActions({
   const router = useRouter();
   const { open: openDialog } = useDialog();
   const removePrompt = useMutation(api.prompts.remove);
+  const recordDownload = useMutation(api.prompts.recordDownload);
+  const { copy, copied } = useCopy();
 
   const { current: currentlySaved, setOptimistic: setOptimisticSaved } =
     useOptimisticState(isSaved);
+
+  const handleCopy = () => {
+    if (!copied) {
+      recordDownload({ promptId });
+      copy(content);
+    }
+  };
 
   const handleDelete = () => {
     openDialog("confirmDialog", {
@@ -47,8 +58,23 @@ export function PromptDetailActions({
   };
 
   return (
-    <PromptDetailSection className="border-none" title={t("actions")}>
+    <div className="flex flex-col gap-2 p-4">
+      <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        {t("actions")}
+      </h3>
       <div className="flex flex-col gap-2">
+        <Button
+          className="w-full justify-start"
+          onClick={handleCopy}
+          variant="outline"
+        >
+          {copied ? (
+            <CheckIcon className="mr-2 size-4 text-green-500" />
+          ) : (
+            <CopyIcon className="mr-2 size-4" />
+          )}
+          {t("copy")}
+        </Button>
         <SaveButton
           isSaved={currentlySaved}
           label={{ save: t("save"), unsave: t("unsave") }}
@@ -67,6 +93,6 @@ export function PromptDetailActions({
           </Button>
         )}
       </div>
-    </PromptDetailSection>
+    </div>
   );
 }

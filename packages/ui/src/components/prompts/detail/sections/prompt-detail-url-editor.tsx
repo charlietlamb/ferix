@@ -3,7 +3,6 @@
 import { useRouter } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
-import { PromptDetailSection } from "@ferix/ui/components/prompts/detail/prompt-detail-section";
 import { Button } from "@ferix/ui/components/ui/button";
 import { Input } from "@ferix/ui/components/ui/input";
 import { useInlineEdit } from "@ferix/ui/hooks/use-inline-edit";
@@ -55,7 +54,10 @@ export function PromptDetailUrlEditor({
 
   if (slugEdit.isEditing) {
     return (
-      <PromptDetailSection title={t("url")}>
+      <div className="flex flex-col gap-2 border-border border-b p-4">
+        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {t("url")}
+        </h3>
         <div className="flex items-center gap-2">
           <div className="flex flex-1 items-center rounded-md border bg-muted/50 px-2">
             <span className="text-muted-foreground text-xs">/prompt/</span>
@@ -96,12 +98,15 @@ export function PromptDetailUrlEditor({
             <XIcon className="size-3.5" />
           </Button>
         </div>
-      </PromptDetailSection>
+      </div>
     );
   }
 
   return (
-    <PromptDetailSection title={t("url")}>
+    <div className="flex flex-col gap-2 border-border border-b p-4">
+      <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        {t("url")}
+      </h3>
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center">
           <LinkIcon className="size-4 shrink-0 text-muted-foreground" />
@@ -117,6 +122,6 @@ export function PromptDetailUrlEditor({
           <PencilSimpleIcon className="size-3.5" />
         </Button>
       </div>
-    </PromptDetailSection>
+    </div>
   );
 }

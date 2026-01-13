@@ -3,8 +3,12 @@
 import type { Id } from "@ferix/server/_generated/dataModel";
 import { AppPage } from "@ferix/ui/components/layout/app-page";
 import { PromptDetailContent } from "@ferix/ui/components/prompts/detail/prompt-detail-content";
-import { PromptDetailHeader } from "@ferix/ui/components/prompts/detail/prompt-detail-header";
-import { PromptDetailSidebar } from "@ferix/ui/components/prompts/detail/prompt-detail-sidebar";
+import { PromptDetailActions } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-actions";
+import { PromptDetailAuthor } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-author";
+import { PromptDetailDates } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-dates";
+import { PromptDetailStats } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-stats";
+import { PromptDetailTags } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-tags";
+import { PromptDetailUrlEditor } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-url-editor";
 
 interface PromptDetailPageProps {
   prompt: {
@@ -27,33 +31,47 @@ interface PromptDetailPageProps {
 export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
   return (
     <AppPage>
-      <PromptDetailHeader
-        content={prompt.content}
-        isCreator={prompt.isCreator}
-        promptId={prompt._id}
-        slug={prompt.slug}
-        title={prompt.title}
-        type={prompt.type}
-      />
-      <div className="flex flex-1 flex-col gap-6 overflow-auto p-4 lg:flex-row">
+      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+        {/* Content - left side on desktop */}
         <PromptDetailContent
           isCreator={prompt.isCreator}
           promptId={prompt._id}
           serverContent={prompt.content}
-        />
-        <PromptDetailSidebar
-          createdAt={prompt.createdAt}
-          creator={prompt.creator}
-          downloads={prompt.downloads}
-          isCreator={prompt.isCreator}
-          isSaved={prompt.isSaved}
-          promptId={prompt._id}
-          saveCount={prompt.saveCount}
           slug={prompt.slug}
-          tags={prompt.tags}
           title={prompt.title}
-          updatedAt={prompt.updatedAt}
+          type={prompt.type}
         />
+
+        {/* Sidebar - right side on desktop, stacked cells */}
+        <aside className="flex flex-col border-border border-t md:w-[320px] md:shrink-0 md:overflow-auto md:border-t-0 md:border-l">
+          <PromptDetailAuthor creator={prompt.creator} />
+          <PromptDetailStats
+            downloads={prompt.downloads}
+            saveCount={prompt.saveCount}
+          />
+          <PromptDetailDates
+            createdAt={prompt.createdAt}
+            updatedAt={prompt.updatedAt}
+          />
+          <PromptDetailTags
+            isCreator={prompt.isCreator}
+            promptId={prompt._id}
+            tags={prompt.tags}
+          />
+          {prompt.isCreator && (
+            <PromptDetailUrlEditor
+              promptId={prompt._id}
+              slug={prompt.slug}
+              title={prompt.title}
+            />
+          )}
+          <PromptDetailActions
+            content={prompt.content}
+            isCreator={prompt.isCreator}
+            isSaved={prompt.isSaved}
+            promptId={prompt._id}
+          />
+        </aside>
       </div>
     </AppPage>
   );

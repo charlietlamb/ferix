@@ -1,6 +1,5 @@
 "use client";
 
-import { PromptDetailSection } from "@ferix/ui/components/prompts/detail/prompt-detail-section";
 import {
   Avatar,
   AvatarFallback,
@@ -16,7 +15,10 @@ export function PromptDetailAuthor({ creator }: PromptDetailAuthorProps) {
   const t = useTranslations("promptDetail");
 
   return (
-    <PromptDetailSection title={t("author")}>
+    <div className="flex flex-col gap-2 border-border border-b p-4">
+      <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        {t("author")}
+      </h3>
       {creator ? (
         <div className="flex items-center gap-2">
           <Avatar size="sm">
@@ -34,6 +36,6 @@ export function PromptDetailAuthor({ creator }: PromptDetailAuthorProps) {
           {t("unknownAuthor")}
         </span>
       )}
-    </PromptDetailSection>
+    </div>
   );
 }

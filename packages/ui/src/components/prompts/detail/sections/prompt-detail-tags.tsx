@@ -2,7 +2,6 @@
 
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
-import { PromptDetailSection } from "@ferix/ui/components/prompts/detail/prompt-detail-section";
 import { MultiSelect } from "@ferix/ui/components/ui/multi-select";
 import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
 import { getTagsByIds, tagsToOptions } from "@ferix/ui/lib/tags";
@@ -57,7 +56,10 @@ export function PromptDetailTags({
 
   if (isCreator) {
     return (
-      <PromptDetailSection title={t("tags")}>
+      <div className="flex flex-col gap-2 border-border border-b p-4">
+        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {t("tags")}
+        </h3>
         <MultiSelect
           groupBy
           onChange={handleTagsChange}
@@ -65,7 +67,7 @@ export function PromptDetailTags({
           placeholder={t("selectTags")}
           value={selectedTags}
         />
-      </PromptDetailSection>
+      </div>
     );
   }
 
@@ -74,7 +76,10 @@ export function PromptDetailTags({
   }
 
   return (
-    <PromptDetailSection title={t("tags")}>
+    <div className="flex flex-col gap-2 border-border border-b p-4">
+      <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        {t("tags")}
+      </h3>
       <div className="flex flex-wrap gap-2">
         {tagObjects.map((tag) => {
           const Icon = tag.icon;
@@ -89,6 +94,6 @@ export function PromptDetailTags({
           );
         })}
       </div>
-    </PromptDetailSection>
+    </div>
   );
 }
