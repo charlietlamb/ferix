@@ -1,4 +1,4 @@
-import { AppHeader } from "@ferix/ui/components/header/app-header";
+import { DashboardHeader } from "@ferix/ui/components/layout/dashboard-header";
 import { AppSidebar } from "@ferix/ui/components/sidebar/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@ferix/ui/components/ui/sidebar";
 
@@ -7,7 +7,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider className="overflow-hidden" defaultOpen>
       <AppSidebar />
       <SidebarInset>
-        <AppHeader />
+        <DashboardHeader />
         <div className="scrollbar-none min-h-0 flex-1 overflow-auto">
           {children}
         </div>

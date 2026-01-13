@@ -1,10 +1,10 @@
-import {
-  PageHeader,
-  PageHeaderDescription,
-} from "@ferix/ui/components/header/page-header";
 import { ClaudeCodeIcon } from "@ferix/ui/components/icons/claude-code-icon";
 import { CursorIcon } from "@ferix/ui/components/icons/cursor-icon";
 import { OpenCodeLogo } from "@ferix/ui/components/icons/open-code-logo";
+import {
+  PageHeader,
+  PageHeaderDescription,
+} from "@ferix/ui/components/layout/page-header";
 import { useTranslations } from "next-intl";
 
 export function HeroSection() {

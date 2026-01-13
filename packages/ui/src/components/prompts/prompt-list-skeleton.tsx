@@ -1,34 +1,33 @@
 "use client";
 
-import type { Prompt } from "@ferix/server/types";
-import { PromptCell } from "@ferix/ui/components/prompts/prompt-cell";
+import { PromptCellSkeleton } from "@ferix/ui/components/prompts/prompt-cell-skeleton";
 import { PromptListHeader } from "@ferix/ui/components/prompts/prompt-list-header";
 import { cn } from "@ferix/ui/lib/utils";
 
-interface PromptListProps {
-  prompts: Prompt[];
+interface PromptListSkeletonProps {
   title: string;
   viewMorePath: string;
+  count?: number;
 }
 
-export function PromptList({ prompts, title, viewMorePath }: PromptListProps) {
-  if (prompts.length === 0) {
-    return null;
-  }
-
+export function PromptListSkeleton({
+  title,
+  viewMorePath,
+  count = 8,
+}: PromptListSkeletonProps) {
   return (
     <section className="flex flex-col">
       <PromptListHeader title={title} viewMorePath={viewMorePath} />
       <div className="scrollbar-none flex overflow-x-auto border-border border-t">
-        {prompts.map((prompt, index) => (
+        {Array.from({ length: count }).map((_, i) => (
           <div
             className={cn(
               "w-80 shrink-0 border-border border-b",
-              index < prompts.length - 1 && "border-r"
+              i < count - 1 && "border-r"
             )}
-            key={prompt._id}
+            key={i}
           >
-            <PromptCell prompt={prompt} />
+            <PromptCellSkeleton />
           </div>
         ))}
       </div>

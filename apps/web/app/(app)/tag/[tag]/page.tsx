@@ -1,11 +1,12 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
+import { AppPage } from "@ferix/ui/components/layout/app-page";
 import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
-} from "@ferix/ui/components/header/page-header";
+} from "@ferix/ui/components/layout/page-header";
 import { PromptGrid } from "@ferix/ui/components/prompts/prompt-grid";
 import { getTagById } from "@ferix/ui/lib/tags";
 import { usePaginatedQuery } from "convex/react";
@@ -35,7 +36,7 @@ export default function TagPage({ params }: TagPageProps) {
   const Icon = tag.icon;
 
   return (
-    <div>
+    <AppPage>
       <PageHeader className="flex flex-row items-center justify-between">
         <div>
           <PageHeaderTitle>{tag.label}</PageHeaderTitle>
@@ -46,11 +47,10 @@ export default function TagPage({ params }: TagPageProps) {
         <Icon size={24} />
       </PageHeader>
       <PromptGrid
-        hasMore={status === "CanLoadMore"}
-        isLoading={status === "LoadingMore"}
         onLoadMore={() => loadMore(20)}
         prompts={results}
+        status={status}
       />
-    </div>
+    </AppPage>
   );
 }

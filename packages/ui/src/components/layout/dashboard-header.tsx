@@ -4,7 +4,7 @@ import { CreatePromptButton } from "@ferix/ui/components/prompts/create-prompt-b
 import { SidebarTrigger, useSidebar } from "@ferix/ui/components/ui/sidebar";
 import { AnimatePresence, motion } from "motion/react";
 
-export function AppHeader() {
+export function DashboardHeader() {
   const { open } = useSidebar();
 
   return (

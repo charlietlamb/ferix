@@ -31,6 +31,10 @@
   "prompts": {
     "newPrompt": "Create",
     "viewAll": "View All",
+    "empty": {
+      "title": "No prompts found",
+      "description": "There are no prompts to display yet."
+    },
     "popular": {
       "title": "Popular Subagents"
     },

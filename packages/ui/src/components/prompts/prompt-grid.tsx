@@ -2,22 +2,21 @@
 
 import type { Prompt } from "@ferix/server/types";
 import { PromptCell } from "@ferix/ui/components/prompts/prompt-cell";
+import { PromptGridEmpty } from "@ferix/ui/components/prompts/prompt-grid-empty";
+import { PromptGridSkeleton } from "@ferix/ui/components/prompts/prompt-grid-skeleton";
+import type { PaginationStatus } from "convex/browser";
 import { useEffect, useRef } from "react";
 
 interface PromptGridProps {
   prompts: Prompt[];
-  hasMore: boolean;
-  isLoading: boolean;
+  status: PaginationStatus;
   onLoadMore: () => void;
 }
 
-export function PromptGrid({
-  prompts,
-  hasMore,
-  isLoading,
-  onLoadMore,
-}: PromptGridProps) {
+export function PromptGrid({ prompts, status, onLoadMore }: PromptGridProps) {
   const loaderRef = useRef<HTMLDivElement>(null);
+  const hasMore = status === "CanLoadMore";
+  const isLoading = status === "LoadingMore";
 
   useEffect(() => {
     const loader = loaderRef.current;
@@ -38,12 +37,12 @@ export function PromptGrid({
     return () => observer.disconnect();
   }, [hasMore, isLoading, onLoadMore]);
 
+  if (status === "LoadingFirstPage") {
+    return <PromptGridSkeleton />;
+  }
+
   if (prompts.length === 0 && !isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center text-muted-foreground">
-        No prompts found
-      </div>
-    );
+    return <PromptGridEmpty />;
   }
 
   return (

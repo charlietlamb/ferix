@@ -8,12 +8,14 @@ import type { VariantProps } from "class-variance-authority";
 
 interface CreatePromptButtonProps extends VariantProps<typeof buttonVariants> {
   className?: string;
+  children?: React.ReactNode;
 }
 
 export function CreatePromptButton({
   variant = "ghost",
   size = "default",
   className,
+  children,
 }: CreatePromptButtonProps) {
   const { open: openDialog } = useDialog();
 
@@ -25,6 +27,7 @@ export function CreatePromptButton({
       variant={variant}
     >
       <PlusIcon className="size-4" />
+      {children}
     </AuthButton>
   );
 }
