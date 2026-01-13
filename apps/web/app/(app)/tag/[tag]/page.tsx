@@ -7,7 +7,7 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
 } from "@ferix/ui/components/layout/page-header";
-import { PromptGrid } from "@ferix/ui/components/prompts/prompt-grid";
+import { PromptGrid } from "@ferix/ui/components/prompts/grid/prompt-grid";
 import { getTagById } from "@ferix/ui/lib/tags";
 import { usePaginatedQuery } from "convex/react";
 import { notFound } from "next/navigation";

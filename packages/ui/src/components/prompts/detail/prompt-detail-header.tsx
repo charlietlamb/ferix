@@ -3,7 +3,7 @@
 import { useRouter } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
-import { TypeBadge } from "@ferix/ui/components/prompts/type-badge";
+import { TypeBadge } from "@ferix/ui/components/prompts/shared/type-badge";
 import { Button } from "@ferix/ui/components/ui/button";
 import { Input } from "@ferix/ui/components/ui/input";
 import { CopyButton } from "@ferix/ui/components/utils/copy-button";

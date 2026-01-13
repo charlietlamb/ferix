@@ -1,6 +1,6 @@
 "use client";
 
-import { CreatePromptButton } from "@ferix/ui/components/prompts/create-prompt-button";
+import { CreatePromptButton } from "@ferix/ui/components/prompts/create/create-prompt-button";
 import {
   Empty,
   EmptyContent,

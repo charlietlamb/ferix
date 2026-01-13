@@ -1,4 +1,4 @@
-import { PromptCellSkeleton } from "./prompt-cell-skeleton";
+import { PromptCellSkeleton } from "@ferix/ui/components/prompts/cell/prompt-cell-skeleton";
 
 interface PromptGridSkeletonProps {
   count?: number;

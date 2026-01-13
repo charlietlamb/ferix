@@ -1,8 +1,8 @@
 "use client";
 
 import type { Prompt } from "@ferix/server/types";
-import { PromptCell } from "@ferix/ui/components/prompts/prompt-cell";
-import { PromptListHeader } from "@ferix/ui/components/prompts/prompt-list-header";
+import { PromptCell } from "@ferix/ui/components/prompts/cell/prompt-cell";
+import { PromptListHeader } from "@ferix/ui/components/prompts/list/prompt-list-header";
 import { cn } from "@ferix/ui/lib/utils";
 
 interface PromptListProps {

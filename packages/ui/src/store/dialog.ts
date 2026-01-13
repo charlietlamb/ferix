@@ -3,7 +3,7 @@ import { ForgotPasswordDialog } from "../components/auth/forgot-password/forgot-
 import { SignInDialog } from "../components/auth/sign-in/sign-in-dialog";
 import { SignUpDialog } from "../components/auth/sign-up/sign-up-dialog";
 import { ConfirmDialog } from "../components/dialog/confirm-dialog";
-import { CreatePromptDialog } from "../components/prompts/create-prompt-dialog";
+import { CreatePromptDialog } from "../components/prompts/create/create-prompt-dialog";
 import { ChangePasswordDialog } from "../components/settings/change-password-dialog";
 import { SettingsDialog } from "../components/settings/settings-dialog";
 import type { ConfirmDialogProps } from "./dialog-types";

@@ -1,6 +1,6 @@
 "use client";
 
-import { PromptDetailSection } from "@ferix/ui/components/prompts/prompt-detail-section";
+import { PromptDetailSection } from "@ferix/ui/components/prompts/detail/prompt-detail-section";
 import {
   Avatar,
   AvatarFallback,

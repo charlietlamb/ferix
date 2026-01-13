@@ -1,6 +1,6 @@
 "use client";
 
-import { CreatePromptButton } from "@ferix/ui/components/prompts/create-prompt-button";
+import { CreatePromptButton } from "@ferix/ui/components/prompts/create/create-prompt-button";
 import { SidebarTrigger, useSidebar } from "@ferix/ui/components/ui/sidebar";
 import { AnimatePresence, motion } from "motion/react";
 

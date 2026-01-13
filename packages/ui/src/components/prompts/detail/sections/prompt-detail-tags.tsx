@@ -2,7 +2,7 @@
 
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
-import { PromptDetailSection } from "@ferix/ui/components/prompts/prompt-detail-section";
+import { PromptDetailSection } from "@ferix/ui/components/prompts/detail/prompt-detail-section";
 import { MultiSelect } from "@ferix/ui/components/ui/multi-select";
 import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
 import { getTagsByIds, tagsToOptions } from "@ferix/ui/lib/tags";

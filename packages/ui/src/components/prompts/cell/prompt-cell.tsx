@@ -3,7 +3,7 @@
 import { Link } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Prompt } from "@ferix/server/types";
-import { TypeBadge } from "@ferix/ui/components/prompts/type-badge";
+import { TypeBadge } from "@ferix/ui/components/prompts/shared/type-badge";
 import {
   Avatar,
   AvatarFallback,

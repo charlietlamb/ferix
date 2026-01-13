@@ -1,9 +1,9 @@
 "use client";
 
 import type { Prompt } from "@ferix/server/types";
-import { PromptCell } from "@ferix/ui/components/prompts/prompt-cell";
-import { PromptGridEmpty } from "@ferix/ui/components/prompts/prompt-grid-empty";
-import { PromptGridSkeleton } from "@ferix/ui/components/prompts/prompt-grid-skeleton";
+import { PromptCell } from "@ferix/ui/components/prompts/cell/prompt-cell";
+import { PromptGridEmpty } from "@ferix/ui/components/prompts/grid/prompt-grid-empty";
+import { PromptGridSkeleton } from "@ferix/ui/components/prompts/grid/prompt-grid-skeleton";
 import { useInfiniteScroll } from "@ferix/ui/hooks/use-infinite-scroll";
 import type { PaginationStatus } from "convex/browser";
 

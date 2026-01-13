@@ -3,7 +3,7 @@
 import { useRouter } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
-import { PromptDetailSection } from "@ferix/ui/components/prompts/prompt-detail-section";
+import { PromptDetailSection } from "@ferix/ui/components/prompts/detail/prompt-detail-section";
 import { Button } from "@ferix/ui/components/ui/button";
 import { SaveButton } from "@ferix/ui/components/utils/save-button";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";

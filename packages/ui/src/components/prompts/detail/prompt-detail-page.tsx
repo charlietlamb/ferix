@@ -2,9 +2,9 @@
 
 import type { Id } from "@ferix/server/_generated/dataModel";
 import { AppPage } from "@ferix/ui/components/layout/app-page";
-import { PromptDetailContent } from "@ferix/ui/components/prompts/prompt-detail-content";
-import { PromptDetailHeader } from "@ferix/ui/components/prompts/prompt-detail-header";
-import { PromptDetailSidebar } from "@ferix/ui/components/prompts/prompt-detail-sidebar";
+import { PromptDetailContent } from "@ferix/ui/components/prompts/detail/prompt-detail-content";
+import { PromptDetailHeader } from "@ferix/ui/components/prompts/detail/prompt-detail-header";
+import { PromptDetailSidebar } from "@ferix/ui/components/prompts/detail/prompt-detail-sidebar";
 
 interface PromptDetailPageProps {
   prompt: {

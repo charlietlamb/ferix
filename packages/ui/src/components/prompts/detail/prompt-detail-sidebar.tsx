@@ -1,12 +1,12 @@
 "use client";
 
 import type { Id } from "@ferix/server/_generated/dataModel";
-import { PromptDetailActions } from "@ferix/ui/components/prompts/detail/prompt-detail-actions";
-import { PromptDetailAuthor } from "@ferix/ui/components/prompts/detail/prompt-detail-author";
-import { PromptDetailDetails } from "@ferix/ui/components/prompts/detail/prompt-detail-details";
-import { PromptDetailStats } from "@ferix/ui/components/prompts/detail/prompt-detail-stats";
-import { PromptDetailTags } from "@ferix/ui/components/prompts/detail/prompt-detail-tags";
-import { PromptDetailUrlEditor } from "@ferix/ui/components/prompts/detail/prompt-detail-url-editor";
+import { PromptDetailActions } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-actions";
+import { PromptDetailAuthor } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-author";
+import { PromptDetailDetails } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-details";
+import { PromptDetailStats } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-stats";
+import { PromptDetailTags } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-tags";
+import { PromptDetailUrlEditor } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-url-editor";
 
 interface PromptDetailSidebarProps {
   promptId: Id<"prompts">;

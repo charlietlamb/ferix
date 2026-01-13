@@ -1,8 +1,8 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
-import { PromptList } from "@ferix/ui/components/prompts/prompt-list";
-import { PromptListSkeleton } from "@ferix/ui/components/prompts/prompt-list-skeleton";
+import { PromptList } from "@ferix/ui/components/prompts/list/prompt-list";
+import { PromptListSkeleton } from "@ferix/ui/components/prompts/list/prompt-list-skeleton";
 import { usePaginatedQuery } from "convex/react";
 import { useTranslations } from "next-intl";
 

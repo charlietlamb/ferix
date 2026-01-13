@@ -1,7 +1,7 @@
 "use client";
 
-import { PromptCellSkeleton } from "@ferix/ui/components/prompts/prompt-cell-skeleton";
-import { PromptListHeader } from "@ferix/ui/components/prompts/prompt-list-header";
+import { PromptCellSkeleton } from "@ferix/ui/components/prompts/cell/prompt-cell-skeleton";
+import { PromptListHeader } from "@ferix/ui/components/prompts/list/prompt-list-header";
 import { cn } from "@ferix/ui/lib/utils";
 
 interface PromptListSkeletonProps {

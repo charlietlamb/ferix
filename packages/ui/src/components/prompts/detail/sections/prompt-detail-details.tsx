@@ -1,6 +1,6 @@
 "use client";
 
-import { PromptDetailSection } from "@ferix/ui/components/prompts/prompt-detail-section";
+import { PromptDetailSection } from "@ferix/ui/components/prompts/detail/prompt-detail-section";
 import { CalendarIcon } from "@phosphor-icons/react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
