@@ -79,7 +79,7 @@ export function PromptCell({ prompt }: PromptCellProps) {
         </div>
       </div>
 
-      <div className="w-full flex-1 overflow-hidden rounded border border-border/50 bg-black/20">
+      <div className="w-full flex-1 overflow-hidden rounded border border-border/50 bg-muted">
         <div className="flex items-center gap-1.5 border-border/50 border-b px-3 py-2">
           <div className="size-2 rounded-full bg-red-500/60" />
           <div className="size-2 rounded-full bg-yellow-500/60" />
