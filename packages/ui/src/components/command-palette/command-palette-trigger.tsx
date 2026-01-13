@@ -11,7 +11,7 @@ export function CommandPaletteTrigger() {
 
   return (
     <Button
-      className="h-8 flex-1 justify-start gap-2 px-2 text-muted-foreground md:max-w-64"
+      className="h-8 w-full justify-start gap-2 px-2 text-muted-foreground"
       onClick={() => open("commandPaletteDialog")}
       variant="outline"
     >

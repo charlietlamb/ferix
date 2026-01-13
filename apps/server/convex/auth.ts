@@ -3,10 +3,12 @@ import { convex } from "@convex-dev/better-auth/plugins";
 import { env } from "@ferix/env/convex";
 import { sendPasswordResetEmail } from "@ferix/notifications/emails/password-reset";
 import { betterAuth } from "better-auth";
+import { username } from "better-auth/plugins";
 import { components } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import authConfig from "./auth.config";
+import { generateUniqueUsername } from "./users";
 
 export const authComponent = createClient<DataModel>(components.betterAuth);
 
@@ -28,7 +30,37 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
         clientSecret: env.GITHUB_CLIENT_SECRET,
       },
     },
-    plugins: [convex({ authConfig })],
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            if (user.username) {
+              return { data: user };
+            }
+
+            const generatedUsername = await generateUniqueUsername(
+              ctx.runQuery,
+              user.name
+            );
+
+            return {
+              data: {
+                ...user,
+                username: generatedUsername,
+                displayUsername: generatedUsername,
+              },
+            };
+          },
+        },
+      },
+    },
+    plugins: [
+      convex({ authConfig }),
+      username({
+        minUsernameLength: 3,
+        maxUsernameLength: 30,
+      }),
+    ],
   });
 };
 

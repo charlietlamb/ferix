@@ -9,12 +9,14 @@ interface TextFieldProps {
   label: string;
   type?: string;
   placeholder?: string;
+  onValueChange?: (value: string) => void;
 }
 
 export function TextField({
   label,
   type = "text",
   placeholder,
+  onValueChange,
 }: TextFieldProps) {
   const field = useFieldContext<string>();
 
@@ -24,7 +26,10 @@ export function TextField({
       <Input
         id={field.name}
         onBlur={field.handleBlur}
-        onChange={(e) => field.handleChange(e.target.value)}
+        onChange={(e) => {
+          field.handleChange(e.target.value);
+          onValueChange?.(e.target.value);
+        }}
         placeholder={placeholder}
         type={type}
         value={field.state.value}
