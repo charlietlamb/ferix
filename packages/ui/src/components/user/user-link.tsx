@@ -28,20 +28,27 @@ export function UserLink({
   const router = useRouter();
 
   const content = (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div
+      className={cn(
+        "group/user-link flex cursor-pointer items-center gap-2",
+        className
+      )}
+    >
       {showAvatar && (
         <Avatar size={avatarSize}>
           {image && <AvatarImage alt={name} src={image} />}
           <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
-      <div className="flex min-w-0 flex-col">
-        <span className="max-w-20 truncate text-foreground text-xs">
-          {name}
-        </span>
+      <div className="flex min-w-0 flex-col items-start">
+        {name && (
+          <span className="max-w-20 truncate text-muted-foreground text-xs transition-colors group-hover/user-link:text-foreground">
+            {name}
+          </span>
+        )}
         {username && (
-          <span className="max-w-20 truncate text-muted-foreground text-xs">
-            {username}
+          <span className="max-w-20 truncate text-muted-foreground text-xs underline-offset-2 transition-colors group-hover/user-link:text-foreground group-hover/user-link:underline">
+            @{username}
           </span>
         )}
       </div>
@@ -51,7 +58,7 @@ export function UserLink({
   if (username) {
     return (
       <button
-        className="transition-opacity hover:opacity-80"
+        className="text-left"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
