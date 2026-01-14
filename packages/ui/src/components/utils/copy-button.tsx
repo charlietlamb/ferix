@@ -5,6 +5,7 @@ import type { Id } from "@ferix/server/_generated/dataModel";
 import { Button } from "@ferix/ui/components/ui/button";
 import { useCopy } from "@ferix/ui/hooks/use-copy";
 import { cn } from "@ferix/ui/lib/utils";
+import type { Icon } from "@phosphor-icons/react";
 import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { useMutation } from "convex/react";
 
@@ -14,6 +15,7 @@ interface CopyButtonProps {
   onCopy?: () => void;
   showOnHover?: boolean;
   className?: string;
+  icon?: Icon;
 }
 
 export function CopyButton({
@@ -22,9 +24,11 @@ export function CopyButton({
   onCopy,
   showOnHover,
   className,
+  icon: IconComponent,
 }: CopyButtonProps) {
   const { copy, copied } = useCopy();
   const recordDownload = useMutation(api.prompts.recordDownload);
+  const DefaultIcon = IconComponent ?? CopyIcon;
 
   const handleCopy = (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -48,7 +52,7 @@ export function CopyButton({
       {copied ? (
         <CheckIcon className="size-4 text-green-500" />
       ) : (
-        <CopyIcon
+        <DefaultIcon
           className={cn(
             "size-4",
             showOnHover &&

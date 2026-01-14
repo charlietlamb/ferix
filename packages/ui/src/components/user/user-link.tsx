@@ -42,7 +42,7 @@ export function UserLink({
       )}
       <div className="flex min-w-0 flex-col items-start">
         {name && (
-          <span className="max-w-20 truncate text-muted-foreground text-xs transition-colors group-hover/user-link:text-foreground">
+          <span className="max-w-20 truncate text-foreground text-xs">
             {name}
           </span>
         )}

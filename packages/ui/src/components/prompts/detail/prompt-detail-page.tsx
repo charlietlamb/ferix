@@ -70,6 +70,7 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
             isCreator={prompt.isCreator}
             isSaved={prompt.isSaved}
             promptId={prompt._id}
+            slug={prompt.slug}
           />
         </aside>
       </div>

@@ -15,7 +15,10 @@ export function PromptDetailSkeleton() {
               <Skeleton className="h-7 w-48" />
               <Skeleton className="h-5 w-16 rounded-full" />
             </div>
-            <Skeleton className="size-8" />
+            <div className="flex items-center gap-1">
+              <Skeleton className="size-8" />
+              <Skeleton className="size-8" />
+            </div>
           </div>
 
           {/* Editor toolbar */}
@@ -65,9 +68,20 @@ export function PromptDetailSkeleton() {
             </div>
           </div>
 
+          {/* URL Editor */}
+          <div className="flex flex-col gap-2 border-border border-b p-4">
+            <Skeleton className="h-3 w-8" />
+            <div className="flex items-center justify-between gap-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="size-7" />
+            </div>
+          </div>
+
           {/* Actions */}
           <div className="flex flex-col gap-2 p-4">
             <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
           </div>

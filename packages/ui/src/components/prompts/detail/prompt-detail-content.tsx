@@ -62,6 +62,7 @@ export function PromptDetailContent({
       <PromptDetailHeader
         content={content}
         promptId={promptId}
+        slug={slug}
         title={title}
         type={type}
       />
