@@ -53,7 +53,7 @@ export function CommandPalette() {
       setTheme(resolvedTheme === "dark" ? "light" : "dark");
     } else if (item.action === "createPromptDialog") {
       if (isAuthenticated) {
-        openDialog("createPromptDialog");
+        router.push("/create-prompt");
       } else {
         openDialog("signInDialog");
       }
@@ -104,7 +104,9 @@ export function CommandPalette() {
                             value={item.id}
                           >
                             {Icon && <Icon className="size-4" />}
-                            <span className="flex-1">{item.label}</span>
+                            <span className="flex-1">
+                              {item.labelKey ? t(item.labelKey) : item.label}
+                            </span>
                             {item.description && (
                               <span className="text-muted-foreground text-xs">
                                 {item.description}

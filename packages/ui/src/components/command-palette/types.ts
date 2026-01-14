@@ -3,7 +3,8 @@ export type CommandItemType = "tag" | "prompt" | "action" | "page";
 export interface CommandItemData {
   id: string;
   type: CommandItemType;
-  label: string;
+  label?: string;
+  labelKey?: string;
   description?: string;
   icon?: React.ComponentType<{ size?: number; className?: string }>;
   keywords?: string[];

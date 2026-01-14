@@ -35,6 +35,7 @@ interface MultiSelectProps {
   className?: string;
   badgeClassName?: string;
   groupBy?: boolean;
+  dropdownPosition?: "top" | "bottom";
 }
 
 export function MultiSelect({
@@ -50,6 +51,7 @@ export function MultiSelect({
   className,
   badgeClassName,
   groupBy = false,
+  dropdownPosition = "top",
 }: MultiSelectProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -198,7 +200,12 @@ export function MultiSelect({
       </div>
       <div className="relative mt-2">
         {open && filteredOptions.length > 0 && (
-          <div className="bg-popover text-popover-foreground animate-in absolute bottom-full z-50 mb-1 w-full rounded-md border shadow-md outline-none">
+          <div
+            className={cn(
+              "bg-popover text-popover-foreground animate-in absolute z-50 w-full rounded-md border shadow-md outline-none",
+              dropdownPosition === "top" ? "bottom-full mb-1" : "top-0 mt-1"
+            )}
+          >
             <CommandList className="max-h-64 overflow-y-auto">
               {Object.entries(groupedOptions).map(([group, groupOptions]) => (
                 <CommandGroup
@@ -240,7 +247,12 @@ export function MultiSelect({
           </div>
         )}
         {open && filteredOptions.length === 0 && (
-          <div className="bg-popover text-popover-foreground animate-in absolute bottom-full z-50 mb-1 w-full rounded-md border shadow-md outline-none">
+          <div
+            className={cn(
+              "bg-popover text-popover-foreground animate-in absolute z-50 w-full rounded-md border shadow-md outline-none",
+              dropdownPosition === "top" ? "bottom-full mb-1" : "top-0 mt-1"
+            )}
+          >
             <CommandList className="max-h-64 overflow-y-auto">
               <CommandEmpty className="text-muted-foreground">
                 {emptyIndicator || "No results found."}

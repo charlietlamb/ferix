@@ -1,7 +1,8 @@
 "use client";
 
-import { AuthButton } from "@ferix/ui/components/auth/auth-button";
-import type { buttonVariants } from "@ferix/ui/components/ui/button";
+import { useRouter } from "@ferix/i18n/navigation";
+import { Button, type buttonVariants } from "@ferix/ui/components/ui/button";
+import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
 import { PlusIcon } from "@phosphor-icons/react";
 import type { VariantProps } from "class-variance-authority";
@@ -17,17 +18,27 @@ export function CreatePromptButton({
   className,
   children,
 }: CreatePromptButtonProps) {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthenticated();
   const { open: openDialog } = useDialog();
 
+  const handleClick = () => {
+    if (isAuthenticated) {
+      router.push("/create-prompt");
+    } else {
+      openDialog("signInDialog");
+    }
+  };
+
   return (
-    <AuthButton
+    <Button
       className={className}
-      onAuthenticatedClick={() => openDialog("createPromptDialog")}
+      onClick={handleClick}
       size={size}
       variant={variant}
     >
       <PlusIcon className="size-4" />
       {children}
-    </AuthButton>
+    </Button>
   );
 }

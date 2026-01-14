@@ -5,7 +5,7 @@ const actions: (CommandItemData & { keywords?: string[] })[] = [
   {
     id: "action-create-prompt",
     type: "action",
-    label: "Create Prompt",
+    labelKey: "actionsCreatePrompt",
     icon: PlusIcon,
     action: "createPromptDialog",
     keywords: ["new", "add", "create"],
@@ -13,7 +13,7 @@ const actions: (CommandItemData & { keywords?: string[] })[] = [
   {
     id: "action-settings",
     type: "action",
-    label: "Settings",
+    labelKey: "actionsSettings",
     icon: GearIcon,
     action: "settingsDialog",
     keywords: ["preferences", "config"],
@@ -21,7 +21,7 @@ const actions: (CommandItemData & { keywords?: string[] })[] = [
   {
     id: "action-toggle-theme",
     type: "action",
-    label: "Toggle Theme",
+    labelKey: "actionsToggleTheme",
     icon: MoonIcon,
     action: "toggleTheme",
     keywords: ["dark", "light", "mode"],

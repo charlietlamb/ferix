@@ -43,7 +43,7 @@ export const create = mutation({
       createdAt: now,
     });
 
-    return promptId;
+    return { promptId, slug };
   },
 });
 
@@ -292,10 +292,10 @@ export const listByTag = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const allPrompts = await ctx.db.query("prompts").order("desc").collect();
-    const filtered = allPrompts.filter((prompt) =>
-      prompt.tags.includes(args.tag)
-    );
+    const allPrompts = await ctx.db.query("prompts").collect();
+    const filtered = allPrompts
+      .filter((prompt) => prompt.tags.includes(args.tag))
+      .sort((a, b) => (b.downloads ?? 0) - (a.downloads ?? 0));
 
     // Manual pagination on filtered results
     const startIndex = args.paginationOpts.cursor

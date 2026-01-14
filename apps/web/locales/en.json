@@ -43,7 +43,7 @@
       "title": "Recent Subagents"
     },
     "create": {
-      "title": "Create Prompt",
+      "title": "Create",
       "description": "Create a new prompt",
       "titleLabel": "Title",
       "titlePlaceholder": "My prompt",
@@ -135,7 +135,27 @@
     "prompts": "Prompts",
     "tags": "Tags",
     "pages": "Pages",
-    "actions": "Actions"
+    "actions": "Actions",
+    "actionsCreatePrompt": "Create",
+    "actionsSettings": "Settings",
+    "actionsToggleTheme": "Toggle Theme"
+  },
+  "promptNew": {
+    "title": "New Prompt",
+    "titlePlaceholder": "Enter prompt title...",
+    "contentPlaceholder": "Enter your prompt content...",
+    "create": "Create",
+    "creating": "Creating...",
+    "success": "Prompt created successfully",
+    "error": "Failed to create",
+    "draftSaved": "Draft saved locally",
+    "tags": "Tags",
+    "tagsPlaceholder": "Select tags...",
+    "authRequired": {
+      "title": "Sign in required",
+      "description": "Sign in to create and share prompts",
+      "signIn": "Sign In"
+    }
   },
   "auth": {
     "emailVerified": "Email verified successfully",

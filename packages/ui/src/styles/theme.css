@@ -7,9 +7,9 @@
   --popover: oklch(0.99 0.005 260);
   --popover-foreground: oklch(0.15 0.02 260);
 
-  /* Primary - rich amber/gold with WCAG AA contrast */
+  /* Primary - rich amber/gold with light text for contrast */
   --primary: oklch(0.65 0.18 90);
-  --primary-foreground: oklch(0.15 0.02 260);
+  --primary-foreground: oklch(0.99 0.005 260);
 
   /* Secondary - subtle cool surface */
   --secondary: oklch(0.95 0.008 260);
@@ -41,7 +41,7 @@
   --sidebar: oklch(0.97 0.01 260);
   --sidebar-foreground: oklch(0.15 0.02 260);
   --sidebar-primary: oklch(0.65 0.18 90);
-  --sidebar-primary-foreground: oklch(0.15 0.02 260);
+  --sidebar-primary-foreground: oklch(0.99 0.005 260);
   --sidebar-accent: oklch(0.94 0.01 260);
   --sidebar-accent-foreground: oklch(0.15 0.02 260);
   --sidebar-border: oklch(0.88 0.01 260);

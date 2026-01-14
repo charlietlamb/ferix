@@ -4,7 +4,7 @@ import type { Id } from "@ferix/server/_generated/dataModel";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UsePromptDraftOptions {
-  promptId: Id<"prompts">;
+  promptId?: Id<"prompts">;
   serverContent: string;
   debounceMs?: number;
 }
@@ -23,7 +23,7 @@ export function usePromptDraft({
   serverContent,
   debounceMs = 1000,
 }: UsePromptDraftOptions): UsePromptDraftReturn {
-  const storageKey = `prompt-draft-${promptId}`;
+  const storageKey = promptId ? `prompt-draft-${promptId}` : "prompt-draft-new";
 
   // Initialize from localStorage or server content
   const [content, setContent] = useState(() => {
