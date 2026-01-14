@@ -3,6 +3,21 @@
     "title": "A directory of high quailty subagents for",
     "description": "Explore the latest and most popular subagents created by our community."
   },
+  "stats": {
+    "prompts": "prompts",
+    "downloads": "downloads",
+    "creators": "creators",
+    "categories": "categories"
+  },
+  "categories": {
+    "promptCount": "{count} prompts"
+  },
+  "cta": {
+    "title": "Share your subagents",
+    "description": "Help the community by sharing your prompts and rules",
+    "create": "Create",
+    "browse": "Browse Popular"
+  },
   "ui": {
     "form": {
       "loading": "Loading..."
