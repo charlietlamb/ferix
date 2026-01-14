@@ -27,7 +27,11 @@ export async function enrichPrompts<T extends Doc<"prompts">>(
       return {
         ...prompt,
         creator: creator
-          ? { name: creator.name, image: creator.image ?? null }
+          ? {
+              name: creator.name,
+              image: creator.image ?? null,
+              username: creator.username ?? null,
+            }
           : null,
         isSaved: savedPromptIds.has(prompt._id.toString()),
       };

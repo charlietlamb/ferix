@@ -4,11 +4,7 @@ import { Link } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Prompt } from "@ferix/server/types";
 import { TypeBadge } from "@ferix/ui/components/prompts/shared/type-badge";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@ferix/ui/components/ui/avatar";
+import { UserLink } from "@ferix/ui/components/user/user-link";
 import { SaveButton } from "@ferix/ui/components/utils/save-button";
 import { useCopy } from "@ferix/ui/hooks/use-copy";
 import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
@@ -94,20 +90,11 @@ export function PromptCell({ prompt }: PromptCellProps) {
 
       <div className="flex items-center justify-between text-muted-foreground text-xs">
         {prompt.creator ? (
-          <div className="flex items-center gap-2">
-            <Avatar size="sm">
-              {prompt.creator.image && (
-                <AvatarImage
-                  alt={prompt.creator.name}
-                  src={prompt.creator.image}
-                />
-              )}
-              <AvatarFallback>
-                {prompt.creator.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <span className="max-w-20 truncate">{prompt.creator.name}</span>
-          </div>
+          <UserLink
+            image={prompt.creator.image}
+            name={prompt.creator.name}
+            username={prompt.creator.username}
+          />
         ) : (
           <div />
         )}

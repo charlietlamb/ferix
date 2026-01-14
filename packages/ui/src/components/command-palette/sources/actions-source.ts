@@ -40,7 +40,9 @@ export const actionsSource: CommandSource = {
     }
 
     return actions.filter((action) => {
-      const matchesLabel = action.label.toLowerCase().includes(normalizedQuery);
+      const matchesLabel = action.labelKey
+        .toLowerCase()
+        .includes(normalizedQuery);
       const matchesKeywords = action.keywords?.some((k) =>
         k.toLowerCase().includes(normalizedQuery)
       );

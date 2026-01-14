@@ -1,7 +1,11 @@
 import type { Doc } from "./_generated/dataModel";
 
 export type Prompt = Doc<"prompts"> & {
-  creator: { name: string; image: string | null } | null;
+  creator: {
+    name: string;
+    image: string | null;
+    username: string | null;
+  } | null;
   isSaved: boolean;
 };
 

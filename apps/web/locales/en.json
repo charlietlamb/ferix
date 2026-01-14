@@ -27,6 +27,12 @@
     "tag": {
       "title": "Tag",
       "description": "Explore prompts tagged with"
+    },
+    "user": {
+      "prompts": "prompts",
+      "downloads": "downloads",
+      "created": "Created",
+      "saved": "Saved"
     }
   },
   "prompts": {

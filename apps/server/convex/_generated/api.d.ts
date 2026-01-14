@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as lib_slug from "../lib/slug.js";
 import type * as migrations from "../migrations.js";
+import type * as profiles from "../profiles.js";
 import type * as prompts from "../prompts.js";
 import type * as types from "../types.js";
 import type * as users from "../users.js";
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/slug": typeof lib_slug;
   migrations: typeof migrations;
+  profiles: typeof profiles;
   prompts: typeof prompts;
   types: typeof types;
   users: typeof users;

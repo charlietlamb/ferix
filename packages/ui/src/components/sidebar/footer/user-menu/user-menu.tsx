@@ -9,13 +9,19 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@ferix/ui/components/ui/dropdown-menu";
 import type { User } from "better-auth";
+import { ProfileItem } from "./profile-item";
 import { SettingsItem } from "./settings-item";
 import { SignOutItem } from "./sign-out-item";
 
-export function UserMenu({ user }: { user: User }) {
+type UserWithUsername = User & {
+  username?: string | null;
+};
+
+export function UserMenu({ user }: { user: UserWithUsername }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <DropdownMenu>
@@ -26,6 +32,12 @@ export function UserMenu({ user }: { user: User }) {
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" side="top">
+          {user.username && (
+            <>
+              <ProfileItem username={user.username} />
+              <DropdownMenuSeparator />
+            </>
+          )}
           <SettingsItem />
           <SignOutItem />
         </DropdownMenuContent>
