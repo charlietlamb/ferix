@@ -52,7 +52,12 @@ export function SignInForm({ onSuccess, onForgotPassword }: SignInFormProps) {
         )}
       </form.AppField>
       <form.AppField name="password">
-        {(field) => <field.PasswordField label={t("password")} />}
+        {(field) => (
+          <field.PasswordField
+            label={t("password")}
+            placeholder={t("passwordPlaceholder")}
+          />
+        )}
       </form.AppField>
       {onForgotPassword && (
         <div className="text-right">

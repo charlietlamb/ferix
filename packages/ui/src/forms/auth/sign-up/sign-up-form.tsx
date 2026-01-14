@@ -3,11 +3,14 @@
 import { signUp } from "@ferix/auth/client";
 import { useAppForm } from "@ferix/ui/hooks/use-app-form";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { toast } from "sonner";
+import { SignUpComplete } from "./sign-up-complete";
 import { signUpFormDefaults, signUpFormSchema } from "./sign-up-form-schema";
 
-export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
+export function SignUpForm() {
   const t = useTranslations("auth.signUp");
+  const [isComplete, setIsComplete] = useState(false);
 
   const form = useAppForm({
     defaultValues: signUpFormDefaults,
@@ -26,9 +29,13 @@ export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
         return;
       }
 
-      onSuccess?.();
+      setIsComplete(true);
     },
   });
+
+  if (isComplete) {
+    return <SignUpComplete />;
+  }
 
   return (
     <form
@@ -51,7 +58,12 @@ export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
         )}
       </form.AppField>
       <form.AppField name="password">
-        {(field) => <field.PasswordField label={t("password")} />}
+        {(field) => (
+          <field.PasswordField
+            label={t("password")}
+            placeholder={t("passwordPlaceholder")}
+          />
+        )}
       </form.AppField>
       <form.AppForm>
         <form.SubmitButton label={t("submit")} />

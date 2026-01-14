@@ -2,6 +2,7 @@ import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
 import { env } from "@ferix/env/convex";
 import { sendPasswordResetEmail } from "@ferix/notifications/emails/password-reset";
+import { sendVerificationEmail } from "@ferix/notifications/emails/verification";
 import { betterAuth } from "better-auth";
 import { username } from "better-auth/plugins";
 import { components } from "./_generated/api";
@@ -19,9 +20,21 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
     database: authComponent.adapter(ctx),
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: false,
+      requireEmailVerification: true,
       sendResetPassword: async ({ user, url }) => {
         await sendPasswordResetEmail({ to: user.email, resetUrl: url });
+      },
+    },
+    emailVerification: {
+      autoSignInAfterVerification: true,
+      sendOnSignUp: true,
+      sendVerificationEmail: async ({ user, url }) => {
+        const verifyUrl = new URL(url);
+        verifyUrl.searchParams.set("callbackURL", "/?verified=true");
+        await sendVerificationEmail({
+          to: user.email,
+          verifyUrl: verifyUrl.toString(),
+        });
       },
     },
     socialProviders: {

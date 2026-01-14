@@ -6,14 +6,14 @@ import { FormCard } from "@ferix/ui/components/form/form-card";
 import { useTranslations } from "next-intl";
 import { SignUpForm } from "../../../forms/auth/sign-up/sign-up-form";
 
-export function SignUpCard({ onSuccess }: { onSuccess?: () => void }) {
+export function SignUpCard() {
   const t = useTranslations("auth.signUp");
   const router = useRouter();
 
   return (
     <FormCard description={t("description")} title={t("title")}>
       <div>
-        <SignUpForm onSuccess={onSuccess} />
+        <SignUpForm />
         <AuthFormFooter
           mode="signUp"
           onSwitchForm={() => router.push("/sign-in")}

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getLocale, getMessages } from "next-intl/server";
+import { Suspense } from "react";
 import "@ferix/ui/styles/globals.css";
 import { Providers } from "./providers";
+import { VerifiedToast } from "./verified-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +35,9 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers locale={locale} messages={messages}>
+          <Suspense>
+            <VerifiedToast />
+          </Suspense>
           {children}
         </Providers>
       </body>

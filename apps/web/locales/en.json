@@ -138,12 +138,14 @@
     "actions": "Actions"
   },
   "auth": {
+    "emailVerified": "Email verified successfully",
     "signIn": {
       "title": "Sign In",
       "description": "Enter your credentials to continue",
       "email": "Email",
       "emailPlaceholder": "you@example.com",
       "password": "Password",
+      "passwordPlaceholder": "Enter your password",
       "submit": "Sign In",
       "or": "or",
       "continueWithGithub": "Continue with GitHub",
@@ -172,6 +174,7 @@
       "email": "Email",
       "emailPlaceholder": "you@example.com",
       "password": "Password",
+      "passwordPlaceholder": "Enter your password",
       "submit": "Sign Up",
       "or": "or",
       "continueWithGithub": "Continue with GitHub",
@@ -180,13 +183,17 @@
       "success": "Account created successfully",
       "error": "Failed to sign up",
       "githubSuccess": "Signed up with GitHub",
-      "githubError": "Failed to sign up with GitHub"
+      "githubError": "Failed to sign up with GitHub",
+      "successTitle": "Check your email",
+      "successDescription": "We've sent you a verification link. Please check your email to verify your account and sign in."
     },
     "resetPassword": {
       "title": "Reset Password",
       "description": "Enter your new password",
       "password": "New Password",
+      "passwordPlaceholder": "Enter your new password",
       "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your new password",
       "submit": "Reset Password",
       "success": "Password reset successfully",
       "error": "Failed to reset password",

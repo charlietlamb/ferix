@@ -4,7 +4,6 @@ import { AuthFormFooter } from "@ferix/ui/components/auth/auth-form-footer";
 import { BaseDialog } from "@ferix/ui/components/dialog/base-dialog";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
 import { useTranslations } from "next-intl";
-import { toast } from "sonner";
 import { SignUpForm } from "../../../forms/auth/sign-up/sign-up-form";
 
 export function SignUpDialog() {
@@ -17,12 +16,7 @@ export function SignUpDialog() {
       dialogKey="signUpDialog"
       title={t("title")}
     >
-      <SignUpForm
-        onSuccess={() => {
-          close();
-          toast.success(t("success"));
-        }}
-      />
+      <SignUpForm />
       <AuthFormFooter
         mode="signUp"
         onSwitchForm={() => {

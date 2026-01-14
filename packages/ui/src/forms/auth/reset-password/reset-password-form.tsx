@@ -33,7 +33,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       }
 
       toast.success(t("success"));
-      router.push("/sign-in");
+      router.push("/");
     },
   });
 
@@ -46,10 +46,20 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       }}
     >
       <form.AppField name="password">
-        {(field) => <field.PasswordField label={t("password")} />}
+        {(field) => (
+          <field.PasswordField
+            label={t("password")}
+            placeholder={t("passwordPlaceholder")}
+          />
+        )}
       </form.AppField>
       <form.AppField name="confirmPassword">
-        {(field) => <field.PasswordField label={t("confirmPassword")} />}
+        {(field) => (
+          <field.PasswordField
+            label={t("confirmPassword")}
+            placeholder={t("confirmPasswordPlaceholder")}
+          />
+        )}
       </form.AppField>
       <form.AppForm>
         <form.SubmitButton label={t("submit")} />
