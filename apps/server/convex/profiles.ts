@@ -56,33 +56,17 @@ export const listCreatedPrompts = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const allPrompts = await ctx.db
+    // Use compound index for efficient pagination sorted by downloads
+    const results = await ctx.db
       .query("prompts")
-      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
-      .collect();
-
-    // Sort by downloads (most popular first)
-    const sorted = allPrompts.sort(
-      (a, b) => (b.downloads ?? 0) - (a.downloads ?? 0)
-    );
-
-    // Manual pagination
-    const startIndex = args.paginationOpts.cursor
-      ? sorted.findIndex(
-          (p) => p._id === (args.paginationOpts.cursor as unknown)
-        ) + 1
-      : 0;
-    const pageData = sorted.slice(
-      startIndex,
-      startIndex + args.paginationOpts.numItems
-    );
-    const hasMore = startIndex + args.paginationOpts.numItems < sorted.length;
-    const nextCursor = hasMore ? pageData.at(-1)?._id : null;
+      .withIndex("by_userId_downloads", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .paginate(args.paginationOpts);
 
     return {
-      page: await enrichPrompts(ctx, pageData),
-      isDone: !hasMore,
-      continueCursor: (nextCursor ?? "") as string,
+      page: await enrichPrompts(ctx, results.page),
+      isDone: results.isDone,
+      continueCursor: results.continueCursor,
     };
   },
 });
@@ -93,35 +77,22 @@ export const listSavedPrompts = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const saves = await ctx.db
+    // Use proper Convex pagination instead of collect + manual slicing
+    const savesPage = await ctx.db
       .query("saves")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .order("desc")
-      .collect();
-
-    const startIndex = args.paginationOpts.cursor
-      ? saves.findIndex(
-          (s) => s._id === (args.paginationOpts.cursor as unknown)
-        ) + 1
-      : 0;
-    const pageData = saves.slice(
-      startIndex,
-      startIndex + args.paginationOpts.numItems
-    );
-    const hasMore = startIndex + args.paginationOpts.numItems < saves.length;
-    const nextCursor = hasMore ? pageData.at(-1)?._id : null;
+      .paginate(args.paginationOpts);
 
     const prompts = await Promise.all(
-      pageData.map((save) => ctx.db.get(save.promptId))
+      savesPage.page.map((save) => ctx.db.get(save.promptId))
     );
     const validPrompts = prompts.filter((p): p is Doc<"prompts"> => p !== null);
 
-    const enriched = await enrichPrompts(ctx, validPrompts);
-
     return {
-      page: enriched,
-      isDone: !hasMore,
-      continueCursor: (nextCursor ?? "") as string,
+      page: await enrichPrompts(ctx, validPrompts),
+      isDone: savesPage.isDone,
+      continueCursor: savesPage.continueCursor,
     };
   },
 });

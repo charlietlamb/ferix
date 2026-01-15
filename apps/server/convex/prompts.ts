@@ -408,35 +408,22 @@ export const listSaved = query({
       return { page: [], isDone: true, continueCursor: "" as string };
     }
 
-    const saves = await ctx.db
+    // Use proper Convex pagination instead of collect + manual slicing
+    const savesPage = await ctx.db
       .query("saves")
       .withIndex("by_userId", (q) => q.eq("userId", user._id))
       .order("desc")
-      .collect();
-
-    const startIndex = args.paginationOpts.cursor
-      ? saves.findIndex(
-          (s) => s._id === (args.paginationOpts.cursor as unknown)
-        ) + 1
-      : 0;
-    const pageData = saves.slice(
-      startIndex,
-      startIndex + args.paginationOpts.numItems
-    );
-    const hasMore = startIndex + args.paginationOpts.numItems < saves.length;
-    const nextCursor = hasMore ? pageData.at(-1)?._id : null;
+      .paginate(args.paginationOpts);
 
     const prompts = await Promise.all(
-      pageData.map((save) => ctx.db.get(save.promptId))
+      savesPage.page.map((save) => ctx.db.get(save.promptId))
     );
     const validPrompts = prompts.filter((p): p is Doc<"prompts"> => p !== null);
 
-    const enriched = await enrichPrompts(ctx, validPrompts);
-
     return {
-      page: enriched,
-      isDone: !hasMore,
-      continueCursor: (nextCursor ?? "") as string,
+      page: await enrichPrompts(ctx, validPrompts),
+      isDone: savesPage.isDone,
+      continueCursor: savesPage.continueCursor,
     };
   },
 });

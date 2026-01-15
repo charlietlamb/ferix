@@ -1,5 +1,6 @@
 "use client";
 
+import { DirectoryItem } from "@ferix/ui/components/directory/directory-item";
 import { Button } from "@ferix/ui/components/ui/button";
 import { MultiSelect } from "@ferix/ui/components/ui/multi-select";
 import {
@@ -78,27 +79,9 @@ export function PromptNewSidebar({
           value={directoryId ?? "none"}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder={t("directoryPlaceholder")}>
+            <SelectValue>
               {currentDirectory ? (
-                <div className="flex items-center gap-2">
-                  {/* biome-ignore lint: public svg */}
-                  <img
-                    alt={currentDirectory.name}
-                    className="size-4 object-contain dark:hidden"
-                    height={16}
-                    src={currentDirectory.lightImageUrl}
-                    width={16}
-                  />
-                  {/* biome-ignore lint: public svg */}
-                  <img
-                    alt={currentDirectory.name}
-                    className="hidden size-4 object-contain dark:block"
-                    height={16}
-                    src={currentDirectory.darkImageUrl}
-                    width={16}
-                  />
-                  {currentDirectory.name}
-                </div>
+                <DirectoryItem directory={currentDirectory} />
               ) : (
                 t("noDirectory")
               )}
@@ -108,23 +91,7 @@ export function PromptNewSidebar({
             <SelectItem value="none">{t("noDirectory")}</SelectItem>
             {directories.map((directory) => (
               <SelectItem key={directory.id} value={directory.id}>
-                {/* biome-ignore lint: public svg */}
-                <img
-                  alt={directory.name}
-                  className="size-4 object-contain dark:hidden"
-                  height={16}
-                  src={directory.lightImageUrl}
-                  width={16}
-                />
-                {/* biome-ignore lint: public svg */}
-                <img
-                  alt={directory.name}
-                  className="hidden size-4 object-contain dark:block"
-                  height={16}
-                  src={directory.darkImageUrl}
-                  width={16}
-                />
-                {directory.name}
+                <DirectoryItem directory={directory} />
               </SelectItem>
             ))}
           </SelectContent>

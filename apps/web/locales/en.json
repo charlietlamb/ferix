@@ -168,6 +168,7 @@
     "url": "URL",
     "slugSaved": "URL updated",
     "slugError": "Failed to update URL",
+    "slugConflict": "This URL is already taken",
     "selectTags": "Select tags...",
     "tagsSaved": "Tags updated",
     "tagsError": "Failed to update tags",

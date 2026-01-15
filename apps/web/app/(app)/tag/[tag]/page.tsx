@@ -37,7 +37,7 @@ export default function TagPage({ params }: TagPageProps) {
 
   return (
     <AppPage>
-      <PageHeader className="flex flex-row items-center justify-between">
+      <PageHeader className="flex flex-row items-center justify-between border-border border-b">
         <div>
           <PageHeaderTitle>{tag.label}</PageHeaderTitle>
           <PageHeaderDescription>
@@ -47,6 +47,7 @@ export default function TagPage({ params }: TagPageProps) {
         <Icon size={24} />
       </PageHeader>
       <PromptGrid
+        hideBorderTop
         onLoadMore={() => loadMore(20)}
         prompts={results}
         status={status}

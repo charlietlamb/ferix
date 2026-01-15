@@ -19,7 +19,8 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_slug", ["slug"])
     .index("by_type", ["type"])
-    .index("by_downloads", ["downloads"]),
+    .index("by_downloads", ["downloads"])
+    .index("by_userId_downloads", ["userId", "downloads"]),
 
   commits: defineTable({
     promptId: v.id("prompts"),

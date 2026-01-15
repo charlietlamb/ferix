@@ -21,11 +21,12 @@ export default function RecentPage() {
 
   return (
     <AppPage>
-      <PageHeader>
+      <PageHeader className="border-border border-b">
         <PageHeaderTitle>{t("title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("description")}</PageHeaderDescription>
       </PageHeader>
       <PromptGrid
+        hideBorderTop
         onLoadMore={() => loadMore(20)}
         prompts={results}
         status={status}

@@ -44,8 +44,11 @@ export function PromptDetailUrlEditor({
         });
         toast.success(t("slugSaved"));
         router.replace(`/prompt/${newSlug.trim()}`);
-      } catch {
-        toast.error(t("slugError"));
+      } catch (error) {
+        const isConflict =
+          error instanceof Error &&
+          error.message.includes("Slug already exists");
+        toast.error(isConflict ? t("slugConflict") : t("slugError"));
         throw new Error("Save failed");
       }
     },

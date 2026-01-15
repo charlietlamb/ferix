@@ -21,20 +21,30 @@ export async function enrichPrompts<T extends Doc<"prompts">>(
     savedPromptIds = new Set(userSaves.map((s) => s.promptId.toString()));
   }
 
-  return Promise.all(
-    prompts.map(async (prompt) => {
-      const creator = await authComponent.getAnyUserById(ctx, prompt.userId);
-      return {
-        ...prompt,
-        creator: creator
-          ? {
-              name: creator.name,
-              image: creator.image ?? null,
-              username: creator.username ?? null,
-            }
-          : null,
-        isSaved: savedPromptIds.has(prompt._id.toString()),
-      };
-    })
+  // Batch fetch all unique creators instead of N+1 individual fetches
+  const uniqueUserIds = [...new Set(prompts.map((p) => p.userId))];
+  const users = await Promise.all(
+    uniqueUserIds.map((id) => authComponent.getAnyUserById(ctx, id))
   );
+  const userMap = new Map<string, NonNullable<(typeof users)[number]>>(
+    users
+      .filter((u): u is NonNullable<typeof u> => u !== null)
+      .map((u) => [u._id, u])
+  );
+
+  // Map prompts synchronously using pre-fetched data
+  return prompts.map((prompt) => {
+    const creator = userMap.get(prompt.userId);
+    return {
+      ...prompt,
+      creator: creator
+        ? {
+            name: creator.name,
+            image: creator.image ?? null,
+            username: creator.username ?? null,
+          }
+        : null,
+      isSaved: savedPromptIds.has(prompt._id.toString()),
+    };
+  });
 }

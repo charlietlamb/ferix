@@ -2,6 +2,7 @@
 
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
+import { DirectoryItem } from "@ferix/ui/components/directory/directory-item";
 import {
   Select,
   SelectContent,
@@ -64,33 +65,19 @@ export function PromptDetailDirectory({
           value={currentDirectoryId ?? "none"}
         >
           <SelectTrigger className="w-full">
-            <SelectValue>{t("selectDirectory")}</SelectValue>
+            <SelectValue>
+              {currentDirectory ? (
+                <DirectoryItem directory={currentDirectory} />
+              ) : (
+                t("noDirectory")
+              )}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">{t("noDirectory")}</SelectItem>
             {directories.map((directory) => (
-              <SelectItem
-                className="flex items-center gap-2"
-                key={directory.id}
-                value={directory.id}
-              >
-                {/* biome-ignore lint: public svg */}
-                <img
-                  alt={directory.name}
-                  className="size-4 object-contain dark:hidden"
-                  height={16}
-                  src={directory.lightImageUrl}
-                  width={16}
-                />
-                {/* biome-ignore lint: public svg */}
-                <img
-                  alt={directory.name}
-                  className="hidden size-4 object-contain dark:block"
-                  height={16}
-                  src={directory.darkImageUrl}
-                  width={16}
-                />
-                {directory.name}
+              <SelectItem key={directory.id} value={directory.id}>
+                <DirectoryItem directory={directory} />
               </SelectItem>
             ))}
           </SelectContent>
@@ -109,28 +96,12 @@ export function PromptDetailDirectory({
         {t("directory")}
       </h3>
       <a
-        className="flex items-center gap-2 text-sm hover:underline"
+        className="text-sm hover:underline"
         href={currentDirectory.link}
         rel="noopener noreferrer"
         target="_blank"
       >
-        {/* biome-ignore lint: public svg */}
-        <img
-          alt={currentDirectory.name}
-          className="size-4 object-contain dark:hidden"
-          height={16}
-          src={currentDirectory.lightImageUrl}
-          width={16}
-        />
-        {/* biome-ignore lint: public svg */}
-        <img
-          alt={currentDirectory.name}
-          className="hidden size-4 object-contain dark:block"
-          height={16}
-          src={currentDirectory.darkImageUrl}
-          width={16}
-        />
-        {currentDirectory.name}
+        <DirectoryItem directory={currentDirectory} />
       </a>
     </div>
   );
