@@ -170,7 +170,11 @@
     "slugError": "Failed to update URL",
     "selectTags": "Select tags...",
     "tagsSaved": "Tags updated",
-    "tagsError": "Failed to update tags"
+    "tagsError": "Failed to update tags",
+    "directory": "Directory",
+    "selectDirectory": "Select directory...",
+    "noDirectory": "None",
+    "directoryError": "Failed to update directory"
   },
   "commandPalette": {
     "title": "Command Palette",
@@ -198,6 +202,9 @@
     "draftSaved": "Draft saved locally",
     "tags": "Tags",
     "tagsPlaceholder": "Select tags...",
+    "directory": "Directory",
+    "directoryPlaceholder": "Select directory...",
+    "noDirectory": "None",
     "authRequired": {
       "title": "Sign in required",
       "description": "Sign in to create and share prompts",

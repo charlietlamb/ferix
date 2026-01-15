@@ -14,6 +14,7 @@ export const create = mutation({
     content: v.string(),
     type: promptTypes,
     tags: v.optional(v.array(v.string())),
+    directoryId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
@@ -32,6 +33,7 @@ export const create = mutation({
       content: args.content,
       type: args.type,
       tags: args.tags ?? [],
+      directoryId: args.directoryId,
       downloads: 0,
       createdAt: now,
       updatedAt: now,
@@ -337,6 +339,31 @@ export const updateTags = mutation({
 
     await ctx.db.patch(args.promptId, {
       tags: args.tags,
+      updatedAt: Date.now(),
+    });
+
+    return args.promptId;
+  },
+});
+
+export const updateDirectory = mutation({
+  args: {
+    promptId: v.id("prompts"),
+    directoryId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    const prompt = await ctx.db.get(args.promptId);
+    if (!prompt || prompt.userId !== user._id) {
+      throw new Error("Prompt not found");
+    }
+
+    await ctx.db.patch(args.promptId, {
+      directoryId: args.directoryId,
       updatedAt: Date.now(),
     });
 

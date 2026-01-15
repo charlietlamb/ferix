@@ -91,6 +91,7 @@ export function PromptCell({ prompt }: PromptCellProps) {
       <div className="flex items-center justify-between text-muted-foreground text-xs">
         {prompt.creator ? (
           <UserLink
+            directoryId={prompt.directoryId}
             image={prompt.creator.image}
             name={prompt.creator.name}
             username={prompt.creator.username}

@@ -14,6 +14,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  br::selection {
+    background-color: transparent !important;
+  }
 }
 
 @layer utilities {

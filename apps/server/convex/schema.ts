@@ -11,6 +11,7 @@ export default defineSchema({
     content: v.string(),
     type: promptTypes,
     tags: v.array(v.string()),
+    directoryId: v.optional(v.string()),
     downloads: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),

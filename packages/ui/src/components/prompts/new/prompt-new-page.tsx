@@ -20,6 +20,7 @@ export function PromptNewPage() {
 
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [directoryId, setDirectoryId] = useState<string | undefined>(undefined);
   const [isCreating, setIsCreating] = useState(false);
 
   const { content, setContent, hasLocalChanges, clearDraft } = usePromptDraft({
@@ -40,6 +41,7 @@ export function PromptNewPage() {
         content: content.trim(),
         type: "subagent",
         tags,
+        directoryId,
       });
       clearDraft();
       toast.success(t("success"));
@@ -80,8 +82,10 @@ export function PromptNewPage() {
 
         <PromptNewSidebar
           canCreate={canCreate}
+          directoryId={directoryId}
           isCreating={isCreating}
           onCreate={handleCreate}
+          onDirectoryChange={setDirectoryId}
           onTagsChange={setTags}
           tags={tags}
         />

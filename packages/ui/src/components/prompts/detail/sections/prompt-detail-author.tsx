@@ -1,5 +1,6 @@
 "use client";
 
+import { DirectoryAvatar } from "@ferix/ui/components/directory/directory-avatar";
 import {
   Avatar,
   AvatarFallback,
@@ -9,9 +10,13 @@ import { useTranslations } from "next-intl";
 
 interface PromptDetailAuthorProps {
   creator: { name: string; image: string | null } | null;
+  directoryId?: string | null;
 }
 
-export function PromptDetailAuthor({ creator }: PromptDetailAuthorProps) {
+export function PromptDetailAuthor({
+  creator,
+  directoryId,
+}: PromptDetailAuthorProps) {
   const t = useTranslations("promptDetail");
 
   return (
@@ -21,14 +26,22 @@ export function PromptDetailAuthor({ creator }: PromptDetailAuthorProps) {
       </h3>
       {creator ? (
         <div className="flex items-center gap-2">
-          <Avatar size="sm">
-            {creator.image && (
-              <AvatarImage alt={creator.name} src={creator.image} />
-            )}
-            <AvatarFallback>
-              {creator.name.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          {directoryId ? (
+            <DirectoryAvatar
+              directoryId={directoryId}
+              size="sm"
+              user={{ name: creator.name, image: creator.image }}
+            />
+          ) : (
+            <Avatar size="sm">
+              {creator.image && (
+                <AvatarImage alt={creator.name} src={creator.image} />
+              )}
+              <AvatarFallback>
+                {creator.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          )}
           <span className="text-sm">{creator.name}</span>
         </div>
       ) : (
