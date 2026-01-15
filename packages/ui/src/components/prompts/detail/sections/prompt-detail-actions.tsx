@@ -3,11 +3,12 @@
 import { useRouter } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
+import { PromptSection } from "@ferix/ui/components/prompts/shared/prompt-section";
 import { Button } from "@ferix/ui/components/ui/button";
 import { SaveButton } from "@ferix/ui/components/utils/save-button";
+import { useAutoSubmitForm } from "@ferix/ui/hooks/use-auto-submit-form";
 import { useCopy } from "@ferix/ui/hooks/use-copy";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
-import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
 import {
   CheckIcon,
   CopyIcon,
@@ -41,8 +42,15 @@ export function PromptDetailActions({
   const { copy, copied } = useCopy();
   const { copy: copyLink, copied: linkCopied } = useCopy();
 
-  const { current: currentlySaved, setOptimistic: setOptimisticSaved } =
-    useOptimisticState(isSaved);
+  // Optimistic state for save status
+  const { value: currentlySaved, setValue: setOptimisticSaved } =
+    useAutoSubmitForm({
+      initialValue: isSaved,
+      onSubmit: async () => {
+        // The actual mutation is handled by SaveButton
+        // This hook just provides optimistic state
+      },
+    });
 
   const handleCopy = () => {
     if (!copied) {
@@ -72,10 +80,7 @@ export function PromptDetailActions({
   };
 
   return (
-    <div className="flex flex-col gap-2 p-4">
-      <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-        {t("actions")}
-      </h3>
+    <PromptSection border={false} title={t("actions")}>
       <div className="flex flex-col gap-2">
         <Button
           className="w-full justify-start"
@@ -119,6 +124,6 @@ export function PromptDetailActions({
           </Button>
         )}
       </div>
-    </div>
+    </PromptSection>
   );
 }

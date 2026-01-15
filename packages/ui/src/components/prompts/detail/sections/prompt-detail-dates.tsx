@@ -1,5 +1,6 @@
 "use client";
 
+import { PromptSection } from "@ferix/ui/components/prompts/shared/prompt-section";
 import { CalendarIcon } from "@phosphor-icons/react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
@@ -16,10 +17,7 @@ export function PromptDetailDates({
   const t = useTranslations("promptDetail");
 
   return (
-    <div className="flex flex-col gap-2 border-border border-b p-4">
-      <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-        {t("details")}
-      </h3>
+    <PromptSection title={t("details")}>
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-sm">
           <CalendarIcon className="size-4 text-muted-foreground" />
@@ -32,6 +30,6 @@ export function PromptDetailDates({
           <span>{formatDistanceToNow(createdAt, { addSuffix: true })}</span>
         </div>
       </div>
-    </div>
+    </PromptSection>
   );
 }

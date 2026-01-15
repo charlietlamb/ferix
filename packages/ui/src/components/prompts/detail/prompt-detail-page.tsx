@@ -10,6 +10,7 @@ import { PromptDetailDirectory } from "@ferix/ui/components/prompts/detail/secti
 import { PromptDetailStats } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-stats";
 import { PromptDetailTags } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-tags";
 import { PromptDetailUrlEditor } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-url-editor";
+import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
 
 interface PromptDetailPageProps {
   prompt: {
@@ -23,7 +24,11 @@ interface PromptDetailPageProps {
     downloads: number;
     createdAt: number;
     updatedAt: number;
-    creator: { name: string; image: string | null } | null;
+    creator: {
+      name: string;
+      image: string | null;
+      username: string | null;
+    } | null;
     isCreator: boolean;
     isSaved: boolean;
     saveCount: number;
@@ -31,10 +36,16 @@ interface PromptDetailPageProps {
 }
 
 export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
+  // Lift directoryId state so it can be shared between Author and Directory sections
+  const {
+    current: currentDirectoryId,
+    setOptimistic: setOptimisticDirectoryId,
+    reset: resetDirectoryId,
+  } = useOptimisticState(prompt.directoryId);
+
   return (
     <AppPage>
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-        {/* Content - left side on desktop */}
         <PromptDetailContent
           isCreator={prompt.isCreator}
           promptId={prompt._id}
@@ -44,11 +55,10 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
           type={prompt.type}
         />
 
-        {/* Sidebar - right side on desktop, stacked cells */}
         <aside className="flex flex-col border-border border-t md:w-[320px] md:shrink-0 md:overflow-auto md:border-t-0 md:border-l">
           <PromptDetailAuthor
             creator={prompt.creator}
-            directoryId={prompt.directoryId}
+            directoryId={currentDirectoryId}
           />
           <PromptDetailStats
             downloads={prompt.downloads}
@@ -64,8 +74,10 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
             tags={prompt.tags}
           />
           <PromptDetailDirectory
-            directoryId={prompt.directoryId}
+            directoryId={currentDirectoryId}
             isCreator={prompt.isCreator}
+            onDirectoryChange={setOptimisticDirectoryId}
+            onError={resetDirectoryId}
             promptId={prompt._id}
           />
           {prompt.isCreator && (

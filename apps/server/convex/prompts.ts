@@ -211,7 +211,11 @@ export const getBySlug = query({
     const basePrompt = {
       ...prompt,
       creator: creator
-        ? { name: creator.name, image: creator.image ?? null }
+        ? {
+            name: creator.name,
+            image: creator.image ?? null,
+            username: creator.username ?? null,
+          }
         : null,
       isCreator: currentUser ? currentUser._id === prompt.userId : false,
       isSaved,

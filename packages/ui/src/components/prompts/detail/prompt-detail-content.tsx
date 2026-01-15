@@ -6,10 +6,10 @@ import { PromptDetailHeader } from "@ferix/ui/components/prompts/detail/prompt-d
 import { PromptDetailToolbar } from "@ferix/ui/components/prompts/detail/prompt-detail-toolbar";
 import { Textarea } from "@ferix/ui/components/ui/textarea";
 import { CopyButton } from "@ferix/ui/components/utils/copy-button";
+import { useAppForm } from "@ferix/ui/hooks/use-app-form";
 import { usePromptDraft } from "@ferix/ui/hooks/use-prompt-draft";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
 import { toast } from "sonner";
 
 interface PromptDetailContentProps {
@@ -31,8 +31,8 @@ export function PromptDetailContent({
 }: PromptDetailContentProps) {
   const t = useTranslations("promptDetail");
   const updatePrompt = useMutation(api.prompts.update);
-  const [isSaving, setIsSaving] = useState(false);
 
+  // usePromptDraft handles localStorage persistence
   const {
     content,
     setContent,
@@ -44,18 +44,19 @@ export function PromptDetailContent({
     serverContent,
   });
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await updatePrompt({ promptId, content });
-      clearDraft();
-      toast.success(t("saveSuccess"));
-    } catch {
-      toast.error(t("saveError"));
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // TanStack Form for submit handling
+  const form = useAppForm({
+    defaultValues: { content: serverContent },
+    onSubmit: async () => {
+      try {
+        await updatePrompt({ promptId, content });
+        clearDraft();
+        toast.success(t("saveSuccess"));
+      } catch {
+        toast.error(t("saveError"));
+      }
+    },
+  });
 
   return (
     <div className="flex min-h-[400px] flex-1 flex-col md:min-h-0">
@@ -67,33 +68,38 @@ export function PromptDetailContent({
         type={type}
       />
 
-      <PromptDetailToolbar
-        hasLocalChanges={hasLocalChanges}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isCreator={isCreator}
-        isSaving={isSaving}
-        onSave={handleSave}
-        slug={slug}
-      />
+      <form.Subscribe selector={(state) => state.isSubmitting}>
+        {(isSaving) => (
+          <>
+            <PromptDetailToolbar
+              hasLocalChanges={hasLocalChanges}
+              hasUnsavedChanges={hasUnsavedChanges}
+              isCreator={isCreator}
+              isSaving={isSaving}
+              onSave={() => form.handleSubmit()}
+              slug={slug}
+            />
 
-      {/* Textarea */}
-      <div className="group/textarea relative min-h-0 flex-1">
-        <div className="h-full overflow-auto">
-          <Textarea
-            className="min-h-full resize-none rounded-none border-0 bg-transparent p-4 font-mono text-sm focus-visible:ring-0 disabled:cursor-default disabled:opacity-100"
-            disabled={!isCreator || isSaving}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={t("contentPlaceholder")}
-            readOnly={!isCreator}
-            value={content}
-          />
-        </div>
-        <CopyButton
-          className="absolute top-2 right-5 opacity-0 transition-opacity group-hover/textarea:opacity-100"
-          content={content}
-          promptId={promptId}
-        />
-      </div>
+            <div className="group/textarea relative min-h-0 flex-1">
+              <div className="h-full overflow-auto">
+                <Textarea
+                  className="min-h-full resize-none rounded-none border-0 bg-transparent p-4 font-mono text-sm focus-visible:ring-0 disabled:cursor-default disabled:opacity-100"
+                  disabled={!isCreator || isSaving}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder={t("contentPlaceholder")}
+                  readOnly={!isCreator}
+                  value={content}
+                />
+              </div>
+              <CopyButton
+                className="absolute top-2 right-5 opacity-0 transition-opacity group-hover/textarea:opacity-100"
+                content={content}
+                promptId={promptId}
+              />
+            </div>
+          </>
+        )}
+      </form.Subscribe>
     </div>
   );
 }

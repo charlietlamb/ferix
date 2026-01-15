@@ -2,11 +2,13 @@
 
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
+import { PromptSection } from "@ferix/ui/components/prompts/shared/prompt-section";
 import { MultiSelect } from "@ferix/ui/components/ui/multi-select";
-import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
+import { useAutoSubmitForm } from "@ferix/ui/hooks/use-auto-submit-form";
 import { getTagsByIds, tagsToOptions } from "@ferix/ui/lib/tags";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
+import { useMemo } from "react";
 import { toast } from "sonner";
 
 interface PromptDetailTagsProps {
@@ -23,43 +25,38 @@ export function PromptDetailTags({
   const t = useTranslations("promptDetail");
   const updateTags = useMutation(api.prompts.updateTags);
 
-  const {
-    current: currentTags,
-    setOptimistic,
-    reset,
-  } = useOptimisticState(tags);
+  const { value: currentTags, setValue: setTags } = useAutoSubmitForm({
+    initialValue: tags,
+    onSubmit: async (newTags) => {
+      try {
+        await updateTags({ promptId, tags: newTags });
+      } catch {
+        toast.error(t("tagsError"));
+        throw new Error("Failed to update tags");
+      }
+    },
+  });
 
-  const tagObjects = getTagsByIds(currentTags);
-  const tagOptions = tagsToOptions();
-  const selectedTags = tagObjects.map((tag) => ({
-    label: tag.label,
-    value: tag.id,
-    icon: tag.icon,
-    group: tag.category,
-  }));
+  const tagOptions = useMemo(() => tagsToOptions(), []);
+  const tagObjects = useMemo(() => getTagsByIds(currentTags), [currentTags]);
+  const selectedTags = useMemo(
+    () =>
+      tagObjects.map((tag) => ({
+        label: tag.label,
+        value: tag.id,
+        icon: tag.icon,
+        group: tag.category,
+      })),
+    [tagObjects]
+  );
 
-  const handleTagsChange = async (
-    newTags: { label: string; value: string }[]
-  ) => {
-    const newTagIds = newTags.map((tag) => tag.value);
-    setOptimistic(newTagIds);
-    try {
-      await updateTags({
-        promptId,
-        tags: newTagIds,
-      });
-    } catch {
-      reset();
-      toast.error(t("tagsError"));
-    }
+  const handleTagsChange = (newTags: { label: string; value: string }[]) => {
+    setTags(newTags.map((tag) => tag.value));
   };
 
   if (isCreator) {
     return (
-      <div className="flex flex-col gap-2 border-border border-b p-4">
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-          {t("tags")}
-        </h3>
+      <PromptSection title={t("tags")}>
         <MultiSelect
           groupBy
           onChange={handleTagsChange}
@@ -67,7 +64,7 @@ export function PromptDetailTags({
           placeholder={t("selectTags")}
           value={selectedTags}
         />
-      </div>
+      </PromptSection>
     );
   }
 
@@ -76,10 +73,7 @@ export function PromptDetailTags({
   }
 
   return (
-    <div className="flex flex-col gap-2 border-border border-b p-4">
-      <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-        {t("tags")}
-      </h3>
+    <PromptSection title={t("tags")}>
       <div className="flex flex-wrap gap-2">
         {tagObjects.map((tag) => {
           const Icon = tag.icon;
@@ -94,6 +88,6 @@ export function PromptDetailTags({
           );
         })}
       </div>
-    </div>
+    </PromptSection>
   );
 }

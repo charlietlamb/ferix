@@ -3,6 +3,7 @@
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
 import { DirectoryItem } from "@ferix/ui/components/directory/directory-item";
+import { PromptSection } from "@ferix/ui/components/prompts/shared/prompt-section";
 import {
   Select,
   SelectContent,
@@ -10,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ferix/ui/components/ui/select";
-import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
 import { directories, getDirectoryById } from "@ferix/ui/lib/directories";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
@@ -20,49 +20,46 @@ interface PromptDetailDirectoryProps {
   promptId: Id<"prompts">;
   directoryId?: string;
   isCreator: boolean;
+  /** Callback when directory changes (for optimistic updates in parent) */
+  onDirectoryChange: (directoryId: string | undefined) => void;
+  /** Callback when mutation fails (to rollback optimistic update) */
+  onError: () => void;
 }
 
 export function PromptDetailDirectory({
   promptId,
   directoryId,
   isCreator,
+  onDirectoryChange,
+  onError,
 }: PromptDetailDirectoryProps) {
   const t = useTranslations("promptDetail");
   const updateDirectory = useMutation(api.prompts.updateDirectory);
 
-  const {
-    current: currentDirectoryId,
-    setOptimistic,
-    reset,
-  } = useOptimisticState(directoryId);
-
-  const currentDirectory = currentDirectoryId
-    ? getDirectoryById(currentDirectoryId)
-    : null;
+  const currentDirectory = directoryId ? getDirectoryById(directoryId) : null;
 
   const handleDirectoryChange = async (value: string | null) => {
-    const newDirectoryId = value === "none" ? undefined : (value ?? undefined);
-    setOptimistic(newDirectoryId);
+    const newDirectoryId =
+      value === "none" || value === null ? undefined : value;
+
+    // Optimistic update
+    onDirectoryChange(newDirectoryId);
+
     try {
-      await updateDirectory({
-        promptId,
-        directoryId: newDirectoryId,
-      });
+      await updateDirectory({ promptId, directoryId: newDirectoryId });
     } catch {
-      reset();
+      // Rollback on error
+      onError();
       toast.error(t("directoryError"));
     }
   };
 
   if (isCreator) {
     return (
-      <div className="flex flex-col gap-2 border-border border-b p-4">
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-          {t("directory")}
-        </h3>
+      <PromptSection title={t("directory")}>
         <Select
           onValueChange={handleDirectoryChange}
-          value={currentDirectoryId ?? "none"}
+          value={directoryId ?? "none"}
         >
           <SelectTrigger className="w-full">
             <SelectValue>
@@ -82,7 +79,7 @@ export function PromptDetailDirectory({
             ))}
           </SelectContent>
         </Select>
-      </div>
+      </PromptSection>
     );
   }
 
@@ -91,10 +88,7 @@ export function PromptDetailDirectory({
   }
 
   return (
-    <div className="flex flex-col gap-2 border-border border-b p-4">
-      <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-        {t("directory")}
-      </h3>
+    <PromptSection title={t("directory")}>
       <a
         className="text-sm hover:underline"
         href={currentDirectory.link}
@@ -103,6 +97,6 @@ export function PromptDetailDirectory({
       >
         <DirectoryItem directory={currentDirectory} />
       </a>
-    </div>
+    </PromptSection>
   );
 }
