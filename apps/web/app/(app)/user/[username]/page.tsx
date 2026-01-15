@@ -10,7 +10,10 @@ import {
 } from "@ferix/ui/components/profile/user-profile-tabs";
 import { useQuery } from "convex/react";
 import { notFound } from "next/navigation";
-import { use, useRef, useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { use, useRef } from "react";
+
+const profileTabs = ["created", "saved"] as const;
 
 interface UserPageProps {
   params: Promise<{ username: string }>;
@@ -20,7 +23,10 @@ export default function UserPage({ params }: UserPageProps) {
   const { username } = use(params);
   const user = useQuery(api.profiles.getByUsername, { username });
   const hadUserRef = useRef(false);
-  const [activeTab, setActiveTab] = useState<ProfileTab>("created");
+  const [activeTab, setActiveTab] = useQueryState<ProfileTab>(
+    "tab",
+    parseAsStringLiteral(profileTabs).withDefault("created")
+  );
 
   if (user === undefined) {
     return (

@@ -31,9 +31,15 @@
   },
   "sidebar": {
     "browse": "Browse",
+    "home": "Home",
     "popular": "Popular",
     "recent": "Recent",
-    "topCategories": "Top Categories"
+    "tags": "All Tags",
+    "topCategories": "Top Categories",
+    "viewAll": "View All",
+    "personal": "Personal",
+    "myProfile": "My Profile",
+    "saved": "Saved"
   },
   "pages": {
     "popular": {

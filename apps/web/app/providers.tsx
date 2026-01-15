@@ -7,6 +7,7 @@ import { ConvexReactClient } from "convex/react";
 import type { AbstractIntlMessages } from "next-intl";
 import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "next-themes";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import type { ReactNode } from "react";
 import { AuthProvider } from "./auth-provider";
 import { DialogProvider } from "./dialog-provider";
@@ -24,12 +25,14 @@ export function Providers({ children, messages, locale }: ProvidersProps) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <NextIntlClientProvider locale={locale} messages={messages}>
-        <ConvexBetterAuthProvider authClient={authClient} client={convex}>
-          <AuthProvider>
-            <DialogProvider>{children}</DialogProvider>
-          </AuthProvider>
-          <ToastProvider />
-        </ConvexBetterAuthProvider>
+        <NuqsAdapter>
+          <ConvexBetterAuthProvider authClient={authClient} client={convex}>
+            <AuthProvider>
+              <DialogProvider>{children}</DialogProvider>
+            </AuthProvider>
+            <ToastProvider />
+          </ConvexBetterAuthProvider>
+        </NuqsAdapter>
       </NextIntlClientProvider>
     </ThemeProvider>
   );
