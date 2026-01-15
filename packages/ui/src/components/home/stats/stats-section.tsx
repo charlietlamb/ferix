@@ -35,7 +35,7 @@ function StatItem({
 function StatsSkeleton() {
   const t = useTranslations("stats");
   return (
-    <section className="flex border-border border-y">
+    <section className="flex border-border border-b">
       <StatItem label={t("prompts")} value={undefined} />
       <StatItem label={t("downloads")} value={undefined} />
       <StatItem label={t("creators")} value={undefined} />
@@ -53,7 +53,7 @@ export function StatsSection() {
   }
 
   return (
-    <section className="flex border-border border-y">
+    <section className="flex border-border border-b">
       <StatItem label={t("prompts")} value={stats.totalPrompts} />
       <StatItem label={t("downloads")} value={stats.totalDownloads} />
       <StatItem label={t("creators")} value={stats.totalCreators} />

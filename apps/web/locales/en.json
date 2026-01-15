@@ -1,4 +1,7 @@
 {
+  "search": {
+    "placeholder": "Search for prompts, tags, or actions..."
+  },
   "hero": {
     "title": "A directory of high quailty subagents for",
     "description": "Explore the latest and most popular subagents created by our community."
@@ -10,6 +13,8 @@
     "categories": "categories"
   },
   "categories": {
+    "title": "Top Categories",
+    "viewAll": "View All",
     "promptCount": "{count} prompts"
   },
   "cta": {
@@ -48,6 +53,20 @@
       "downloads": "downloads",
       "created": "Created",
       "saved": "Saved"
+    },
+    "tags": {
+      "title": "All Tags",
+      "description": "Browse all available tags",
+      "categories": {
+        "language": "Languages",
+        "framework": "Frameworks",
+        "tool": "Tools",
+        "database": "Databases",
+        "platform": "Platforms",
+        "service": "Services",
+        "design": "Design",
+        "library": "Libraries"
+      }
     }
   },
   "prompts": {

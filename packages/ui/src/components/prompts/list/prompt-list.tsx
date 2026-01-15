@@ -17,14 +17,14 @@ export function PromptList({ prompts, title, viewMorePath }: PromptListProps) {
   }
 
   return (
-    <section className="flex flex-col">
+    <section className="flex flex-col border-border border-b">
       <PromptListHeader title={title} viewMorePath={viewMorePath} />
-      <div className="scrollbar-none flex overflow-x-auto border-border border-t">
+      <div className="scrollbar-none flex overflow-x-auto">
         {prompts.map((prompt, index) => (
           <div
             className={cn(
-              "w-80 shrink-0 border-border border-b",
-              index < prompts.length - 1 && "border-r"
+              "w-80 shrink-0",
+              index < prompts.length - 1 && "border-border border-r"
             )}
             key={prompt._id}
           >

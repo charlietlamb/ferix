@@ -16,14 +16,14 @@ export function PromptListSkeleton({
   count = 8,
 }: PromptListSkeletonProps) {
   return (
-    <section className="flex flex-col">
+    <section className="flex flex-col border-border border-b">
       <PromptListHeader title={title} viewMorePath={viewMorePath} />
-      <div className="scrollbar-none flex overflow-x-auto border-border border-t">
+      <div className="scrollbar-none flex overflow-x-auto">
         {Array.from({ length: count }).map((_, i) => (
           <div
             className={cn(
-              "w-80 shrink-0 border-border border-b",
-              i < count - 1 && "border-r"
+              "w-80 shrink-0",
+              i < count - 1 && "border-border border-r"
             )}
             key={i}
           >

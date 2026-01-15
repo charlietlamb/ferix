@@ -4,7 +4,7 @@ import { signIn } from "@ferix/auth/client";
 import { Button } from "@ferix/ui/components/ui/button";
 import { Separator } from "@ferix/ui/components/ui/separator";
 import { Spinner } from "@ferix/ui/components/ui/spinner";
-import { GithubLogoIcon } from "@phosphor-icons/react";
+import { SiGithub } from "@icons-pack/react-simple-icons";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -50,7 +50,7 @@ export function AuthFormFooter({ mode, onSwitchForm }: AuthFormFooterProps) {
         {isLoading ? (
           <Spinner className="mr-2" />
         ) : (
-          <GithubLogoIcon className="mr-2 size-4" />
+          <SiGithub className="mr-2 size-4" />
         )}
         {t("continueWithGithub")}
       </Button>
