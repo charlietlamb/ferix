@@ -97,6 +97,7 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
             isSaved={prompt.isSaved}
             promptId={prompt._id}
             slug={prompt.slug}
+            title={prompt.title}
           />
         </aside>
       </div>

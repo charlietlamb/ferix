@@ -1,5 +1,6 @@
 "use client";
 
+import { useTrack } from "@ferix/analytics/use-track";
 import { useRouter } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
@@ -23,6 +24,7 @@ interface PromptDetailActionsProps {
   promptId: Id<"prompts">;
   content: string;
   slug: string;
+  title?: string;
   isSaved: boolean;
   canEdit: boolean;
 }
@@ -31,6 +33,7 @@ export function PromptDetailActions({
   promptId,
   content,
   slug,
+  title,
   isSaved,
   canEdit,
 }: PromptDetailActionsProps) {
@@ -41,6 +44,7 @@ export function PromptDetailActions({
   const recordDownload = useMutation(api.prompts.recordDownload);
   const { copy, copied } = useCopy();
   const { copy: copyLink, copied: linkCopied } = useCopy();
+  const { trackPromptDownload, trackPromptLinkCopy } = useTrack();
 
   // Optimistic state for save status
   const { value: currentlySaved, setValue: setOptimisticSaved } =
@@ -56,12 +60,21 @@ export function PromptDetailActions({
     if (!copied) {
       recordDownload({ promptId });
       copy(content);
+      trackPromptDownload({
+        promptId,
+        promptSlug: slug,
+        promptTitle: title,
+      });
     }
   };
 
   const handleCopyLink = () => {
     if (!linkCopied) {
       copyLink(`${window.location.origin}/prompt/${slug}`);
+      trackPromptLinkCopy({
+        promptId,
+        promptSlug: slug,
+      });
     }
   };
 

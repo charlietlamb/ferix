@@ -1,0 +1,26 @@
+{
+  "name": "@ferix/analytics",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./provider": "./src/provider.tsx",
+    "./events": "./src/events.ts",
+    "./use-track": "./src/hooks/use-track.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@posthog/react": "catalog:",
+    "posthog-js": "catalog:"
+  },
+  "devDependencies": {
+    "@ferix/typescript-config": "*",
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:"
+  }
+}

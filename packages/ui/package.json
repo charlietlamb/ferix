@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
+    "@ferix/analytics": "*",
     "@ferix/auth": "*",
     "@ferix/i18n": "*",
     "@ferix/server": "*",

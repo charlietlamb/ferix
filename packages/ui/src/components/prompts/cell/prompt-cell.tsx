@@ -1,5 +1,6 @@
 "use client";
 
+import { useTrack } from "@ferix/analytics/use-track";
 import { Link } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Prompt } from "@ferix/server/types";
@@ -30,6 +31,7 @@ const typeIcons = {
 export function PromptCell({ prompt }: PromptCellProps) {
   const recordDownload = useMutation(api.prompts.recordDownload);
   const { copy, copied } = useCopy();
+  const { trackPromptDownload } = useTrack();
   const firstTagId = prompt.tags[0];
   const firstTag = firstTagId ? getTagById(firstTagId) : null;
   const TypeIcon = firstTag?.icon ?? typeIcons[prompt.type];
@@ -46,6 +48,11 @@ export function PromptCell({ prompt }: PromptCellProps) {
       setOptimisticDownloads(prompt.downloads + 1);
       recordDownload({ promptId: prompt._id });
       copy(prompt.content);
+      trackPromptDownload({
+        promptId: prompt._id,
+        promptSlug: prompt.slug,
+        promptTitle: prompt.title,
+      });
     }
   };
 
