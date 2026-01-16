@@ -375,6 +375,31 @@ export const updateDirectory = mutation({
   },
 });
 
+export const updateType = mutation({
+  args: {
+    promptId: v.id("prompts"),
+    type: promptTypes,
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    const prompt = await ctx.db.get(args.promptId);
+    if (!prompt || prompt.userId !== user._id) {
+      throw new Error("Prompt not found");
+    }
+
+    await ctx.db.patch(args.promptId, {
+      type: args.type,
+      updatedAt: Date.now(),
+    });
+
+    return args.promptId;
+  },
+});
+
 export const toggleSave = mutation({
   args: { promptId: v.id("prompts") },
   handler: async (ctx, args) => {

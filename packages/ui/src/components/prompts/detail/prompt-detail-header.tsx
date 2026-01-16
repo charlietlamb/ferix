@@ -3,13 +3,14 @@
 import type { Id } from "@ferix/server/_generated/dataModel";
 import { TypeBadge } from "@ferix/ui/components/prompts/shared/type-badge";
 import { CopyButton } from "@ferix/ui/components/utils/copy-button";
+import type { PromptType } from "@ferix/ui/lib/prompt-types";
 import { LinkIcon } from "@phosphor-icons/react";
 
 interface PromptDetailHeaderProps {
   promptId: Id<"prompts">;
   title: string;
   slug: string;
-  type: "subagent" | "rule";
+  type: PromptType;
   content: string;
 }
 

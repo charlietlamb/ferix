@@ -31,7 +31,7 @@ export function PromptNewPage() {
         const result = await createPrompt({
           title: value.title.trim(),
           content: content.trim(), // Use content from usePromptDraft
-          type: "subagent",
+          type: value.type,
           tags: value.tags,
           directoryId: value.directoryId,
         });
@@ -59,11 +59,17 @@ export function PromptNewPage() {
       >
         <div className="flex min-h-[400px] flex-1 flex-col md:min-h-0">
           <form.AppField name="title">
-            {(field) => (
-              <PromptNewHeader
-                onTitleChange={field.handleChange}
-                title={field.state.value}
-              />
+            {(titleField) => (
+              <form.AppField name="type">
+                {(typeField) => (
+                  <PromptNewHeader
+                    onTitleChange={titleField.handleChange}
+                    onTypeChange={typeField.handleChange}
+                    title={titleField.state.value}
+                    type={typeField.state.value}
+                  />
+                )}
+              </form.AppField>
             )}
           </form.AppField>
 

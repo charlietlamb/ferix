@@ -1,8 +1,12 @@
+import { PROMPT_TYPES, type PromptType } from "@ferix/ui/lib/prompt-types";
 import { z } from "zod";
+
+export const promptTypeSchema = z.enum(PROMPT_TYPES);
 
 export const promptFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title is too long"),
   content: z.string(),
+  type: promptTypeSchema,
   tags: z.array(z.string()),
   directoryId: z.string().optional(),
 });
@@ -10,6 +14,7 @@ export const promptFormSchema = z.object({
 export interface PromptFormValues {
   title: string;
   content: string;
+  type: PromptType;
   tags: string[];
   directoryId: string | undefined;
 }
@@ -17,6 +22,7 @@ export interface PromptFormValues {
 export const promptFormDefaults: PromptFormValues = {
   title: "",
   content: "",
+  type: "subagent",
   tags: [],
   directoryId: undefined,
 };

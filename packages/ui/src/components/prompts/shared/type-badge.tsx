@@ -1,11 +1,16 @@
 "use client";
 
 import { Badge } from "@ferix/ui/components/ui/badge";
+import {
+  getPromptTypeConfig,
+  type PromptType,
+} from "@ferix/ui/lib/prompt-types";
 
 interface TypeBadgeProps {
-  type: "subagent" | "rule";
+  type: PromptType;
 }
 
 export function TypeBadge({ type }: TypeBadgeProps) {
-  return <Badge variant="outline">{type}</Badge>;
+  const config = getPromptTypeConfig(type);
+  return <Badge variant="outline">{config.label}</Badge>;
 }

@@ -8,6 +8,7 @@ import { Textarea } from "@ferix/ui/components/ui/textarea";
 import { CopyButton } from "@ferix/ui/components/utils/copy-button";
 import { useAppForm } from "@ferix/ui/hooks/use-app-form";
 import { usePromptDraft } from "@ferix/ui/hooks/use-prompt-draft";
+import type { PromptType } from "@ferix/ui/lib/prompt-types";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -18,7 +19,7 @@ interface PromptDetailContentProps {
   canEdit: boolean;
   title: string;
   slug: string;
-  type: "subagent" | "rule";
+  type: PromptType;
 }
 
 export function PromptDetailContent({

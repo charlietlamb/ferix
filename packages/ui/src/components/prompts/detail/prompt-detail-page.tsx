@@ -9,9 +9,11 @@ import { PromptDetailDates } from "@ferix/ui/components/prompts/detail/sections/
 import { PromptDetailDirectory } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-directory";
 import { PromptDetailStats } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-stats";
 import { PromptDetailTags } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-tags";
+import { PromptDetailType } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-type";
 import { PromptDetailUrlEditor } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-url-editor";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
+import type { PromptType } from "@ferix/ui/lib/prompt-types";
 
 interface PromptDetailPageProps {
   prompt: {
@@ -19,7 +21,7 @@ interface PromptDetailPageProps {
     title: string;
     slug: string;
     content: string;
-    type: "subagent" | "rule";
+    type: PromptType;
     tags: string[];
     directoryId?: string;
     downloads: number;
@@ -71,6 +73,11 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
           <PromptDetailDates
             createdAt={prompt.createdAt}
             updatedAt={prompt.updatedAt}
+          />
+          <PromptDetailType
+            canEdit={canEdit}
+            promptId={prompt._id}
+            type={prompt.type}
           />
           <PromptDetailTags
             canEdit={canEdit}

@@ -9,24 +9,14 @@ import { UserLink } from "@ferix/ui/components/user/user-link";
 import { SaveButton } from "@ferix/ui/components/utils/save-button";
 import { useCopy } from "@ferix/ui/hooks/use-copy";
 import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
+import { type PromptType, promptTypeConfigs } from "@ferix/ui/lib/prompt-types";
 import { getTagById } from "@ferix/ui/lib/tags";
-import {
-  CheckIcon,
-  CopyIcon,
-  DownloadIcon,
-  GavelIcon,
-  UserRectangleIcon,
-} from "@phosphor-icons/react";
+import { CheckIcon, CopyIcon, DownloadIcon } from "@phosphor-icons/react";
 import { useMutation } from "convex/react";
 
 interface PromptCellProps {
   prompt: Prompt;
 }
-
-const typeIcons = {
-  subagent: UserRectangleIcon,
-  rule: GavelIcon,
-};
 
 export function PromptCell({ prompt }: PromptCellProps) {
   const recordDownload = useMutation(api.prompts.recordDownload);
@@ -34,7 +24,8 @@ export function PromptCell({ prompt }: PromptCellProps) {
   const { trackPromptDownload } = useTrack();
   const firstTagId = prompt.tags[0];
   const firstTag = firstTagId ? getTagById(firstTagId) : null;
-  const TypeIcon = firstTag?.icon ?? typeIcons[prompt.type];
+  const typeConfig = promptTypeConfigs[prompt.type as PromptType];
+  const TypeIcon = firstTag?.icon ?? typeConfig?.icon;
 
   const { current: isSaved, setOptimistic: setOptimisticSaved } =
     useOptimisticState(prompt.isSaved);

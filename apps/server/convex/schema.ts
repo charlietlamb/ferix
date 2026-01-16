@@ -1,7 +1,12 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-export const promptTypes = v.union(v.literal("subagent"), v.literal("rule"));
+export const promptTypes = v.union(
+  v.literal("rules"),
+  v.literal("subagent"),
+  v.literal("system"),
+  v.literal("skill")
+);
 
 export default defineSchema({
   prompts: defineTable({

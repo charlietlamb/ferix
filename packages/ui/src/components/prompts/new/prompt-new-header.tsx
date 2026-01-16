@@ -1,17 +1,22 @@
 "use client";
 
-import { TypeBadge } from "@ferix/ui/components/prompts/shared/type-badge";
+import { PromptTypeSelect } from "@ferix/ui/components/prompts/shared/prompt-type-select";
 import { Input } from "@ferix/ui/components/ui/input";
+import type { PromptType } from "@ferix/ui/lib/prompt-types";
 import { useTranslations } from "next-intl";
 
 interface PromptNewHeaderProps {
   title: string;
   onTitleChange: (title: string) => void;
+  type: PromptType;
+  onTypeChange: (type: PromptType) => void;
 }
 
 export function PromptNewHeader({
   title,
   onTitleChange,
+  type,
+  onTypeChange,
 }: PromptNewHeaderProps) {
   const t = useTranslations("promptNew");
 
@@ -25,7 +30,7 @@ export function PromptNewHeader({
           placeholder={t("titlePlaceholder")}
           value={title}
         />
-        <TypeBadge type="subagent" />
+        <PromptTypeSelect onChange={onTypeChange} value={type} />
       </div>
     </div>
   );
