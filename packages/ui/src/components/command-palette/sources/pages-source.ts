@@ -37,7 +37,7 @@ export const pagesSource: CommandSource = {
     }
 
     return pages.filter((page) =>
-      page.label.toLowerCase().includes(normalizedQuery)
+      page.label?.toLowerCase().includes(normalizedQuery)
     );
   },
 };

@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@ferix/ui/components/ui/select";
 import { Spinner } from "@ferix/ui/components/ui/spinner";
+import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { directories, getDirectoryById } from "@ferix/ui/lib/directories";
 import { getTagsByIds, tagsToOptions } from "@ferix/ui/lib/tags";
 import { useTranslations } from "next-intl";
@@ -35,6 +36,7 @@ export function PromptNewSidebar({
   onCreate,
 }: PromptNewSidebarProps) {
   const t = useTranslations("promptNew");
+  const { isAdmin } = useAuthenticated();
 
   const tagObjects = getTagsByIds(tags);
   const tagOptions = tagsToOptions();
@@ -70,33 +72,35 @@ export function PromptNewSidebar({
           value={selectedTags}
         />
       </div>
-      <div className="flex flex-col gap-2 border-border border-b p-4">
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-          {t("directory")}
-        </h3>
-        <Select
-          onValueChange={handleDirectoryChange}
-          value={directoryId ?? "none"}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue>
-              {currentDirectory ? (
-                <DirectoryItem directory={currentDirectory} />
-              ) : (
-                t("noDirectory")
-              )}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">{t("noDirectory")}</SelectItem>
-            {directories.map((directory) => (
-              <SelectItem key={directory.id} value={directory.id}>
-                <DirectoryItem directory={directory} />
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {isAdmin && (
+        <div className="flex flex-col gap-2 border-border border-b p-4">
+          <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+            {t("directory")}
+          </h3>
+          <Select
+            onValueChange={handleDirectoryChange}
+            value={directoryId ?? "none"}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue>
+                {currentDirectory ? (
+                  <DirectoryItem directory={currentDirectory} />
+                ) : (
+                  t("noDirectory")
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">{t("noDirectory")}</SelectItem>
+              {directories.map((directory) => (
+                <SelectItem key={directory.id} value={directory.id}>
+                  <DirectoryItem directory={directory} />
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="p-4">
         <Button
           className="w-full"

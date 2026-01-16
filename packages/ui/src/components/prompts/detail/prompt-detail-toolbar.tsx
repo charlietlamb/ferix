@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 
 interface PromptDetailToolbarProps {
   slug: string;
-  isCreator: boolean;
+  canEdit: boolean;
   hasLocalChanges: boolean;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
@@ -15,7 +15,7 @@ interface PromptDetailToolbarProps {
 
 export function PromptDetailToolbar({
   slug,
-  isCreator,
+  canEdit,
   hasLocalChanges,
   hasUnsavedChanges,
   isSaving,
@@ -29,7 +29,7 @@ export function PromptDetailToolbar({
         <FileTextIcon className="size-4" />
         <span>{slug}.md</span>
       </div>
-      {isCreator && (
+      {canEdit && (
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-xs">
             {hasLocalChanges ? t("draftSaved") : t("noChanges")}

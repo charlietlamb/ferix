@@ -24,11 +24,12 @@ export const {
 
 /**
  * User type extended with username and admin plugin fields
+ * Note: banExpires can be Date (from session) or number (from storage)
  */
 export type UserWithUsername = User & {
   username?: string | null;
   role?: string | null;
   banned?: boolean | null;
   banReason?: string | null;
-  banExpires?: number | null;
+  banExpires?: Date | number | null;
 };

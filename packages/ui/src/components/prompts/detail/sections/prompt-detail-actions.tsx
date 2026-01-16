@@ -24,7 +24,7 @@ interface PromptDetailActionsProps {
   content: string;
   slug: string;
   isSaved: boolean;
-  isCreator: boolean;
+  canEdit: boolean;
 }
 
 export function PromptDetailActions({
@@ -32,7 +32,7 @@ export function PromptDetailActions({
   content,
   slug,
   isSaved,
-  isCreator,
+  canEdit,
 }: PromptDetailActionsProps) {
   const t = useTranslations("promptDetail");
   const router = useRouter();
@@ -113,7 +113,7 @@ export function PromptDetailActions({
           promptId={promptId}
           variant="button"
         />
-        {isCreator && (
+        {canEdit && (
           <Button
             className="w-full justify-start text-destructive hover:text-destructive"
             onClick={handleDelete}

@@ -15,7 +15,7 @@ import { toast } from "sonner";
 interface PromptDetailContentProps {
   promptId: Id<"prompts">;
   serverContent: string;
-  isCreator: boolean;
+  canEdit: boolean;
   title: string;
   slug: string;
   type: "subagent" | "rule";
@@ -24,7 +24,7 @@ interface PromptDetailContentProps {
 export function PromptDetailContent({
   promptId,
   serverContent,
-  isCreator,
+  canEdit,
   title,
   slug,
   type,
@@ -72,9 +72,9 @@ export function PromptDetailContent({
         {(isSaving) => (
           <>
             <PromptDetailToolbar
+              canEdit={canEdit}
               hasLocalChanges={hasLocalChanges}
               hasUnsavedChanges={hasUnsavedChanges}
-              isCreator={isCreator}
               isSaving={isSaving}
               onSave={() => form.handleSubmit()}
               slug={slug}
@@ -84,10 +84,10 @@ export function PromptDetailContent({
               <div className="h-full overflow-auto">
                 <Textarea
                   className="min-h-full resize-none rounded-none border-0 bg-transparent p-4 font-mono text-sm focus-visible:ring-0 disabled:cursor-default disabled:opacity-100"
-                  disabled={!isCreator || isSaving}
+                  disabled={!canEdit || isSaving}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder={t("contentPlaceholder")}
-                  readOnly={!isCreator}
+                  readOnly={!canEdit}
                   value={content}
                 />
               </div>

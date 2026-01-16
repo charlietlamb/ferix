@@ -10,6 +10,7 @@ import { PromptDetailDirectory } from "@ferix/ui/components/prompts/detail/secti
 import { PromptDetailStats } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-stats";
 import { PromptDetailTags } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-tags";
 import { PromptDetailUrlEditor } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-url-editor";
+import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
 
 interface PromptDetailPageProps {
@@ -36,6 +37,9 @@ interface PromptDetailPageProps {
 }
 
 export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
+  const { isAdmin } = useAuthenticated();
+  const canEdit = prompt.isCreator || isAdmin;
+
   // Lift directoryId state so it can be shared between Author and Directory sections
   const {
     current: currentDirectoryId,
@@ -47,7 +51,7 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
     <AppPage>
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         <PromptDetailContent
-          isCreator={prompt.isCreator}
+          canEdit={canEdit}
           promptId={prompt._id}
           serverContent={prompt.content}
           slug={prompt.slug}
@@ -69,18 +73,18 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
             updatedAt={prompt.updatedAt}
           />
           <PromptDetailTags
-            isCreator={prompt.isCreator}
+            canEdit={canEdit}
             promptId={prompt._id}
             tags={prompt.tags}
           />
           <PromptDetailDirectory
+            canEdit={isAdmin}
             directoryId={currentDirectoryId}
-            isCreator={prompt.isCreator}
             onDirectoryChange={setOptimisticDirectoryId}
             onError={resetDirectoryId}
             promptId={prompt._id}
           />
-          {prompt.isCreator && (
+          {canEdit && (
             <PromptDetailUrlEditor
               promptId={prompt._id}
               slug={prompt.slug}
@@ -88,8 +92,8 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
             />
           )}
           <PromptDetailActions
+            canEdit={canEdit}
             content={prompt.content}
-            isCreator={prompt.isCreator}
             isSaved={prompt.isSaved}
             promptId={prompt._id}
             slug={prompt.slug}

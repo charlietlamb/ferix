@@ -14,13 +14,13 @@ import { toast } from "sonner";
 interface PromptDetailTagsProps {
   promptId: Id<"prompts">;
   tags: string[];
-  isCreator: boolean;
+  canEdit: boolean;
 }
 
 export function PromptDetailTags({
   promptId,
   tags,
-  isCreator,
+  canEdit,
 }: PromptDetailTagsProps) {
   const t = useTranslations("promptDetail");
   const updateTags = useMutation(api.prompts.updateTags);
@@ -54,7 +54,7 @@ export function PromptDetailTags({
     setTags(newTags.map((tag) => tag.value));
   };
 
-  if (isCreator) {
+  if (canEdit) {
     return (
       <PromptSection title={t("tags")}>
         <MultiSelect

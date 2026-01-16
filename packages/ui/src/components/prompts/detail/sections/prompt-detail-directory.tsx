@@ -19,7 +19,7 @@ import { toast } from "sonner";
 interface PromptDetailDirectoryProps {
   promptId: Id<"prompts">;
   directoryId?: string;
-  isCreator: boolean;
+  canEdit: boolean;
   /** Callback when directory changes (for optimistic updates in parent) */
   onDirectoryChange: (directoryId: string | undefined) => void;
   /** Callback when mutation fails (to rollback optimistic update) */
@@ -29,7 +29,7 @@ interface PromptDetailDirectoryProps {
 export function PromptDetailDirectory({
   promptId,
   directoryId,
-  isCreator,
+  canEdit,
   onDirectoryChange,
   onError,
 }: PromptDetailDirectoryProps) {
@@ -54,7 +54,7 @@ export function PromptDetailDirectory({
     }
   };
 
-  if (isCreator) {
+  if (canEdit) {
     return (
       <PromptSection title={t("directory")}>
         <Select
