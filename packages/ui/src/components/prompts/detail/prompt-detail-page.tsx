@@ -64,7 +64,7 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
           type={prompt.type}
         />
 
-        <aside className="flex flex-col border-border border-t md:w-[320px] md:shrink-0 md:overflow-auto md:border-t-0 md:border-l">
+        <aside className="flex flex-col overflow-auto border-border border-t md:w-[320px] md:shrink-0 md:border-t-0 md:border-l">
           <PromptDetailAuthor
             creator={prompt.creator}
             directory={prompt.directory}

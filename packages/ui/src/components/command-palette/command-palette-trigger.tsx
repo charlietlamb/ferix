@@ -16,7 +16,9 @@ export function CommandPaletteTrigger() {
       variant="outline"
     >
       <MagnifyingGlassIcon className="size-4" />
-      <span className="flex-1 text-left text-sm">{t("placeholder")}</span>
+      <span className="flex-1 truncate text-left text-sm">
+        {t("placeholder")}
+      </span>
       <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] opacity-100 sm:flex">
         <span className="text-xs">⌘</span>K
       </kbd>

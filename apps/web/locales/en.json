@@ -282,7 +282,8 @@
     "submitting": "Adding...",
     "success": "Directory added successfully",
     "error": "Failed to add directory",
-    "alreadyExists": "This directory has already been added"
+    "alreadyExists": "This directory has already been added",
+    "unauthorized": "You must be signed in to add a directory"
   },
   "auth": {
     "emailVerified": "Email verified successfully",

@@ -81,17 +81,15 @@ export function PromptDetailContent({
               slug={slug}
             />
 
-            <div className="group/textarea relative min-h-0 flex-1">
-              <div className="h-full overflow-auto">
-                <Textarea
-                  className="min-h-full resize-none rounded-none border-0 bg-transparent p-4 font-mono text-sm focus-visible:ring-0 disabled:cursor-default disabled:opacity-100"
-                  disabled={!canEdit || isSaving}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder={t("contentPlaceholder")}
-                  readOnly={!canEdit}
-                  value={content}
-                />
-              </div>
+            <div className="group/textarea relative min-h-0 flex-1 overflow-auto">
+              <Textarea
+                className="min-h-full resize-none rounded-none border-0 bg-transparent p-4 font-mono text-sm focus-visible:ring-0 disabled:cursor-default disabled:opacity-100"
+                disabled={!canEdit || isSaving}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder={t("contentPlaceholder")}
+                readOnly={!canEdit}
+                value={content}
+              />
               <CopyButton
                 className="absolute top-2 right-5 opacity-0 transition-opacity group-hover/textarea:opacity-100"
                 content={content}

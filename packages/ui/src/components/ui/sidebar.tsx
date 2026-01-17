@@ -4,6 +4,7 @@ import * as React from "react"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
+import { usePathname } from "next/navigation"
 
 import { cn } from "@ferix/ui/lib/utils"
 import { Button } from "@ferix/ui/components/ui/button"
@@ -68,6 +69,14 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
+  const pathname = usePathname()
+
+  // Close mobile sidebar on navigation
+  React.useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }, [pathname, isMobile])
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.

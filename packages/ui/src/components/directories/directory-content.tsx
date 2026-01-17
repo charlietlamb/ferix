@@ -2,6 +2,11 @@
 
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
+import {
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderTitle,
+} from "@ferix/ui/components/layout/page-header";
 import { Button } from "@ferix/ui/components/ui/button";
 import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
@@ -82,12 +87,12 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-border border-b px-4 py-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-bold text-xl">{ownerTitle}</h1>
-          <p className="text-muted-foreground text-sm">
+      <PageHeader className="flex flex-row items-center justify-between border-border border-b">
+        <div>
+          <PageHeaderTitle>{ownerTitle}</PageHeaderTitle>
+          <PageHeaderDescription>
             {t("description", { owner: directory.owner, repo: directory.repo })}
-          </p>
+          </PageHeaderDescription>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5">
@@ -123,14 +128,14 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
           <a href={githubRepoUrl} rel="noopener noreferrer" target="_blank">
             <img
               alt={directory.owner}
-              className="size-12 transition-opacity hover:opacity-80"
-              height={48}
+              className="size-6 transition-opacity hover:opacity-80"
+              height={24}
               src={githubAvatarUrl}
-              width={48}
+              width={24}
             />
           </a>
         </div>
-      </div>
+      </PageHeader>
       {isAdmin && (
         <DirectoryTags directoryId={directoryId} tags={directory.tags ?? []} />
       )}
@@ -144,17 +149,17 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
  */
 function DirectoryHeaderSkeleton() {
   return (
-    <div className="flex items-center justify-between border-border border-b px-4 py-3">
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-7 w-32" />
-        <Skeleton className="h-4 w-48" />
+    <div className="flex items-center justify-between border-border border-b px-4 py-2">
+      <div className="flex flex-col gap-1">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-3 w-48" />
       </div>
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5">
           <Skeleton className="h-5 w-56" />
           <Skeleton className="size-7 rounded" />
         </div>
-        <Skeleton className="size-12" />
+        <Skeleton className="size-6 rounded-full" />
       </div>
     </div>
   );

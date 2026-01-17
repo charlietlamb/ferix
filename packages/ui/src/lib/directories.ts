@@ -8,6 +8,7 @@ export const TOP_DIRECTORY_URLS = [
   "https://github.com/better-auth/skills",
   "https://github.com/vercel-labs/agent-skills",
   "https://github.com/expo/skills",
+  "https://github.com/callstackincubator/agent-skills",
 ];
 
 /**

@@ -56,8 +56,15 @@ export function AddDirectoryForm({ onSuccess }: AddDirectoryFormProps) {
         toast.success(t("success"));
         onSuccess?.();
       } catch (err) {
-        if (err instanceof Error && err.message.includes("already exists")) {
-          toast.error(t("alreadyExists"));
+        console.error("Directory creation error:", err);
+        if (err instanceof Error) {
+          if (err.message.includes("already exists")) {
+            toast.error(t("alreadyExists"));
+          } else if (err.message.includes("Unauthorized")) {
+            toast.error(t("unauthorized"));
+          } else {
+            toast.error(err.message || t("error"));
+          }
         } else {
           toast.error(t("error"));
         }

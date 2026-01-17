@@ -25,7 +25,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) {
+    if (!user?._id) {
       throw new Error("Unauthorized");
     }
 
