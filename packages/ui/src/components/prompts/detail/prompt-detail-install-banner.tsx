@@ -38,7 +38,7 @@ export function PromptDetailInstallBanner({
         <Link href={`/directory/${directory._id}`}>
           <img
             alt={directory.owner}
-            className="size-8 shrink-0 rounded border border-border"
+            className="size-8 shrink-0 border border-border"
             height={32}
             src={getGithubAvatarUrl(directory.owner)}
             width={32}

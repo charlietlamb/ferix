@@ -4,7 +4,10 @@ import { cn } from "@ferix/ui/lib/utils";
  * Top directories to feature on the home page
  * These are GitHub URLs that will be matched against stored directories
  */
-export const TOP_DIRECTORY_URLS = ["https://github.com/better-auth/skills"];
+export const TOP_DIRECTORY_URLS = [
+  "https://github.com/better-auth/skills",
+  "https://github.com/vercel-labs/agent-skills",
+];
 
 /**
  * Regex for parsing GitHub URLs
