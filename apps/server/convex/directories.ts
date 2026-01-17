@@ -40,6 +40,16 @@ export const get = query({
   },
 });
 
+export const getByGithubUrl = query({
+  args: { githubUrl: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("directories")
+      .withIndex("by_githubUrl", (q) => q.eq("githubUrl", args.githubUrl))
+      .first();
+  },
+});
+
 export const remove = mutation({
   args: { directoryId: v.id("directories") },
   handler: async (ctx, args) => {

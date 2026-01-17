@@ -3,7 +3,9 @@ import { ForgotPasswordDialog } from "../components/auth/forgot-password/forgot-
 import { SignInDialog } from "../components/auth/sign-in/sign-in-dialog";
 import { SignUpDialog } from "../components/auth/sign-up/sign-up-dialog";
 import { CommandPalette } from "../components/command-palette/command-palette";
+import { CreateMenuDialog } from "../components/create/create-menu-dialog";
 import { ConfirmDialog } from "../components/dialog/confirm-dialog";
+import { AddDirectoryDialog } from "../components/directories/add-directory-dialog";
 import { ChangePasswordDialog } from "../components/settings/change-password-dialog";
 import { SettingsDialog } from "../components/settings/settings-dialog";
 import type { ConfirmDialogProps } from "./dialog-types";
@@ -15,6 +17,8 @@ export interface DialogMap {
   forgotPasswordDialog: undefined;
   commandPaletteDialog: undefined;
   confirmDialog: ConfirmDialogProps;
+  createMenuDialog: undefined;
+  addDirectoryDialog: undefined;
 }
 
 export type DialogKey = keyof DialogMap;
@@ -38,6 +42,8 @@ export const dialogRegistry: {
   forgotPasswordDialog: ForgotPasswordDialog,
   commandPaletteDialog: CommandPalette,
   confirmDialog: ConfirmDialog,
+  createMenuDialog: CreateMenuDialog,
+  addDirectoryDialog: AddDirectoryDialog,
 };
 
 export const dialogStackAtom = atom<DialogEntry[]>([]);

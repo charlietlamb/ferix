@@ -208,6 +208,33 @@
       "signIn": "Sign In"
     }
   },
+  "createMenu": {
+    "title": "Create",
+    "description": "Choose what you want to create",
+    "prompt": {
+      "title": "Create Prompt",
+      "description": "Share subagents, skills, and rules with the community"
+    },
+    "directory": {
+      "title": "Add Skills Directory",
+      "description": "Link a GitHub repo containing Claude Code skills"
+    }
+  },
+  "addDirectory": {
+    "title": "Add Skills Directory",
+    "description": "Link a GitHub repository containing Claude Code skills",
+    "githubUrl": "GitHub URL",
+    "githubUrlPlaceholder": "https://github.com/owner/repo",
+    "checking": "Checking repository...",
+    "valid": "Valid repository",
+    "invalid": "Repository not found or not accessible",
+    "invalidUrl": "Enter a valid GitHub repository URL",
+    "submit": "Add Directory",
+    "submitting": "Adding...",
+    "success": "Directory added successfully",
+    "error": "Failed to add directory",
+    "alreadyExists": "This directory has already been added"
+  },
   "auth": {
     "emailVerified": "Email verified successfully",
     "signIn": {

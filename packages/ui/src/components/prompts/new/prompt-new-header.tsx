@@ -25,7 +25,7 @@ export function PromptNewHeader({
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <Input
           autoFocus
-          className="h-auto border-0 bg-transparent p-0 font-medium text-lg shadow-none focus-visible:ring-0"
+          className="h-auto min-w-0 flex-1 truncate border-0 bg-transparent p-0 font-medium text-lg shadow-none placeholder:text-muted-foreground focus-visible:ring-0 dark:bg-transparent"
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder={t("titlePlaceholder")}
           value={title}
