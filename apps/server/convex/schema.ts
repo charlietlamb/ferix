@@ -8,9 +8,15 @@ export const promptTypes = v.union(
   v.literal("skill")
 );
 
+export const syncStatusTypes = v.union(
+  v.literal("syncing"),
+  v.literal("success"),
+  v.literal("error")
+);
+
 export default defineSchema({
   prompts: defineTable({
-    userId: v.string(),
+    userId: v.optional(v.string()),
     title: v.string(),
     slug: v.string(),
     content: v.string(),
@@ -19,17 +25,25 @@ export default defineSchema({
     downloads: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
+    directoryId: v.optional(v.id("directories")),
+    filePath: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
     .index("by_slug", ["slug"])
     .index("by_type", ["type"])
     .index("by_downloads", ["downloads"])
-    .index("by_userId_downloads", ["userId", "downloads"]),
+    .index("by_userId_downloads", ["userId", "downloads"])
+    .index("by_directoryId", ["directoryId"]),
 
   directories: defineTable({
     githubUrl: v.string(),
+    owner: v.string(),
+    repo: v.string(),
     submittedByUserId: v.string(),
+    tags: v.optional(v.array(v.string())),
     createdAt: v.number(),
+    lastSyncedAt: v.optional(v.number()),
+    syncStatus: v.optional(syncStatusTypes),
   }).index("by_githubUrl", ["githubUrl"]),
 
   commits: defineTable({

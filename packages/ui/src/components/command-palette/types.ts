@@ -1,4 +1,9 @@
-export type CommandItemType = "tag" | "prompt" | "action" | "page";
+export type CommandItemType =
+  | "tag"
+  | "prompt"
+  | "action"
+  | "page"
+  | "directory";
 
 export interface CommandItemData {
   id: string;

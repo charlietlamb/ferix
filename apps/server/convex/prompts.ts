@@ -194,7 +194,14 @@ export const getBySlug = query({
 
     const currentUser = await authComponent.safeGetAuthUser(ctx);
 
-    const creator = await authComponent.getAnyUserById(ctx, prompt.userId);
+    const creator = prompt.userId
+      ? await authComponent.getAnyUserById(ctx, prompt.userId)
+      : null;
+
+    // Fetch directory info if this prompt belongs to a directory
+    const directory = prompt.directoryId
+      ? await ctx.db.get(prompt.directoryId)
+      : null;
 
     const saves = await ctx.db
       .query("saves")
@@ -213,6 +220,13 @@ export const getBySlug = query({
             name: creator.name,
             image: creator.image ?? null,
             username: creator.username ?? null,
+          }
+        : null,
+      directory: directory
+        ? {
+            _id: directory._id,
+            owner: directory.owner,
+            repo: directory.repo,
           }
         : null,
       isCreator: currentUser ? currentUser._id === prompt.userId : false,
@@ -457,5 +471,41 @@ export const search = query({
       .slice(0, 8);
 
     return enrichPrompts(ctx, filtered);
+  },
+});
+
+export const listByDirectory = query({
+  args: {
+    directoryId: v.id("directories"),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const results = await ctx.db
+      .query("prompts")
+      .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    return {
+      ...results,
+      page: await enrichPrompts(ctx, results.page),
+    };
+  },
+});
+
+/**
+ * List all prompts in a directory (non-paginated, for file tree view)
+ */
+export const listAllByDirectory = query({
+  args: {
+    directoryId: v.id("directories"),
+  },
+  handler: async (ctx, args) => {
+    const prompts = await ctx.db
+      .query("prompts")
+      .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
+      .collect();
+
+    return enrichPrompts(ctx, prompts);
   },
 });

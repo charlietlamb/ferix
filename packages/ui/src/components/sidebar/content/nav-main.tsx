@@ -9,12 +9,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@ferix/ui/components/ui/sidebar";
-import { ClockIcon, FireIcon, TagIcon } from "@phosphor-icons/react";
+import {
+  ClockIcon,
+  FireIcon,
+  FolderIcon,
+  TagIcon,
+} from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import type { ComponentType } from "react";
 
 interface NavItem {
-  titleKey: "popular" | "recent" | "tags";
+  titleKey: "popular" | "recent" | "tags" | "directories";
   href: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -23,6 +28,7 @@ const navItems: NavItem[] = [
   { titleKey: "popular", href: "/popular", icon: FireIcon },
   { titleKey: "recent", href: "/recent", icon: ClockIcon },
   { titleKey: "tags", href: "/tags", icon: TagIcon },
+  { titleKey: "directories", href: "/directories", icon: FolderIcon },
 ];
 
 export function NavMain() {

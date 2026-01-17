@@ -4,8 +4,8 @@ import { useTrack } from "@ferix/analytics/use-track";
 import { Link } from "@ferix/i18n/navigation";
 import { api } from "@ferix/server/_generated/api";
 import type { Prompt } from "@ferix/server/types";
+import { PromptCellSource } from "@ferix/ui/components/prompts/cell/prompt-cell-source";
 import { TypeBadge } from "@ferix/ui/components/prompts/shared/type-badge";
-import { UserLink } from "@ferix/ui/components/user/user-link";
 import { SaveButton } from "@ferix/ui/components/utils/save-button";
 import { useCopy } from "@ferix/ui/hooks/use-copy";
 import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
@@ -87,15 +87,7 @@ export function PromptCell({ prompt }: PromptCellProps) {
       </div>
 
       <div className="flex items-center justify-between text-muted-foreground text-xs">
-        {prompt.creator ? (
-          <UserLink
-            image={prompt.creator.image}
-            name={prompt.creator.name}
-            username={prompt.creator.username}
-          />
-        ) : (
-          <div />
-        )}
+        <PromptCellSource prompt={prompt} />
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
             <DownloadIcon className="size-3" />

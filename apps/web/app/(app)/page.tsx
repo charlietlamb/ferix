@@ -1,5 +1,6 @@
 import { CategoryGrid } from "@ferix/ui/components/home/categories/category-grid";
 import { CTASection } from "@ferix/ui/components/home/cta/cta-section";
+import { DirectoryGrid } from "@ferix/ui/components/home/directories/directory-grid";
 import { Gutter } from "@ferix/ui/components/home/gutter";
 import { HeroSection } from "@ferix/ui/components/home/hero/hero-section";
 import { LogoSection } from "@ferix/ui/components/home/logo/logo-section";
@@ -13,6 +14,8 @@ export default function DashboardPage() {
     <AppPage className="scrollbar-none h-auto overflow-visible">
       <HeroSection />
       <SearchSection />
+      <DirectoryGrid />
+      <Gutter />
       <PopularPrompts />
       <Gutter />
       {/* <StatsSection /> */}

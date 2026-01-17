@@ -6,6 +6,8 @@ import type { CommandGroup, CommandItemData } from "../types";
 
 export function useCommandPalette(
   promptItems: CommandItemData[] | undefined,
+  syncDirectoryItems: CommandItemData[] | undefined,
+  directorySearchItems: CommandItemData[] | undefined,
   query: string
 ) {
   const groups = useMemo<CommandGroup[]>(() => {
@@ -36,8 +38,26 @@ export function useCommandPalette(
       });
     }
 
+    if (directorySearchItems && directorySearchItems.length > 0) {
+      staticGroups.push({
+        id: "directorySearch",
+        label: "Directories",
+        priority: 50,
+        items: directorySearchItems,
+      });
+    }
+
+    if (syncDirectoryItems && syncDirectoryItems.length > 0) {
+      staticGroups.push({
+        id: "directories",
+        label: "Sync Directories",
+        priority: 25,
+        items: syncDirectoryItems,
+      });
+    }
+
     return staticGroups.sort((a, b) => a.priority - b.priority);
-  }, [query, promptItems]);
+  }, [query, promptItems, syncDirectoryItems, directorySearchItems]);
 
   const isEmpty = groups.length === 0;
 

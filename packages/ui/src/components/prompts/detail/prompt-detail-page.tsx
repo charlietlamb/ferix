@@ -29,6 +29,11 @@ interface PromptDetailPageProps {
       image: string | null;
       username: string | null;
     } | null;
+    directory: {
+      _id: string;
+      owner: string;
+      repo: string;
+    } | null;
     isCreator: boolean;
     isSaved: boolean;
     saveCount: number;
@@ -52,7 +57,10 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
         />
 
         <aside className="flex flex-col border-border border-t md:w-[320px] md:shrink-0 md:overflow-auto md:border-t-0 md:border-l">
-          <PromptDetailAuthor creator={prompt.creator} />
+          <PromptDetailAuthor
+            creator={prompt.creator}
+            directory={prompt.directory}
+          />
           <PromptDetailStats
             downloads={prompt.downloads}
             saveCount={prompt.saveCount}

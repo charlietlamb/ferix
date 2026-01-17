@@ -10,8 +10,10 @@
 
 import type * as auth from "../auth.js";
 import type * as authmin from "../authmin.js";
+import type * as crons from "../crons.js";
 import type * as directories from "../directories.js";
 import type * as http from "../http.js";
+import type * as lib_github from "../lib/github.js";
 import type * as lib_slug from "../lib/slug.js";
 import type * as migrations from "../migrations.js";
 import type * as profiles from "../profiles.js";
@@ -30,8 +32,10 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authmin: typeof authmin;
+  crons: typeof crons;
   directories: typeof directories;
   http: typeof http;
+  "lib/github": typeof lib_github;
   "lib/slug": typeof lib_slug;
   migrations: typeof migrations;
   profiles: typeof profiles;

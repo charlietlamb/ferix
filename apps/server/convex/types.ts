@@ -1,10 +1,15 @@
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 
 export type Prompt = Doc<"prompts"> & {
   creator: {
     name: string;
     image: string | null;
     username: string | null;
+  } | null;
+  directory: {
+    _id: Id<"directories">;
+    owner: string;
+    repo: string;
   } | null;
   isSaved: boolean;
 };

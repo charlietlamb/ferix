@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "@ferix/i18n/navigation";
+import { api } from "@ferix/server/_generated/api";
+import type { Id } from "@ferix/server/_generated/dataModel";
 import {
   Command,
   CommandGroup,
@@ -19,47 +21,95 @@ import {
 import { Spinner } from "@ferix/ui/components/ui/spinner";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
+import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useState } from "react";
+import { toast } from "sonner";
 import { CommandPaletteEmpty } from "./command-palette-empty";
 import { useCommandPalette } from "./hooks/use-command-palette";
+import { useDirectoriesSource } from "./sources/use-directories-source";
+import { useDirectorySearchSource } from "./sources/use-directory-search-source";
 import { usePromptsSource } from "./sources/use-prompts-source";
 import type { CommandItemData } from "./types";
 
 export function CommandPalette() {
   const t = useTranslations("commandPalette");
+  const tDirectory = useTranslations("pages.directory");
   const router = useRouter();
   const { close, open: openDialog, stack } = useDialog();
   const { setTheme, resolvedTheme } = useTheme();
   const { isAuthenticated } = useAuthenticated();
+  const triggerSync = useMutation(api.directories.triggerSync);
 
   const [query, setQuery] = useState("");
   const { items: promptItems, isLoading: isLoadingPrompts } =
     usePromptsSource(query);
-  const { groups, isEmpty } = useCommandPalette(promptItems, query);
+  const { items: syncDirectoryItems, isLoading: isLoadingSyncDirectories } =
+    useDirectoriesSource(query);
+  const { items: directorySearchItems, isLoading: isLoadingDirectorySearch } =
+    useDirectorySearchSource(query);
+  const { groups, isEmpty } = useCommandPalette(
+    promptItems,
+    syncDirectoryItems,
+    directorySearchItems,
+    query
+  );
+
+  const isLoadingDirectories =
+    isLoadingSyncDirectories || isLoadingDirectorySearch;
 
   const isOpen = stack.some((dialog) => dialog.key === "commandPaletteDialog");
+
+  const handleSyncDirectory = async (directoryId: string) => {
+    try {
+      await triggerSync({ directoryId: directoryId as Id<"directories"> });
+      toast.success(tDirectory("syncStarted"));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      const errorKey = message.includes("already in progress")
+        ? "syncInProgress"
+        : "syncError";
+      toast.error(tDirectory(errorKey));
+    }
+  };
 
   const closeAndReset = () => {
     close();
     setQuery("");
   };
 
-  const handleSelect = (item: CommandItemData) => {
+  const handleSelect = async (item: CommandItemData) => {
     closeAndReset();
 
     if (item.action === "toggleTheme") {
       setTheme(resolvedTheme === "dark" ? "light" : "dark");
-    } else if (item.action === "createPromptDialog") {
+      return;
+    }
+
+    if (item.action === "createPromptDialog") {
+      isAuthenticated
+        ? router.push("/create-prompt")
+        : openDialog("signInDialog");
+      return;
+    }
+
+    if (item.action === "settingsDialog") {
       if (isAuthenticated) {
-        router.push("/create-prompt");
+        router.push("/settings");
       } else {
         openDialog("signInDialog");
       }
-    } else if (item.action === "settingsDialog") {
-      openDialog("settingsDialog");
-    } else if (item.path) {
+      return;
+    }
+
+    if (item.action?.startsWith("syncDirectory:")) {
+      const directoryId = item.action.replace("syncDirectory:", "");
+      await handleSyncDirectory(directoryId);
+      return;
+    }
+
+    if (item.path) {
       router.push(item.path);
     }
   };
@@ -87,7 +137,7 @@ export function CommandPalette() {
             value={query}
           />
           <CommandList>
-            {isEmpty && !isLoadingPrompts ? (
+            {isEmpty && !isLoadingPrompts && !isLoadingDirectories ? (
               <CommandPaletteEmpty query={query} />
             ) : (
               <>
@@ -118,7 +168,7 @@ export function CommandPalette() {
                     </CommandGroup>
                   </div>
                 ))}
-                {isLoadingPrompts && (
+                {(isLoadingPrompts || isLoadingDirectories) && (
                   <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm">
                     <Spinner />
                     <span>{t("loading")}</span>

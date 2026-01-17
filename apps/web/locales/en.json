@@ -1,10 +1,10 @@
 {
   "search": {
-    "placeholder": "Search for prompts, tags, or actions..."
+    "placeholder": "Search for skills, directories, subagents, rules, or tags..."
   },
   "hero": {
-    "title": "A directory of skills, subagents and rules for",
-    "description": "Explore the latest and most popular subagents created by our community."
+    "title": "A collection of skills, subagents and rules for",
+    "description": "Explore the latest skills, subagents and rules created by our community. Perfect for Cursor, Claude, and other AI agents."
   },
   "stats": {
     "prompts": "prompts",
@@ -17,9 +17,14 @@
     "viewAll": "View All",
     "promptCount": "{count} prompts"
   },
+  "directories": {
+    "title": "Top Directories",
+    "viewAll": "View All",
+    "promptCount": "{count} prompts"
+  },
   "cta": {
-    "title": "Share your subagents",
-    "description": "Help the community by sharing your prompts and rules",
+    "title": "Share your skills, subagents and rules",
+    "description": "Help the community by sharing your skills, subagents and rules",
     "create": "Create",
     "browse": "Browse Popular"
   },
@@ -35,6 +40,7 @@
     "popular": "Popular",
     "recent": "Recent",
     "tags": "All Tags",
+    "directories": "Directories",
     "topCategories": "Top Categories",
     "viewAll": "View All",
     "personal": "Personal",
@@ -73,6 +79,34 @@
         "design": "Design",
         "library": "Libraries"
       }
+    },
+    "directory": {
+      "loading": "Loading...",
+      "notFound": "Directory not found",
+      "description": "Skills from {owner}/{repo}",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "copyError": "Failed to copy",
+      "sync": "Sync",
+      "syncing": "Syncing...",
+      "syncStarted": "Sync started",
+      "syncInProgress": "Sync already in progress",
+      "syncError": "Failed to start sync",
+      "lastSynced": "Last synced {time}",
+      "justNow": "just now",
+      "minutesAgo": "{minutes}m ago",
+      "hoursAgo": "{hours}h ago",
+      "daysAgo": "{days}d ago",
+      "tags": "Tags",
+      "selectTags": "Select tags...",
+      "tagsSaved": "Tags saved (syncing prompts...)",
+      "tagsError": "Failed to update tags"
+    },
+    "directories": {
+      "title": "All Directories",
+      "description": "Browse GitHub repositories with Claude Code skills",
+      "loading": "Loading directories...",
+      "empty": "No directories yet"
     }
   },
   "prompts": {
@@ -83,10 +117,10 @@
       "description": "There are no prompts to display yet."
     },
     "popular": {
-      "title": "Popular Subagents"
+      "title": "Popular Prompts"
     },
     "recent": {
-      "title": "Recent Subagents"
+      "title": "Recent Prompts"
     },
     "create": {
       "title": "Create",
@@ -136,6 +170,7 @@
   },
   "promptDetail": {
     "author": "Author",
+    "directory": "Directory",
     "unknownAuthor": "Unknown",
     "stats": "Stats",
     "downloads": "downloads",
@@ -178,15 +213,17 @@
   },
   "commandPalette": {
     "title": "Command Palette",
-    "description": "Search for prompts, tags, pages, or actions",
+    "description": "Search for skills, directories, subagents, rules, or tags",
     "placeholder": "Search...",
     "noResults": "No results found",
-    "noResultsHint": "Try searching for prompts, tags, pages, or actions",
+    "noResultsHint": "Try searching for skills, directories, subagents, rules, or tags",
     "loading": "Loading prompts...",
     "prompts": "Prompts",
     "tags": "Tags",
     "pages": "Pages",
     "actions": "Actions",
+    "directories": "Sync Directories",
+    "directorySearch": "Directories",
     "actionsCreatePrompt": "Create",
     "actionsSettings": "Settings",
     "actionsToggleTheme": "Toggle Theme"

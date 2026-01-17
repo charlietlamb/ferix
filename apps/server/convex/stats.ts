@@ -35,3 +35,18 @@ export const countByTags = query({
     return counts;
   },
 });
+
+export const countByDirectories = query({
+  args: { directoryIds: v.array(v.id("directories")) },
+  handler: async (ctx, args) => {
+    const counts: Record<string, number> = {};
+    for (const directoryId of args.directoryIds) {
+      const prompts = await ctx.db
+        .query("prompts")
+        .withIndex("by_directoryId", (q) => q.eq("directoryId", directoryId))
+        .collect();
+      counts[directoryId] = prompts.length;
+    }
+    return counts;
+  },
+});
