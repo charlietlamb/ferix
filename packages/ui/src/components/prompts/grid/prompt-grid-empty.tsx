@@ -16,7 +16,7 @@ export function PromptGridEmpty() {
   const t = useTranslations("prompts");
 
   return (
-    <div className="flex flex-1 items-center justify-center border-border border-t">
+    <div className="flex flex-1 items-center justify-center">
       <Empty className="border-none">
         <EmptyHeader>
           <EmptyMedia variant="icon">
