@@ -24,7 +24,7 @@ import { useDialog } from "@ferix/ui/hooks/use-dialog";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { CommandPaletteEmpty } from "./command-palette-empty";
 import { useCommandPalette } from "./hooks/use-command-palette";
@@ -41,6 +41,7 @@ export function CommandPalette() {
   const { setTheme, resolvedTheme } = useTheme();
   const { isAuthenticated } = useAuthenticated();
   const triggerSync = useMutation(api.directories.triggerSync);
+  const removeDirectory = useMutation(api.directories.remove);
 
   const [query, setQuery] = useState("");
   const { items: promptItems, isLoading: isLoadingPrompts } =
@@ -74,11 +75,28 @@ export function CommandPalette() {
     }
   };
 
+  const handleDeleteDirectory = useCallback(
+    async (directoryId: string) => {
+      try {
+        const result = await removeDirectory({
+          directoryId: directoryId as Id<"directories">,
+        });
+        toast.success(
+          tDirectory("deleteSuccess", { count: result?.deletedPrompts ?? 0 })
+        );
+      } catch {
+        toast.error(tDirectory("deleteError"));
+      }
+    },
+    [removeDirectory, tDirectory]
+  );
+
   const closeAndReset = () => {
     close();
     setQuery("");
   };
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: refactor later
   const handleSelect = async (item: CommandItemData) => {
     closeAndReset();
 
@@ -106,6 +124,20 @@ export function CommandPalette() {
     if (item.action?.startsWith("syncDirectory:")) {
       const directoryId = item.action.replace("syncDirectory:", "");
       await handleSyncDirectory(directoryId);
+      return;
+    }
+
+    if (item.action?.startsWith("deleteDirectory:")) {
+      const parts = item.action.split(":");
+      const directoryId = parts[1] ?? "";
+      const directoryName = parts[2] ?? "";
+      openDialog("confirmDialog", {
+        title: tDirectory("deleteTitle"),
+        description: tDirectory("deleteDescription", { name: directoryName }),
+        confirmLabel: tDirectory("deleteConfirm"),
+        variant: "destructive",
+        onConfirm: () => handleDeleteDirectory(directoryId),
+      });
       return;
     }
 
@@ -153,12 +185,22 @@ export function CommandPalette() {
                             onSelect={() => handleSelect(item)}
                             value={item.id}
                           >
-                            {Icon && <Icon className="size-4" />}
-                            <span className="flex-1">
+                            {item.imageUrl ? (
+                              <img
+                                alt={item.label}
+                                className="size-4 shrink-0 border border-border"
+                                height={16}
+                                src={item.imageUrl}
+                                width={16}
+                              />
+                            ) : (
+                              Icon && <Icon className="size-4 shrink-0" />
+                            )}
+                            <span className="min-w-0 flex-1 truncate">
                               {item.labelKey ? t(item.labelKey) : item.label}
                             </span>
                             {item.description && (
-                              <span className="text-muted-foreground text-xs">
+                              <span className="shrink-0 text-muted-foreground text-xs">
                                 {item.description}
                               </span>
                             )}

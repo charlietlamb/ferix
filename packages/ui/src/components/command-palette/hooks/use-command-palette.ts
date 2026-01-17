@@ -29,30 +29,33 @@ export function useCommandPalette(
       })
       .filter((group): group is CommandGroup => group !== null);
 
-    if (promptItems && promptItems.length > 0) {
+    // Directory management (admin) - highest priority
+    if (syncDirectoryItems && syncDirectoryItems.length > 0) {
       staticGroups.push({
-        id: "prompts",
-        label: "Prompts",
-        priority: 100,
-        items: promptItems,
+        id: "directories",
+        label: "Manage Directories",
+        priority: 5,
+        items: syncDirectoryItems,
       });
     }
 
+    // Directory search results
     if (directorySearchItems && directorySearchItems.length > 0) {
       staticGroups.push({
         id: "directorySearch",
         label: "Directories",
-        priority: 50,
+        priority: 10,
         items: directorySearchItems,
       });
     }
 
-    if (syncDirectoryItems && syncDirectoryItems.length > 0) {
+    // Prompts
+    if (promptItems && promptItems.length > 0) {
       staticGroups.push({
-        id: "directories",
-        label: "Sync Directories",
-        priority: 25,
-        items: syncDirectoryItems,
+        id: "prompts",
+        label: "Prompts",
+        priority: 15,
+        items: promptItems,
       });
     }
 

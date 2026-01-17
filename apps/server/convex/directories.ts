@@ -165,6 +165,8 @@ export const remove = mutation({
     }
 
     await ctx.db.delete(args.directoryId);
+
+    return { success: true, deletedPrompts: prompts.length };
   },
 });
 

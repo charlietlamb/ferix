@@ -100,7 +100,12 @@
       "tags": "Tags",
       "selectTags": "Select tags...",
       "tagsSaved": "Tags saved (syncing prompts...)",
-      "tagsError": "Failed to update tags"
+      "tagsError": "Failed to update tags",
+      "deleteTitle": "Delete Directory",
+      "deleteDescription": "Are you sure you want to delete {name}? This will permanently delete the directory and all associated prompts. This action cannot be undone.",
+      "deleteConfirm": "Delete Directory",
+      "deleteSuccess": "Directory deleted successfully ({count} prompts removed)",
+      "deleteError": "Failed to delete directory"
     },
     "directories": {
       "title": "All Directories",

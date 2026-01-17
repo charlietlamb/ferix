@@ -4,7 +4,7 @@ import type { CommandItemData, CommandSource } from "../types";
 export const tagsSource: CommandSource = {
   id: "tags",
   label: "Tags",
-  priority: 10,
+  priority: 50,
   getItems: (query: string): CommandItemData[] => {
     const normalizedQuery = query.toLowerCase().trim();
 

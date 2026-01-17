@@ -31,7 +31,7 @@ const actions: (CommandItemData & { keywords?: string[] })[] = [
 export const actionsSource: CommandSource = {
   id: "actions",
   label: "Actions",
-  priority: 30,
+  priority: 70,
   getItems: (query: string): CommandItemData[] => {
     const normalizedQuery = query.toLowerCase().trim();
 

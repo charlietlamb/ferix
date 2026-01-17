@@ -1,8 +1,7 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
-import { formatTitle } from "@ferix/ui/lib/directories";
-import { FolderIcon } from "@phosphor-icons/react";
+import { formatTitle, getGithubAvatarUrl } from "@ferix/ui/lib/directories";
 import { useQuery } from "convex/react";
 import type { CommandItemData } from "../types";
 
@@ -43,7 +42,7 @@ export function useDirectorySearchSource(
       type: "directory" as const,
       label: formatTitle(dir.owner),
       description: `${dir.owner}/${dir.repo}`,
-      icon: FolderIcon,
+      imageUrl: getGithubAvatarUrl(dir.owner),
       path: `/directory/${dir._id}`,
     })),
     isLoading: false,

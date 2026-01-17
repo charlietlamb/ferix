@@ -28,7 +28,7 @@ const pages: CommandItemData[] = [
 export const pagesSource: CommandSource = {
   id: "pages",
   label: "Pages",
-  priority: 20,
+  priority: 60,
   getItems: (query: string): CommandItemData[] => {
     const normalizedQuery = query.toLowerCase().trim();
 

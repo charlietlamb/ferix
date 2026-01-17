@@ -12,6 +12,8 @@ export interface CommandItemData {
   labelKey?: string;
   description?: string;
   icon?: React.ComponentType<{ size?: number; className?: string }>;
+  /** Image URL to display instead of icon (e.g., GitHub avatar) */
+  imageUrl?: string;
   keywords?: string[];
   shortcut?: string;
   path?: string;
