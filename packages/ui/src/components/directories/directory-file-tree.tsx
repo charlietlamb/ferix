@@ -7,6 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@ferix/ui/components/ui/collapsible";
+import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 import { formatTitle } from "@ferix/ui/lib/directories";
 import { extractDescription } from "@ferix/ui/lib/markdown";
 import { cn } from "@ferix/ui/lib/utils";
@@ -237,6 +238,72 @@ export function DirectoryFileTree({ prompts }: DirectoryFileTreeProps) {
           node={node}
         />
       ))}
+    </div>
+  );
+}
+
+/**
+ * Skeleton for a single folder row in the file tree
+ */
+function FolderRowSkeleton({ depth }: { depth: number }) {
+  return (
+    <div className="border-border border-b">
+      <div
+        className="flex h-12 items-center gap-2 px-4"
+        style={{ paddingLeft: `${depth * 24 + 16}px` }}
+      >
+        <Skeleton className="size-4" />
+        <Skeleton className="size-4" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="ml-auto h-3 w-6" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for a single file row in the file tree
+ */
+function FileRowSkeleton({ depth }: { depth: number }) {
+  return (
+    <div className="border-border border-b">
+      <div
+        className="flex items-center gap-2 px-4 py-2"
+        style={{ paddingLeft: `${depth * 24 + 16}px` }}
+      >
+        <Skeleton className="size-4 shrink-0" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+          <Skeleton className="h-3 w-48" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for the entire file tree loading state
+ */
+export function DirectoryFileTreeSkeleton() {
+  return (
+    <div className="flex-1 overflow-y-auto">
+      {/* Simulate a folder with files */}
+      <FolderRowSkeleton depth={0} />
+      <FileRowSkeleton depth={1} />
+      <FileRowSkeleton depth={1} />
+      <FileRowSkeleton depth={1} />
+
+      {/* Another folder */}
+      <FolderRowSkeleton depth={0} />
+      <FileRowSkeleton depth={1} />
+      <FileRowSkeleton depth={1} />
+
+      {/* Root-level files */}
+      <FileRowSkeleton depth={0} />
+      <FileRowSkeleton depth={0} />
     </div>
   );
 }

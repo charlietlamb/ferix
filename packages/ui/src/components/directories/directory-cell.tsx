@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@ferix/i18n/navigation";
+import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 import {
   type DirectoryBase,
   formatTitle,
@@ -81,13 +82,13 @@ export function DirectoryCellSkeleton({
   return (
     <div className={cn("flex items-center gap-3 px-4", heightClass)}>
       {showAvatar ? (
-        <div className="size-10 animate-pulse rounded-sm bg-muted" />
+        <Skeleton className="size-10 rounded-sm" />
       ) : (
-        <div className="size-5 animate-pulse rounded bg-muted" />
+        <Skeleton className="size-5 rounded" />
       )}
       <div className="flex flex-col gap-1">
-        <div className="h-4 w-24 animate-pulse rounded bg-muted" />
-        <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-3 w-32" />
       </div>
     </div>
   );

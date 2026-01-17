@@ -14,9 +14,13 @@ interface GithubRepoPreviewProps {
 
 export function GithubRepoPreview({ repo }: GithubRepoPreviewProps) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-4">
-      <Avatar size="lg">
-        <AvatarImage alt={repo.fullName} src={repo.avatarUrl} />
+    <div className="flex items-start gap-3 border border-border bg-muted/30 p-4">
+      <Avatar className="rounded-none border" size="lg">
+        <AvatarImage
+          alt={repo.fullName}
+          className="rounded-none"
+          src={repo.avatarUrl}
+        />
         <AvatarFallback>{repo.fullName.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
       <div className="flex min-w-0 flex-1 flex-col gap-1">

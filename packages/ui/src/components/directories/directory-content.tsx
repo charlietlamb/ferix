@@ -3,6 +3,7 @@
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
 import { Button } from "@ferix/ui/components/ui/button";
+import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { formatTitle, getGithubAvatarUrl } from "@ferix/ui/lib/directories";
 import { ArrowsClockwise, Check, Copy } from "@phosphor-icons/react";
@@ -10,7 +11,10 @@ import { useMutation, useQuery } from "convex/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { DirectoryFileTree } from "./directory-file-tree";
+import {
+  DirectoryFileTree,
+  DirectoryFileTreeSkeleton,
+} from "./directory-file-tree";
 import { DirectoryTags } from "./directory-tags";
 
 interface DirectoryContentProps {
@@ -32,11 +36,7 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
   });
 
   if (directory === undefined || prompts === undefined) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground">{t("loading")}</div>
-      </div>
-    );
+    return <DirectoryContentSkeleton />;
   }
 
   if (directory === null) {
@@ -135,6 +135,39 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
         <DirectoryTags directoryId={directoryId} tags={directory.tags ?? []} />
       )}
       <DirectoryFileTree prompts={prompts} />
+    </div>
+  );
+}
+
+/**
+ * Skeleton for the directory header section
+ */
+function DirectoryHeaderSkeleton() {
+  return (
+    <div className="flex items-center justify-between border-border border-b px-4 py-3">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-7 w-32" />
+        <Skeleton className="h-4 w-48" />
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5">
+          <Skeleton className="h-5 w-56" />
+          <Skeleton className="size-7 rounded" />
+        </div>
+        <Skeleton className="size-12" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Full skeleton for the directory page while loading
+ */
+export function DirectoryContentSkeleton() {
+  return (
+    <div className="flex h-full flex-col">
+      <DirectoryHeaderSkeleton />
+      <DirectoryFileTreeSkeleton />
     </div>
   );
 }
