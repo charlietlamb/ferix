@@ -1,16 +1,12 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
-import type { Id } from "@ferix/server/_generated/dataModel";
 import {
   DirectoryCell,
   DirectoryCellSkeleton,
 } from "@ferix/ui/components/directories/directory-cell";
 import { DirectoryGridHeader } from "@ferix/ui/components/home/directories/directory-grid-header";
-import {
-  getGridItemBorderClasses,
-  getTopDirectories,
-} from "@ferix/ui/lib/directories";
+import { getGridItemBorderClasses } from "@ferix/ui/lib/directories";
 import { useQuery } from "convex/react";
 
 interface DirectoryGridInnerProps {
@@ -18,11 +14,11 @@ interface DirectoryGridInnerProps {
     _id: string;
     owner: string;
     repo: string;
+    promptCount: number;
   }>;
-  counts: Record<string, number> | undefined;
 }
 
-function DirectoryGridInner({ directories, counts }: DirectoryGridInnerProps) {
+function DirectoryGridInner({ directories }: DirectoryGridInnerProps) {
   return (
     <div>
       <ul className="grid grid-cols-2 md:grid-cols-4">
@@ -32,7 +28,7 @@ function DirectoryGridInner({ directories, counts }: DirectoryGridInnerProps) {
             key={directory._id}
           >
             <DirectoryCell
-              count={counts?.[directory._id]}
+              count={directory.promptCount}
               directory={directory}
               heightClass="h-24"
               showAvatar
@@ -60,35 +56,22 @@ function DirectoryGridSkeleton() {
 }
 
 export function DirectoryGrid() {
-  const topDirectoryInfo = getTopDirectories();
-  const allDirectories = useQuery(api.directories.list);
+  const topDirectories = useQuery(api.directories.listTopByDownloads, {
+    limit: 10,
+  });
 
-  const matchedDirectories = allDirectories?.filter((dir) =>
-    topDirectoryInfo.some(
-      (top) => top.owner === dir.owner && top.repo === dir.repo
-    )
-  );
-
-  const directoryIds =
-    matchedDirectories?.map((d) => d._id as Id<"directories">) ?? [];
-
-  const counts = useQuery(
-    api.stats.countByDirectories,
-    directoryIds.length > 0 ? { directoryIds } : "skip"
-  );
-
-  if (!(allDirectories && matchedDirectories)) {
+  if (!topDirectories) {
     return <DirectoryGridSkeleton />;
   }
 
-  if (matchedDirectories.length === 0) {
+  if (topDirectories.length === 0) {
     return null;
   }
 
   return (
     <section className="flex flex-col border-border border-b">
       <DirectoryGridHeader />
-      <DirectoryGridInner counts={counts} directories={matchedDirectories} />
+      <DirectoryGridInner directories={topDirectories} />
     </section>
   );
 }

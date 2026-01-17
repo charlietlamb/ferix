@@ -20,6 +20,7 @@ export const {
   changePassword,
   requestPasswordReset,
   resetPassword,
+  admin,
 } = authClient;
 
 /**

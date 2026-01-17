@@ -25,19 +25,21 @@ export function BaseDialog({
   dialogKey,
   children,
   size = "md",
+  className,
 }: {
   title: string;
   description: string;
   dialogKey: DialogKey;
   children: React.ReactNode;
   size?: keyof typeof sizeClasses;
+  className?: string;
 }) {
   const { close, stack } = useDialog();
   const isOpen = stack.some((dialog) => dialog.key === dialogKey);
 
   return (
     <Dialog onOpenChange={close} open={isOpen}>
-      <DialogContent className={cn(sizeClasses[size])}>
+      <DialogContent className={cn(sizeClasses[size], className)}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

@@ -3,6 +3,7 @@
 import { Button } from "@ferix/ui/components/ui/button";
 import { MultiSelect } from "@ferix/ui/components/ui/multi-select";
 import { Spinner } from "@ferix/ui/components/ui/spinner";
+import { useIsMobile } from "@ferix/ui/hooks/use-mobile";
 import { getTagsByIds, tagsToOptions } from "@ferix/ui/lib/tags";
 import { useTranslations } from "next-intl";
 
@@ -22,6 +23,7 @@ export function PromptNewSidebar({
   onCreate,
 }: PromptNewSidebarProps) {
   const t = useTranslations("promptNew");
+  const isMobile = useIsMobile();
 
   const tagObjects = getTagsByIds(tags);
   const tagOptions = tagsToOptions();
@@ -37,13 +39,13 @@ export function PromptNewSidebar({
   };
 
   return (
-    <aside className="flex flex-col border-border border-t md:w-[320px] md:shrink-0 md:overflow-auto md:border-t-0 md:border-l">
+    <aside className="flex flex-col border-border border-t md:w-[320px] md:shrink-0 md:overflow-visible md:border-t-0 md:border-l">
       <div className="flex flex-col gap-2 border-border border-b p-4">
         <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("tags")}
         </h3>
         <MultiSelect
-          dropdownPosition="top"
+          dropdownPosition={isMobile ? "top" : "bottom"}
           groupBy
           onChange={handleTagsChange}
           options={tagOptions}

@@ -3,6 +3,7 @@ import { ForgotPasswordDialog } from "../components/auth/forgot-password/forgot-
 import { SignInDialog } from "../components/auth/sign-in/sign-in-dialog";
 import { SignUpDialog } from "../components/auth/sign-up/sign-up-dialog";
 import { CommandPalette } from "../components/command-palette/command-palette";
+import { ImpersonatePalette } from "../components/command-palette/impersonate-palette";
 import { CreateMenuDialog } from "../components/create/create-menu-dialog";
 import { ConfirmDialog } from "../components/dialog/confirm-dialog";
 import { AddDirectoryDialog } from "../components/directories/add-directory-dialog";
@@ -16,6 +17,7 @@ export interface DialogMap {
   changePasswordDialog: undefined;
   forgotPasswordDialog: undefined;
   commandPaletteDialog: undefined;
+  impersonatePalette: undefined;
   confirmDialog: ConfirmDialogProps;
   createMenuDialog: undefined;
   addDirectoryDialog: undefined;
@@ -41,6 +43,7 @@ export const dialogRegistry: {
   changePasswordDialog: ChangePasswordDialog,
   forgotPasswordDialog: ForgotPasswordDialog,
   commandPaletteDialog: CommandPalette,
+  impersonatePalette: ImpersonatePalette,
   confirmDialog: ConfirmDialog,
   createMenuDialog: CreateMenuDialog,
   addDirectoryDialog: AddDirectoryDialog,

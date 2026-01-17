@@ -11,6 +11,7 @@ export function AddDirectoryDialog() {
 
   return (
     <BaseDialog
+      className="overflow-visible"
       description={t("description")}
       dialogKey="addDirectoryDialog"
       size="md"

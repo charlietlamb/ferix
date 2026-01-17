@@ -68,6 +68,32 @@ export const list = query({
   },
 });
 
+export const listTopByDownloads = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 10;
+    const directories = await ctx.db.query("directories").collect();
+
+    const directoriesWithDownloads = await Promise.all(
+      directories.map(async (dir) => {
+        const prompts = await ctx.db
+          .query("prompts")
+          .withIndex("by_directoryId", (q) => q.eq("directoryId", dir._id))
+          .collect();
+        const totalDownloads = prompts.reduce(
+          (sum, p) => sum + (p.downloads ?? 0),
+          0
+        );
+        return { ...dir, totalDownloads, promptCount: prompts.length };
+      })
+    );
+
+    return directoriesWithDownloads
+      .sort((a, b) => b.totalDownloads - a.totalDownloads)
+      .slice(0, limit);
+  },
+});
+
 export const get = query({
   args: { directoryId: v.id("directories") },
   handler: async (ctx, args) => {

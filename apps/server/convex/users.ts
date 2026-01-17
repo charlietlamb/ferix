@@ -44,3 +44,47 @@ export const isUsernameAvailable = query({
     return { available: !exists };
   },
 });
+
+interface UserRecord {
+  _id: string;
+  name: string;
+  email: string;
+  username?: string | null;
+  image?: string | null;
+  role?: string | null;
+}
+
+export const listForImpersonation = query({
+  args: { search: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const result = await ctx.runQuery(components.betterAuth.adapter.findMany, {
+      model: "user",
+      limit: 100,
+      paginationOpts: { cursor: null, numItems: 100 },
+    });
+
+    const users = (result?.page ?? []) as UserRecord[];
+    if (users.length === 0) {
+      return [];
+    }
+
+    const search = args.search?.toLowerCase().trim();
+    const filtered = search
+      ? users.filter(
+          (user) =>
+            user.name?.toLowerCase().includes(search) ||
+            user.email?.toLowerCase().includes(search) ||
+            user.username?.toLowerCase()?.includes(search)
+        )
+      : users;
+
+    return filtered.map((user) => ({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      username: user.username ?? null,
+      image: user.image ?? null,
+      role: user.role ?? null,
+    }));
+  },
+});

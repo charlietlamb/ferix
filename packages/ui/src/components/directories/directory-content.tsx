@@ -144,9 +144,6 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
   );
 }
 
-/**
- * Skeleton for the directory header section
- */
 function DirectoryHeaderSkeleton() {
   return (
     <div className="flex items-center justify-between border-border border-b px-4 py-2">
@@ -165,9 +162,6 @@ function DirectoryHeaderSkeleton() {
   );
 }
 
-/**
- * Full skeleton for the directory page while loading
- */
 export function DirectoryContentSkeleton() {
   return (
     <div className="flex h-full flex-col">

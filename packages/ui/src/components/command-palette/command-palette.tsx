@@ -21,6 +21,7 @@ import {
 import { Spinner } from "@ferix/ui/components/ui/spinner";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
+import { useImpersonation } from "@ferix/ui/hooks/use-impersonation";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
@@ -28,6 +29,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { CommandPaletteEmpty } from "./command-palette-empty";
 import { useCommandPalette } from "./hooks/use-command-palette";
+import { useActionsSource } from "./sources/use-actions-source";
 import { useDirectoriesSource } from "./sources/use-directories-source";
 import { useDirectorySearchSource } from "./sources/use-directory-search-source";
 import { usePromptsSource } from "./sources/use-prompts-source";
@@ -40,6 +42,7 @@ export function CommandPalette() {
   const { close, open: openDialog, stack } = useDialog();
   const { setTheme, resolvedTheme } = useTheme();
   const { isAuthenticated } = useAuthenticated();
+  const { stopImpersonating } = useImpersonation();
   const triggerSync = useMutation(api.directories.triggerSync);
   const removeDirectory = useMutation(api.directories.remove);
 
@@ -50,10 +53,12 @@ export function CommandPalette() {
     useDirectoriesSource(query);
   const { items: directorySearchItems, isLoading: isLoadingDirectorySearch } =
     useDirectorySearchSource(query);
+  const { items: actionItems } = useActionsSource(query);
   const { groups, isEmpty } = useCommandPalette(
     promptItems,
     syncDirectoryItems,
     directorySearchItems,
+    actionItems,
     query
   );
 
@@ -100,46 +105,28 @@ export function CommandPalette() {
   const handleSelect = async (item: CommandItemData) => {
     closeAndReset();
 
-    if (item.action === "toggleTheme") {
-      setTheme(resolvedTheme === "dark" ? "light" : "dark");
-      return;
-    }
+    const { action, path } = item;
 
-    if (item.action === "createPromptDialog") {
+    if (action === "toggleTheme") {
+      setTheme(resolvedTheme === "dark" ? "light" : "dark");
+    } else if (action === "createPromptDialog") {
       isAuthenticated
         ? router.push("/create-prompt")
         : openDialog("signInDialog");
-      return;
-    }
-
-    if (item.action === "settingsDialog") {
-      if (isAuthenticated) {
-        router.push("/settings");
-      } else {
-        openDialog("signInDialog");
-      }
-      return;
-    }
-
-    if (item.action === "addDirectoryDialog") {
-      if (isAuthenticated) {
-        openDialog("addDirectoryDialog");
-      } else {
-        openDialog("signInDialog");
-      }
-      return;
-    }
-
-    if (item.action?.startsWith("syncDirectory:")) {
-      const directoryId = item.action.replace("syncDirectory:", "");
-      await handleSyncDirectory(directoryId);
-      return;
-    }
-
-    if (item.action?.startsWith("deleteDirectory:")) {
-      const parts = item.action.split(":");
-      const directoryId = parts[1] ?? "";
-      const directoryName = parts[2] ?? "";
+    } else if (action === "settingsDialog") {
+      isAuthenticated ? router.push("/settings") : openDialog("signInDialog");
+    } else if (action === "addDirectoryDialog") {
+      isAuthenticated
+        ? openDialog("addDirectoryDialog")
+        : openDialog("signInDialog");
+    } else if (action === "impersonatePalette") {
+      openDialog("impersonatePalette");
+    } else if (action === "stopImpersonating") {
+      await stopImpersonating();
+    } else if (action?.startsWith("syncDirectory:")) {
+      await handleSyncDirectory(action.replace("syncDirectory:", ""));
+    } else if (action?.startsWith("deleteDirectory:")) {
+      const [, directoryId = "", directoryName = ""] = action.split(":");
       openDialog("confirmDialog", {
         title: tDirectory("deleteTitle"),
         description: tDirectory("deleteDescription", { name: directoryName }),
@@ -147,11 +134,8 @@ export function CommandPalette() {
         variant: "destructive",
         onConfirm: () => handleDeleteDirectory(directoryId),
       });
-      return;
-    }
-
-    if (item.path) {
-      router.push(item.path);
+    } else if (path) {
+      router.push(path);
     }
   };
 
