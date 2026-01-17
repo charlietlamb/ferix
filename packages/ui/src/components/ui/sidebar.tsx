@@ -4,7 +4,7 @@ import * as React from "react"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@ferix/i18n/navigation"
 
 import { cn } from "@ferix/ui/lib/utils"
 import { Button } from "@ferix/ui/components/ui/button"
