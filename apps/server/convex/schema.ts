@@ -16,7 +16,6 @@ export default defineSchema({
     content: v.string(),
     type: promptTypes,
     tags: v.array(v.string()),
-    directoryId: v.optional(v.string()),
     downloads: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -26,6 +25,12 @@ export default defineSchema({
     .index("by_type", ["type"])
     .index("by_downloads", ["downloads"])
     .index("by_userId_downloads", ["userId", "downloads"]),
+
+  directories: defineTable({
+    githubUrl: v.string(),
+    submittedByUserId: v.string(),
+    createdAt: v.number(),
+  }).index("by_githubUrl", ["githubUrl"]),
 
   commits: defineTable({
     promptId: v.id("prompts"),

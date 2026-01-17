@@ -10,20 +10,15 @@ interface PromptDetailAuthorProps {
     image: string | null;
     username: string | null;
   } | null;
-  directoryId?: string;
 }
 
-export function PromptDetailAuthor({
-  creator,
-  directoryId,
-}: PromptDetailAuthorProps) {
+export function PromptDetailAuthor({ creator }: PromptDetailAuthorProps) {
   const t = useTranslations("promptDetail");
 
   return (
     <PromptSection title={t("author")}>
       {creator ? (
         <UserLink
-          directoryId={directoryId}
           image={creator.image}
           name={creator.name}
           username={creator.username}

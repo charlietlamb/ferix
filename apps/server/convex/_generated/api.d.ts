@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as authmin from "../authmin.js";
+import type * as directories from "../directories.js";
 import type * as http from "../http.js";
 import type * as lib_slug from "../lib/slug.js";
 import type * as migrations from "../migrations.js";
@@ -29,6 +30,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authmin: typeof authmin;
+  directories: typeof directories;
   http: typeof http;
   "lib/slug": typeof lib_slug;
   migrations: typeof migrations;

@@ -8,7 +8,6 @@ export const promptFormSchema = z.object({
   content: z.string(),
   type: promptTypeSchema,
   tags: z.array(z.string()),
-  directoryId: z.string().optional(),
 });
 
 export interface PromptFormValues {
@@ -16,7 +15,6 @@ export interface PromptFormValues {
   content: string;
   type: PromptType;
   tags: string[];
-  directoryId: string | undefined;
 }
 
 export const promptFormDefaults: PromptFormValues = {
@@ -24,16 +22,11 @@ export const promptFormDefaults: PromptFormValues = {
   content: "",
   type: "subagent",
   tags: [],
-  directoryId: undefined,
 };
 
 // Partial schema for inline edits (single field updates)
 export const promptTagsSchema = z.object({
   tags: z.array(z.string()),
-});
-
-export const promptDirectorySchema = z.object({
-  directoryId: z.string().optional(),
 });
 
 export const promptSlugSchema = z.object({

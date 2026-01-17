@@ -33,7 +33,6 @@ export function PromptNewPage() {
           content: content.trim(), // Use content from usePromptDraft
           type: value.type,
           tags: value.tags,
-          directoryId: value.directoryId,
         });
         clearDraft();
         toast.success(t("success"));
@@ -109,27 +108,21 @@ export function PromptNewPage() {
 
         <form.AppField name="tags">
           {(tagsField) => (
-            <form.AppField name="directoryId">
-              {(directoryField) => (
-                <form.Subscribe
-                  selector={(state) => ({
-                    isSubmitting: state.isSubmitting,
-                  })}
-                >
-                  {({ isSubmitting }) => (
-                    <PromptNewSidebar
-                      canCreate={canCreate}
-                      directoryId={directoryField.state.value}
-                      isCreating={isSubmitting}
-                      onCreate={() => form.handleSubmit()}
-                      onDirectoryChange={directoryField.handleChange}
-                      onTagsChange={tagsField.handleChange}
-                      tags={tagsField.state.value}
-                    />
-                  )}
-                </form.Subscribe>
+            <form.Subscribe
+              selector={(state) => ({
+                isSubmitting: state.isSubmitting,
+              })}
+            >
+              {({ isSubmitting }) => (
+                <PromptNewSidebar
+                  canCreate={canCreate}
+                  isCreating={isSubmitting}
+                  onCreate={() => form.handleSubmit()}
+                  onTagsChange={tagsField.handleChange}
+                  tags={tagsField.state.value}
+                />
               )}
-            </form.AppField>
+            </form.Subscribe>
           )}
         </form.AppField>
       </form>

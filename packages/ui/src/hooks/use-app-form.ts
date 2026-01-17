@@ -1,4 +1,3 @@
-import { DirectoryField } from "@ferix/ui/components/form/directory-field";
 import { MultiSelectField } from "@ferix/ui/components/form/multi-select-field";
 import { PasswordField } from "@ferix/ui/components/form/password-field";
 import { SubmitButton } from "@ferix/ui/components/form/submit-button";
@@ -12,7 +11,6 @@ export const { useAppForm, withForm } = createFormHook({
   fieldContext,
   formContext,
   fieldComponents: {
-    DirectoryField,
     MultiSelectField,
     PasswordField,
     TagsField,

@@ -174,11 +174,7 @@
     "tagsError": "Failed to update tags",
     "type": "Type",
     "typeSaved": "Type updated",
-    "typeError": "Failed to update type",
-    "directory": "Directory",
-    "selectDirectory": "Select directory...",
-    "noDirectory": "None",
-    "directoryError": "Failed to update directory"
+    "typeError": "Failed to update type"
   },
   "commandPalette": {
     "title": "Command Palette",
@@ -206,9 +202,6 @@
     "draftSaved": "Draft saved locally",
     "tags": "Tags",
     "tagsPlaceholder": "Select tags...",
-    "directory": "Directory",
-    "directoryPlaceholder": "Select directory...",
-    "noDirectory": "None",
     "authRequired": {
       "title": "Sign in required",
       "description": "Sign in to create and share prompts",

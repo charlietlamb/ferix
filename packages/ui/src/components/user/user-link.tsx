@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "@ferix/i18n/navigation";
-import { DirectoryAvatar } from "@ferix/ui/components/directory/directory-avatar";
 import {
   Avatar,
   AvatarFallback,
@@ -16,7 +15,6 @@ interface UserLinkProps {
   className?: string;
   showAvatar?: boolean;
   avatarSize?: "sm" | "default" | "lg";
-  directoryId?: string | null;
 }
 
 export function UserLink({
@@ -26,7 +24,6 @@ export function UserLink({
   className,
   showAvatar = true,
   avatarSize = "sm",
-  directoryId,
 }: UserLinkProps) {
   const router = useRouter();
 
@@ -37,14 +34,7 @@ export function UserLink({
         className
       )}
     >
-      {showAvatar && directoryId && (
-        <DirectoryAvatar
-          directoryId={directoryId}
-          size={avatarSize}
-          user={{ name, image }}
-        />
-      )}
-      {showAvatar && !directoryId && (
+      {showAvatar && (
         <Avatar size={avatarSize}>
           {image && <AvatarImage alt={name} src={image} />}
           <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
