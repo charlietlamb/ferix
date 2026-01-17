@@ -24,7 +24,7 @@ interface DirectoryCellProps {
 export function DirectoryCell({
   directory,
   count,
-  showAvatar = false,
+  showAvatar = true,
   heightClass = "h-16",
 }: DirectoryCellProps) {
   const t = useTranslations("directories");
@@ -73,7 +73,7 @@ export function DirectoryCell({
  * Skeleton version of DirectoryCell for loading states
  */
 export function DirectoryCellSkeleton({
-  showAvatar = false,
+  showAvatar = true,
   heightClass = "h-16",
 }: {
   showAvatar?: boolean;

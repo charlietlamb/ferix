@@ -19,7 +19,10 @@ import {
 import { generateUniqueSlug } from "./lib/slug";
 
 export const create = mutation({
-  args: { githubUrl: v.string() },
+  args: {
+    githubUrl: v.string(),
+    tags: v.optional(v.array(v.string())),
+  },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
@@ -47,6 +50,7 @@ export const create = mutation({
       repo: parsed.repo,
       submittedByUserId: user._id,
       createdAt: Date.now(),
+      tags: args.tags ?? [],
     });
 
     // Schedule initial sync

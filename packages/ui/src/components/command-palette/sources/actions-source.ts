@@ -1,4 +1,9 @@
-import { GearIcon, MoonIcon, PlusIcon } from "@phosphor-icons/react";
+import {
+  FolderPlusIcon,
+  GearIcon,
+  MoonIcon,
+  PlusIcon,
+} from "@phosphor-icons/react";
 import type { CommandItemData, CommandSource } from "../types";
 
 const actions: (CommandItemData & { keywords?: string[] })[] = [
@@ -9,6 +14,14 @@ const actions: (CommandItemData & { keywords?: string[] })[] = [
     icon: PlusIcon,
     action: "createPromptDialog",
     keywords: ["new", "add", "create"],
+  },
+  {
+    id: "action-import-directory",
+    type: "action",
+    labelKey: "actionsImportDirectory",
+    icon: FolderPlusIcon,
+    action: "addDirectoryDialog",
+    keywords: ["import", "add", "directory", "github", "repo"],
   },
   {
     id: "action-settings",

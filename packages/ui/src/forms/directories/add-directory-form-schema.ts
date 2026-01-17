@@ -7,12 +7,14 @@ export const addDirectoryFormSchema = z.object({
     .string()
     .min(1, "GitHub URL is required")
     .regex(githubUrlRegex, "Must be a valid GitHub repository URL"),
+  tags: z.array(z.string()),
 });
 
 export type AddDirectoryFormValues = z.infer<typeof addDirectoryFormSchema>;
 
 export const addDirectoryFormDefaults: AddDirectoryFormValues = {
   githubUrl: "",
+  tags: [],
 };
 
 /**

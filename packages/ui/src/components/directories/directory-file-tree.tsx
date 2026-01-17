@@ -10,15 +10,17 @@ import {
 import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 import { formatTitle } from "@ferix/ui/lib/directories";
 import { extractDescription } from "@ferix/ui/lib/markdown";
+import { getPromptTypeConfig } from "@ferix/ui/lib/prompt-types";
+import { getTagById } from "@ferix/ui/lib/tags";
 import { cn } from "@ferix/ui/lib/utils";
 import {
   ArrowRight,
   CaretRight,
   DownloadSimple,
-  FileText,
   FolderOpen,
   FolderSimple,
 } from "@phosphor-icons/react";
+import type { ComponentType } from "react";
 import { useState } from "react";
 
 interface FileTreeNode {
@@ -98,6 +100,26 @@ function buildFileTree(prompts: Prompt[]): FileTreeNode[] {
   return sortNodes(root);
 }
 
+/**
+ * Get the icon for a prompt based on its first tag or type
+ */
+function getPromptIcon(
+  prompt: Prompt
+): ComponentType<{ size?: number; className?: string }> {
+  // First, try to get icon from the first tag
+  const firstTagId = prompt.tags?.[0];
+  if (firstTagId) {
+    const firstTag = getTagById(firstTagId);
+    if (firstTag?.icon) {
+      return firstTag.icon;
+    }
+  }
+
+  // Fall back to prompt type icon
+  const typeConfig = getPromptTypeConfig(prompt.type);
+  return typeConfig.icon;
+}
+
 interface FileRowProps {
   node: FileTreeNode;
   depth: number;
@@ -115,6 +137,7 @@ function FileRow({ node, depth, isLast }: FileRowProps) {
     ? prompt.title.split(" - ").slice(1).join(" - ")
     : prompt.title;
   const description = extractDescription(prompt.content);
+  const Icon = getPromptIcon(prompt);
 
   return (
     <div className={cn("border-border", !isLast && "border-b")}>
@@ -123,10 +146,7 @@ function FileRow({ node, depth, isLast }: FileRowProps) {
         href={`/prompt/${prompt.slug}`}
         style={{ paddingLeft: `${depth * 24 + 16}px` }}
       >
-        <FileText
-          className="size-4 shrink-0 self-start text-muted-foreground"
-          style={{ marginTop: "2px" }}
-        />
+        <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2">
             <span className="truncate font-medium text-sm">{title}</span>

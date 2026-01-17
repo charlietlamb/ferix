@@ -121,6 +121,15 @@ export function CommandPalette() {
       return;
     }
 
+    if (item.action === "addDirectoryDialog") {
+      if (isAuthenticated) {
+        openDialog("addDirectoryDialog");
+      } else {
+        openDialog("signInDialog");
+      }
+      return;
+    }
+
     if (item.action?.startsWith("syncDirectory:")) {
       const directoryId = item.action.replace("syncDirectory:", "");
       await handleSyncDirectory(directoryId);

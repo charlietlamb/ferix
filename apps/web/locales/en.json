@@ -233,6 +233,7 @@
     "directories": "Sync Directories",
     "directorySearch": "Directories",
     "actionsCreatePrompt": "Create",
+    "actionsImportDirectory": "Import Directory",
     "actionsSettings": "Settings",
     "actionsToggleTheme": "Toggle Theme"
   },
@@ -274,6 +275,9 @@
     "valid": "Valid repository",
     "invalid": "Repository not found or not accessible",
     "invalidUrl": "Enter a valid GitHub repository URL",
+    "tags": "Tags",
+    "tagsPlaceholder": "Select tags...",
+    "tagsHint": "These tags will be applied to every prompt in this directory",
     "submit": "Add Directory",
     "submitting": "Adding...",
     "success": "Directory added successfully",
