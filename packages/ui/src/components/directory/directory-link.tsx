@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "@ferix/i18n/navigation";
+import { getGithubAvatarUrl } from "@ferix/ui/lib/directories";
 import { cn } from "@ferix/ui/lib/utils";
-import { FolderIcon } from "@phosphor-icons/react";
 
 interface DirectoryLinkProps {
   directoryId: string;
@@ -32,7 +32,13 @@ export function DirectoryLink({
       }}
       type="button"
     >
-      <FolderIcon className="size-4 shrink-0" />
+      <img
+        alt={owner}
+        className="size-5 shrink-0 border border-border"
+        height={20}
+        src={getGithubAvatarUrl(owner)}
+        width={20}
+      />
       <span className="max-w-24 truncate text-xs underline-offset-2 transition-colors group-hover/directory-link:text-foreground group-hover/directory-link:underline">
         {owner}/{repo}
       </span>

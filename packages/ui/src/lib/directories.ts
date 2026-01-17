@@ -72,10 +72,12 @@ export function getGridItemBorderClasses(
   options?: {
     colsMobile?: number;
     colsDesktop?: number;
+    alwaysShowBottomBorder?: boolean;
   }
 ): string {
   const colsMobile = options?.colsMobile ?? 2;
   const colsDesktop = options?.colsDesktop ?? 4;
+  const alwaysShowBottomBorder = options?.alwaysShowBottomBorder ?? false;
 
   const lastRowMobile = Math.ceil(totalItems / colsMobile) - 1;
   const lastRowDesktop = Math.ceil(totalItems / colsDesktop) - 1;
@@ -88,7 +90,7 @@ export function getGridItemBorderClasses(
     "border-border",
     index % colsMobile !== colsMobile - 1 && "max-md:border-r",
     index % colsDesktop !== colsDesktop - 1 && "md:border-r",
-    !isLastRowMobile && "max-md:border-b",
-    !isLastRowDesktop && "md:border-b"
+    (alwaysShowBottomBorder || !isLastRowMobile) && "max-md:border-b",
+    (alwaysShowBottomBorder || !isLastRowDesktop) && "md:border-b"
   );
 }

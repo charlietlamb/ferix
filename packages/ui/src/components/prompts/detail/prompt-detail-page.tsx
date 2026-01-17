@@ -12,6 +12,7 @@ import { PromptDetailType } from "@ferix/ui/components/prompts/detail/sections/p
 import { PromptDetailUrlEditor } from "@ferix/ui/components/prompts/detail/sections/prompt-detail-url-editor";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import type { PromptType } from "@ferix/ui/lib/prompt-types";
+import { PromptDetailInstallBanner } from "./prompt-detail-install-banner";
 
 interface PromptDetailPageProps {
   prompt: {
@@ -33,6 +34,7 @@ interface PromptDetailPageProps {
       _id: string;
       owner: string;
       repo: string;
+      promptCount: number;
     } | null;
     isCreator: boolean;
     isSaved: boolean;
@@ -46,6 +48,12 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
 
   return (
     <AppPage>
+      {prompt.directory && (
+        <PromptDetailInstallBanner
+          directory={prompt.directory}
+          promptCount={prompt.directory.promptCount}
+        />
+      )}
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         <PromptDetailContent
           canEdit={canEdit}

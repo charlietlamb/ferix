@@ -15,7 +15,12 @@ function DirectoriesGridSkeleton() {
     <div className="flex-1 overflow-y-auto">
       <ul className="grid grid-cols-2 md:grid-cols-4">
         {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-          <li className={getGridItemBorderClasses(i, 8)} key={i}>
+          <li
+            className={getGridItemBorderClasses(i, 8, {
+              alwaysShowBottomBorder: true,
+            })}
+            key={i}
+          >
             <DirectoryCellSkeleton />
           </li>
         ))}
@@ -48,7 +53,9 @@ export function DirectoriesContent() {
       <ul className="grid grid-cols-2 md:grid-cols-4">
         {validDirectories.map((directory, i) => (
           <li
-            className={getGridItemBorderClasses(i, validDirectories.length)}
+            className={getGridItemBorderClasses(i, validDirectories.length, {
+              alwaysShowBottomBorder: true,
+            })}
             key={directory._id}
           >
             <DirectoryCell directory={directory} />

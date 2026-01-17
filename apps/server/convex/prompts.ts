@@ -199,9 +199,20 @@ export const getBySlug = query({
       : null;
 
     // Fetch directory info if this prompt belongs to a directory
-    const directory = prompt.directoryId
-      ? await ctx.db.get(prompt.directoryId)
-      : null;
+    let directory: (Doc<"directories"> & { promptCount: number }) | null = null;
+    if (prompt.directoryId) {
+      const dir = await ctx.db.get(prompt.directoryId);
+      if (dir) {
+        const directoryPrompts = await ctx.db
+          .query("prompts")
+          .withIndex("by_directoryId", (q) => q.eq("directoryId", dir._id))
+          .collect();
+        directory = {
+          ...dir,
+          promptCount: directoryPrompts.length,
+        };
+      }
+    }
 
     const saves = await ctx.db
       .query("saves")
@@ -227,6 +238,7 @@ export const getBySlug = query({
             _id: directory._id,
             owner: directory.owner,
             repo: directory.repo,
+            promptCount: directory.promptCount,
           }
         : null,
       isCreator: currentUser ? currentUser._id === prompt.userId : false,

@@ -104,7 +104,7 @@
     },
     "directories": {
       "title": "All Directories",
-      "description": "Browse GitHub repositories with Claude Code skills",
+      "description": "Browse GitHub repositories with agent skills",
       "loading": "Loading directories...",
       "empty": "No directories yet"
     }
@@ -209,7 +209,10 @@
     "tagsError": "Failed to update tags",
     "type": "Type",
     "typeSaved": "Type updated",
-    "typeError": "Failed to update type"
+    "typeError": "Failed to update type",
+    "install": "Install",
+    "installDescription": "Install a collection of {count} prompts from {directory}",
+    "viewDirectory": "View directory"
   },
   "commandPalette": {
     "title": "Command Palette",
@@ -254,12 +257,12 @@
     },
     "directory": {
       "title": "Add Skills Directory",
-      "description": "Link a GitHub repo containing Claude Code skills"
+      "description": "Link a GitHub repo containing agent skills"
     }
   },
   "addDirectory": {
     "title": "Add Skills Directory",
-    "description": "Link a GitHub repository containing Claude Code skills",
+    "description": "Link a GitHub repository containing agent skills",
     "githubUrl": "GitHub URL",
     "githubUrlPlaceholder": "https://github.com/owner/repo",
     "checking": "Checking repository...",

@@ -47,7 +47,7 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
     );
   }
 
-  const repoTitle = formatTitle(directory.repo);
+  const ownerTitle = formatTitle(directory.owner);
   const command = `npx skills add ${directory.owner}/${directory.repo}`;
   const githubAvatarUrl = getGithubAvatarUrl(directory.owner);
   const githubRepoUrl = `https://github.com/${directory.owner}/${directory.repo}`;
@@ -84,7 +84,7 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-border border-b px-4 py-3">
         <div className="flex flex-col gap-1">
-          <h1 className="font-bold text-xl">{repoTitle}</h1>
+          <h1 className="font-bold text-xl">{ownerTitle}</h1>
           <p className="text-muted-foreground text-sm">
             {t("description", { owner: directory.owner, repo: directory.repo })}
           </p>
