@@ -1,12 +1,45 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import slugify from "slugify";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 import { generateUniqueSlug, validateSlugUnique } from "./lib/slug";
 import { promptTypes } from "./schema";
 import { enrichPrompts } from "./utils";
+
+type AuthUser = NonNullable<
+  Awaited<ReturnType<typeof authComponent.safeGetAuthUser>>
+>;
+
+/**
+ * Get the authenticated user and prompt, checking if user can edit the prompt.
+ * User can edit if they are the owner or an admin.
+ */
+async function getEditablePrompt(
+  ctx: QueryCtx | MutationCtx,
+  promptId: Id<"prompts">
+): Promise<{ user: AuthUser; prompt: Doc<"prompts"> } | null> {
+  const user = await authComponent.safeGetAuthUser(ctx);
+  if (!user) {
+    return null;
+  }
+
+  const prompt = await ctx.db.get(promptId);
+  if (!prompt) {
+    return null;
+  }
+
+  const isAdmin = user.role === "admin";
+  const isOwner = prompt.userId === user._id;
+
+  if (!(isOwner || isAdmin)) {
+    return null;
+  }
+
+  return { user, prompt };
+}
 
 export const create = mutation({
   args: {
@@ -73,17 +106,8 @@ export const list = query({
 export const get = query({
   args: { promptId: v.id("prompts") },
   handler: async (ctx, args) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) {
-      return null;
-    }
-
-    const prompt = await ctx.db.get(args.promptId);
-    if (!prompt || prompt.userId !== user._id) {
-      return null;
-    }
-
-    return prompt;
+    const result = await getEditablePrompt(ctx, args.promptId);
+    return result?.prompt ?? null;
   },
 });
 
@@ -93,13 +117,8 @@ export const update = mutation({
     content: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
-
-    const prompt = await ctx.db.get(args.promptId);
-    if (!prompt || prompt.userId !== user._id) {
+    const result = await getEditablePrompt(ctx, args.promptId);
+    if (!result) {
       throw new Error("Prompt not found");
     }
 
@@ -127,17 +146,12 @@ export const rename = mutation({
     slug: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
-
-    const prompt = await ctx.db.get(args.promptId);
-    if (!prompt || prompt.userId !== user._id) {
+    const result = await getEditablePrompt(ctx, args.promptId);
+    if (!result) {
       throw new Error("Prompt not found");
     }
 
-    if (args.slug && args.slug !== prompt.slug) {
+    if (args.slug && args.slug !== result.prompt.slug) {
       await validateSlugUnique(ctx, args.slug, args.promptId);
     }
 
@@ -154,13 +168,8 @@ export const rename = mutation({
 export const remove = mutation({
   args: { promptId: v.id("prompts") },
   handler: async (ctx, args) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
-
-    const prompt = await ctx.db.get(args.promptId);
-    if (!prompt || prompt.userId !== user._id) {
+    const result = await getEditablePrompt(ctx, args.promptId);
+    if (!result) {
       throw new Error("Prompt not found");
     }
 
@@ -355,13 +364,8 @@ export const updateTags = mutation({
     tags: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
-
-    const prompt = await ctx.db.get(args.promptId);
-    if (!prompt || prompt.userId !== user._id) {
+    const result = await getEditablePrompt(ctx, args.promptId);
+    if (!result) {
       throw new Error("Prompt not found");
     }
 
@@ -380,13 +384,8 @@ export const updateType = mutation({
     type: promptTypes,
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
-
-    const prompt = await ctx.db.get(args.promptId);
-    if (!prompt || prompt.userId !== user._id) {
+    const result = await getEditablePrompt(ctx, args.promptId);
+    if (!result) {
       throw new Error("Prompt not found");
     }
 

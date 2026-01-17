@@ -51,7 +51,7 @@ export function MultiSelect({
   className,
   badgeClassName,
   groupBy = false,
-  dropdownPosition = "top",
+  dropdownPosition = "bottom",
 }: MultiSelectProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -128,7 +128,7 @@ export function MultiSelect({
   return (
     <Command
       className={cn(
-        "overflow-visible bg-transparent",
+        "relative overflow-visible bg-transparent",
         className
       )}
       onKeyDown={handleKeyDown}
@@ -198,69 +198,67 @@ export function MultiSelect({
           )}
         </div>
       </div>
-      <div className="relative mt-2">
-        {open && filteredOptions.length > 0 && (
-          <div
-            className={cn(
-              "bg-popover text-popover-foreground animate-in absolute z-50 w-full rounded-md border shadow-md outline-none",
-              dropdownPosition === "top" ? "bottom-full mb-1" : "top-0 mt-1"
-            )}
-          >
-            <CommandList className="max-h-64 overflow-y-auto">
-              {Object.entries(groupedOptions).map(([group, groupOptions]) => (
-                <CommandGroup
-                  heading={group.charAt(0).toUpperCase() + group.slice(1) || undefined}
-                  key={group || "ungrouped"}
-                >
-                  {groupOptions.map((option) => {
-                    const isSelected = value.some(
-                      (v) => v.value === option.value
-                    );
-                    const Icon = option.icon;
-                    return (
-                      <CommandItem
-                        className={cn(
-                          "cursor-pointer",
-                          option.disable && "cursor-not-allowed opacity-50"
-                        )}
-                        data-checked={isSelected}
-                        disabled={option.disable}
-                        key={option.value}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                        onSelect={() => {
-                          if (!option.disable) {
-                            handleSelect(option);
-                          }
-                        }}
-                      >
-                        {Icon && <Icon size={16} />}
-                        {option.label}
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              ))}
-            </CommandList>
-          </div>
-        )}
-        {open && filteredOptions.length === 0 && (
-          <div
-            className={cn(
-              "bg-popover text-popover-foreground animate-in absolute z-50 w-full rounded-md border shadow-md outline-none",
-              dropdownPosition === "top" ? "bottom-full mb-1" : "top-0 mt-1"
-            )}
-          >
-            <CommandList className="max-h-64 overflow-y-auto">
-              <CommandEmpty className="text-muted-foreground">
-                {emptyIndicator || "No results found."}
-              </CommandEmpty>
-            </CommandList>
-          </div>
-        )}
-      </div>
+      {open && filteredOptions.length > 0 && (
+        <div
+          className={cn(
+            "bg-popover text-popover-foreground animate-in absolute z-50 w-full rounded-md border shadow-md outline-none",
+            dropdownPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"
+          )}
+        >
+          <CommandList className="max-h-64 overflow-y-auto">
+            {Object.entries(groupedOptions).map(([group, groupOptions]) => (
+              <CommandGroup
+                heading={group.charAt(0).toUpperCase() + group.slice(1) || undefined}
+                key={group || "ungrouped"}
+              >
+                {groupOptions.map((option) => {
+                  const isSelected = value.some(
+                    (v) => v.value === option.value
+                  );
+                  const Icon = option.icon;
+                  return (
+                    <CommandItem
+                      className={cn(
+                        "cursor-pointer",
+                        option.disable && "cursor-not-allowed opacity-50"
+                      )}
+                      data-checked={isSelected}
+                      disabled={option.disable}
+                      key={option.value}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onSelect={() => {
+                        if (!option.disable) {
+                          handleSelect(option);
+                        }
+                      }}
+                    >
+                      {Icon && <Icon size={16} />}
+                      {option.label}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            ))}
+          </CommandList>
+        </div>
+      )}
+      {open && filteredOptions.length === 0 && (
+        <div
+          className={cn(
+            "bg-popover text-popover-foreground animate-in absolute z-50 w-full rounded-md border shadow-md outline-none",
+            dropdownPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"
+          )}
+        >
+          <CommandList className="max-h-64 overflow-y-auto">
+            <CommandEmpty className="text-muted-foreground">
+              {emptyIndicator || "No results found."}
+            </CommandEmpty>
+          </CommandList>
+        </div>
+      )}
     </Command>
   );
 }

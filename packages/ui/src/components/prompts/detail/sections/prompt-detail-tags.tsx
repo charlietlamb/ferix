@@ -58,6 +58,7 @@ export function PromptDetailTags({
     return (
       <PromptSection title={t("tags")}>
         <MultiSelect
+          dropdownPosition="top"
           groupBy
           onChange={handleTagsChange}
           options={tagOptions}

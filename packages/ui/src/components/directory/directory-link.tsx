@@ -39,7 +39,7 @@ export function DirectoryLink({
         src={getGithubAvatarUrl(owner)}
         width={20}
       />
-      <span className="max-w-24 truncate text-xs underline-offset-2 transition-colors group-hover/directory-link:text-foreground group-hover/directory-link:underline">
+      <span className="text-xs underline-offset-2 transition-colors group-hover/directory-link:text-foreground group-hover/directory-link:underline">
         {owner}/{repo}
       </span>
     </button>

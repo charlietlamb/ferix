@@ -1,9 +1,9 @@
 "use client";
 
-import { Link, useRouter } from "@ferix/i18n/navigation";
+import { useRouter } from "@ferix/i18n/navigation";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
-import { ArrowRightIcon, PlusIcon } from "@phosphor-icons/react";
+import { DownloadSimpleIcon, PlusIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
 export function CTASection() {
@@ -15,6 +15,14 @@ export function CTASection() {
   const handleCreateClick = () => {
     if (isAuthenticated) {
       router.push("/create-prompt");
+    } else {
+      openDialog("signInDialog");
+    }
+  };
+
+  const handleImportClick = () => {
+    if (isAuthenticated) {
+      openDialog("addDirectoryDialog");
     } else {
       openDialog("signInDialog");
     }
@@ -34,13 +42,14 @@ export function CTASection() {
         <PlusIcon className="size-6" />
         <span className="font-medium text-sm">{t("create")}</span>
       </button>
-      <Link
+      <button
         className="flex flex-col items-center justify-center gap-2 p-4 transition-colors hover:bg-muted/50"
-        href="/popular"
+        onClick={handleImportClick}
+        type="button"
       >
-        <ArrowRightIcon className="size-6" />
-        <span className="font-medium text-sm">{t("browse")}</span>
-      </Link>
+        <DownloadSimpleIcon className="size-6" />
+        <span className="font-medium text-sm">{t("import")}</span>
+      </button>
     </section>
   );
 }

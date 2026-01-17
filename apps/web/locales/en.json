@@ -26,7 +26,7 @@
     "title": "Share your skills, subagents and rules",
     "description": "Help the community by sharing your skills, subagents and rules",
     "create": "Create",
-    "browse": "Browse Popular"
+    "import": "Import Directory"
   },
   "ui": {
     "form": {

@@ -21,6 +21,7 @@ import {
   SiDrizzle,
   SiElixir,
   SiEsbuild,
+  SiExpo,
   SiExpress,
   SiFastapi,
   SiFigma,
@@ -140,6 +141,13 @@ export const tags: Tag[] = [
 
   // Frameworks
   { id: "react", label: "React", category: "framework", icon: SiReact },
+  {
+    id: "react-native",
+    label: "React Native",
+    category: "framework",
+    icon: SiReact,
+  },
+  { id: "expo", label: "Expo", category: "framework", icon: SiExpo },
   { id: "nextjs", label: "Next.js", category: "framework", icon: SiNextdotjs },
   { id: "vue", label: "Vue", category: "framework", icon: SiVuedotjs },
   { id: "nuxt", label: "Nuxt", category: "framework", icon: SiNuxt },

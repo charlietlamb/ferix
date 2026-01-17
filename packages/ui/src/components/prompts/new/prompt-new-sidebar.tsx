@@ -43,7 +43,7 @@ export function PromptNewSidebar({
           {t("tags")}
         </h3>
         <MultiSelect
-          dropdownPosition="bottom"
+          dropdownPosition="top"
           groupBy
           onChange={handleTagsChange}
           options={tagOptions}

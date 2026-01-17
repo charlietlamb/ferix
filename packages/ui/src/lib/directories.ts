@@ -7,6 +7,7 @@ import { cn } from "@ferix/ui/lib/utils";
 export const TOP_DIRECTORY_URLS = [
   "https://github.com/better-auth/skills",
   "https://github.com/vercel-labs/agent-skills",
+  "https://github.com/expo/skills",
 ];
 
 /**
