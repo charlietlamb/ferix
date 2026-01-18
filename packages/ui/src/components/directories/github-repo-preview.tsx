@@ -15,7 +15,7 @@ interface GithubRepoPreviewProps {
 export function GithubRepoPreview({ repo }: GithubRepoPreviewProps) {
   return (
     <div className="flex items-start gap-3 border border-border bg-muted/30 p-4">
-      <Avatar className="rounded-none border" size="lg">
+      <Avatar className="rounded-none after:rounded-none" size="lg">
         <AvatarImage
           alt={repo.fullName}
           className="rounded-none"
