@@ -33,12 +33,12 @@ const actions: ActionItem[] = [
     keywords: ["new", "add", "create"],
   },
   {
-    id: "action-import-directory",
+    id: "action-import-repository",
     type: "action",
-    labelKey: "actionsImportDirectory",
+    labelKey: "actionsImportRepository",
     icon: FolderPlusIcon,
-    action: "addDirectoryDialog",
-    keywords: ["import", "add", "directory", "github", "repo"],
+    action: "addRepositoryDialog",
+    keywords: ["import", "add", "repository", "github", "repo"],
   },
   {
     id: "action-settings",

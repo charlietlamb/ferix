@@ -1,6 +1,6 @@
 {
   "search": {
-    "placeholder": "Search for skills, directories, subagents, rules, or tags..."
+    "placeholder": "Search for skills, repositories, subagents, rules, or tags..."
   },
   "hero": {
     "title": "A collection of skills, subagents and rules for",
@@ -17,8 +17,8 @@
     "viewAll": "View All",
     "promptCount": "{count} prompts"
   },
-  "directories": {
-    "title": "Top Directories",
+  "repositories": {
+    "title": "Top Repositories",
     "viewAll": "View All",
     "promptCount": "{count} prompts"
   },
@@ -26,7 +26,7 @@
     "title": "Share your skills, subagents and rules",
     "description": "Help the community by sharing your skills, subagents and rules",
     "create": "Create",
-    "import": "Import Directory"
+    "import": "Import Repository"
   },
   "ui": {
     "form": {
@@ -40,7 +40,7 @@
     "popular": "Popular",
     "recent": "Recent",
     "tags": "All Tags",
-    "directories": "Directories",
+    "repositories": "Repositories",
     "topCategories": "Top Categories",
     "viewAll": "View All",
     "personal": "Personal",
@@ -80,9 +80,9 @@
         "library": "Libraries"
       }
     },
-    "directory": {
+    "repository": {
       "loading": "Loading...",
-      "notFound": "Directory not found",
+      "notFound": "Repository not found",
       "description": "Skills from {owner}/{repo}",
       "copy": "Copy",
       "copied": "Copied!",
@@ -101,17 +101,17 @@
       "selectTags": "Select tags...",
       "tagsSaved": "Tags saved (syncing prompts...)",
       "tagsError": "Failed to update tags",
-      "deleteTitle": "Delete Directory",
-      "deleteDescription": "Are you sure you want to delete {name}? This will permanently delete the directory and all associated prompts. This action cannot be undone.",
-      "deleteConfirm": "Delete Directory",
-      "deleteSuccess": "Directory deleted successfully ({count} prompts removed)",
-      "deleteError": "Failed to delete directory"
+      "deleteTitle": "Delete Repository",
+      "deleteDescription": "Are you sure you want to delete {name}? This will permanently delete the repository and all associated prompts. This action cannot be undone.",
+      "deleteConfirm": "Delete Repository",
+      "deleteSuccess": "Repository deleted successfully ({count} prompts removed)",
+      "deleteError": "Failed to delete repository"
     },
-    "directories": {
-      "title": "All Directories",
+    "repositories": {
+      "title": "All Repositories",
       "description": "Browse GitHub repositories with agent skills",
-      "loading": "Loading directories...",
-      "empty": "No directories yet"
+      "loading": "Loading repositories...",
+      "empty": "No repositories yet"
     }
   },
   "prompts": {
@@ -175,7 +175,7 @@
   },
   "promptDetail": {
     "author": "Author",
-    "directory": "Directory",
+    "repository": "Repository",
     "unknownAuthor": "Unknown",
     "stats": "Stats",
     "downloads": "downloads",
@@ -216,24 +216,24 @@
     "typeSaved": "Type updated",
     "typeError": "Failed to update type",
     "install": "Install",
-    "installDescription": "Install a collection of {count} prompts from {directory}",
-    "viewDirectory": "View directory"
+    "installDescription": "Install a collection of {count} prompts from {repository}",
+    "viewRepository": "View repository"
   },
   "commandPalette": {
     "title": "Command Palette",
-    "description": "Search for skills, directories, subagents, rules, or tags",
+    "description": "Search for skills, repositories, subagents, rules, or tags",
     "placeholder": "Search...",
     "noResults": "No results found",
-    "noResultsHint": "Try searching for skills, directories, subagents, rules, or tags",
+    "noResultsHint": "Try searching for skills, repositories, subagents, rules, or tags",
     "loading": "Loading...",
     "prompts": "Prompts",
     "tags": "Tags",
     "pages": "Pages",
     "actions": "Actions",
-    "directories": "Manage Directories",
-    "directorySearch": "Directories",
+    "repositories": "Manage Repositories",
+    "repositorySearch": "Repositories",
     "actionsCreatePrompt": "Create",
-    "actionsImportDirectory": "Import Directory",
+    "actionsImportRepository": "Import Repository",
     "actionsSettings": "Settings",
     "actionsToggleTheme": "Toggle Theme",
     "actionsImpersonate": "Impersonate User",
@@ -268,13 +268,13 @@
       "title": "Create Prompt",
       "description": "Share subagents, skills, and rules with the community"
     },
-    "directory": {
-      "title": "Add Skills Directory",
+    "repository": {
+      "title": "Add Skills Repository",
       "description": "Link a GitHub repo containing agent skills"
     }
   },
-  "addDirectory": {
-    "title": "Add Skills Directory",
+  "addRepository": {
+    "title": "Add Skills Repository",
     "description": "Link a GitHub repository containing agent skills",
     "githubUrl": "GitHub URL",
     "githubUrlPlaceholder": "https://github.com/owner/repo",
@@ -284,13 +284,13 @@
     "invalidUrl": "Enter a valid GitHub repository URL",
     "tags": "Tags",
     "tagsPlaceholder": "Select tags...",
-    "tagsHint": "These tags will be applied to every prompt in this directory",
-    "submit": "Add Directory",
+    "tagsHint": "These tags will be applied to every prompt in this repository",
+    "submit": "Add Repository",
     "submitting": "Adding...",
-    "success": "Directory added successfully",
-    "error": "Failed to add directory",
-    "alreadyExists": "This directory has already been added",
-    "unauthorized": "You must be signed in to add a directory"
+    "success": "Repository added successfully",
+    "error": "Failed to add repository",
+    "alreadyExists": "This repository has already been added",
+    "unauthorized": "You must be signed in to add a repository"
   },
   "auth": {
     "emailVerified": "Email verified successfully",

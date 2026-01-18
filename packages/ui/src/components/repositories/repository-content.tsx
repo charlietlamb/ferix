@@ -10,41 +10,41 @@ import {
 import { Button } from "@ferix/ui/components/ui/button";
 import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
-import { formatTitle, getGithubAvatarUrl } from "@ferix/ui/lib/directories";
+import { formatTitle, getGithubAvatarUrl } from "@ferix/ui/lib/repositories";
 import { ArrowsClockwise, Check, Copy } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "convex/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  DirectoryFileTree,
-  DirectoryFileTreeSkeleton,
-} from "./directory-file-tree";
-import { DirectoryTags } from "./directory-tags";
+  RepositoryFileTree,
+  RepositoryFileTreeSkeleton,
+} from "./repository-file-tree";
+import { RepositoryTags } from "./repository-tags";
 
-interface DirectoryContentProps {
-  directoryId: string;
+interface RepositoryContentProps {
+  repositoryId: string;
 }
 
-export function DirectoryContent({ directoryId }: DirectoryContentProps) {
-  const t = useTranslations("pages.directory");
+export function RepositoryContent({ repositoryId }: RepositoryContentProps) {
+  const t = useTranslations("pages.repository");
   const { isAdmin } = useAuthenticated();
   const [copied, setCopied] = useState(false);
   const triggerSync = useMutation(api.directories.triggerSync);
 
-  const directory = useQuery(api.directories.get, {
-    directoryId: directoryId as Id<"directories">,
+  const repository = useQuery(api.directories.get, {
+    directoryId: repositoryId as Id<"directories">,
   });
 
   const prompts = useQuery(api.prompts.listAllByDirectory, {
-    directoryId: directoryId as Id<"directories">,
+    directoryId: repositoryId as Id<"directories">,
   });
 
-  if (directory === undefined || prompts === undefined) {
-    return <DirectoryContentSkeleton />;
+  if (repository === undefined || prompts === undefined) {
+    return <RepositoryContentSkeleton />;
   }
 
-  if (directory === null) {
+  if (repository === null) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-muted-foreground">{t("notFound")}</div>
@@ -52,10 +52,10 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
     );
   }
 
-  const ownerTitle = formatTitle(directory.owner);
-  const command = `npx skills add ${directory.owner}/${directory.repo}`;
-  const githubAvatarUrl = getGithubAvatarUrl(directory.owner);
-  const githubRepoUrl = `https://github.com/${directory.owner}/${directory.repo}`;
+  const ownerTitle = formatTitle(repository.owner);
+  const command = `npx skills add ${repository.owner}/${repository.repo}`;
+  const githubAvatarUrl = getGithubAvatarUrl(repository.owner);
+  const githubRepoUrl = `https://github.com/${repository.owner}/${repository.repo}`;
 
   const handleCopy = async () => {
     try {
@@ -71,7 +71,7 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
   const handleSync = async () => {
     try {
       await triggerSync({
-        directoryId: directoryId as Id<"directories">,
+        directoryId: repositoryId as Id<"directories">,
       });
       toast.success(t("syncStarted"));
     } catch (error) {
@@ -91,7 +91,10 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
         <div>
           <PageHeaderTitle>{ownerTitle}</PageHeaderTitle>
           <PageHeaderDescription>
-            {t("description", { owner: directory.owner, repo: directory.repo })}
+            {t("description", {
+              owner: repository.owner,
+              repo: repository.repo,
+            })}
           </PageHeaderDescription>
         </div>
         <div className="flex items-center gap-3">
@@ -112,22 +115,22 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
           </div>
           {isAdmin && (
             <Button
-              disabled={directory.syncStatus === "syncing"}
+              disabled={repository.syncStatus === "syncing"}
               onClick={handleSync}
               size="sm"
               variant="outline"
             >
               <ArrowsClockwise
-                className={`size-4 ${directory.syncStatus === "syncing" ? "animate-spin" : ""}`}
+                className={`size-4 ${repository.syncStatus === "syncing" ? "animate-spin" : ""}`}
               />
               <span className="ml-1.5">
-                {directory.syncStatus === "syncing" ? t("syncing") : t("sync")}
+                {repository.syncStatus === "syncing" ? t("syncing") : t("sync")}
               </span>
             </Button>
           )}
           <a href={githubRepoUrl} rel="noopener noreferrer" target="_blank">
             <img
-              alt={directory.owner}
+              alt={repository.owner}
               className="size-6 transition-opacity hover:opacity-80"
               height={24}
               src={githubAvatarUrl}
@@ -137,14 +140,17 @@ export function DirectoryContent({ directoryId }: DirectoryContentProps) {
         </div>
       </PageHeader>
       {isAdmin && (
-        <DirectoryTags directoryId={directoryId} tags={directory.tags ?? []} />
+        <RepositoryTags
+          repositoryId={repositoryId}
+          tags={repository.tags ?? []}
+        />
       )}
-      <DirectoryFileTree prompts={prompts} />
+      <RepositoryFileTree prompts={prompts} />
     </div>
   );
 }
 
-function DirectoryHeaderSkeleton() {
+function RepositoryHeaderSkeleton() {
   return (
     <div className="flex items-center justify-between border-border border-b px-4 py-2">
       <div className="flex flex-col gap-1">
@@ -162,11 +168,11 @@ function DirectoryHeaderSkeleton() {
   );
 }
 
-export function DirectoryContentSkeleton() {
+export function RepositoryContentSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <DirectoryHeaderSkeleton />
-      <DirectoryFileTreeSkeleton />
+      <RepositoryHeaderSkeleton />
+      <RepositoryFileTreeSkeleton />
     </div>
   );
 }

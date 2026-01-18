@@ -2,15 +2,15 @@
 
 import { api } from "@ferix/server/_generated/api";
 import {
-  DirectoryCell,
-  DirectoryCellSkeleton,
-} from "@ferix/ui/components/directories/directory-cell";
-import { getGridItemBorderClasses } from "@ferix/ui/lib/directories";
+  RepositoryCell,
+  RepositoryCellSkeleton,
+} from "@ferix/ui/components/repositories/repository-cell";
+import { getGridItemBorderClasses } from "@ferix/ui/lib/repositories";
 import { FolderIcon } from "@phosphor-icons/react";
 import { useQuery } from "convex/react";
 import { useTranslations } from "next-intl";
 
-function DirectoriesGridSkeleton() {
+function RepositoriesGridSkeleton() {
   return (
     <div className="flex-1 overflow-y-auto">
       <ul className="grid grid-cols-2 md:grid-cols-4">
@@ -21,7 +21,7 @@ function DirectoriesGridSkeleton() {
             })}
             key={i}
           >
-            <DirectoryCellSkeleton />
+            <RepositoryCellSkeleton />
           </li>
         ))}
       </ul>
@@ -29,17 +29,19 @@ function DirectoriesGridSkeleton() {
   );
 }
 
-export function DirectoriesContent() {
-  const t = useTranslations("pages.directories");
-  const directories = useQuery(api.directories.list);
+export function RepositoriesContent() {
+  const t = useTranslations("pages.repositories");
+  const repositories = useQuery(api.directories.list);
 
-  if (directories === undefined) {
-    return <DirectoriesGridSkeleton />;
+  if (repositories === undefined) {
+    return <RepositoriesGridSkeleton />;
   }
 
-  const validDirectories = directories.filter((dir) => dir.owner && dir.repo);
+  const validRepositories = repositories.filter(
+    (repo) => repo.owner && repo.repo
+  );
 
-  if (validDirectories.length === 0) {
+  if (validRepositories.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2">
         <FolderIcon className="size-12 text-muted-foreground" />
@@ -51,14 +53,14 @@ export function DirectoriesContent() {
   return (
     <div className="flex-1 overflow-y-auto">
       <ul className="grid grid-cols-2 md:grid-cols-4">
-        {validDirectories.map((directory, i) => (
+        {validRepositories.map((repository, i) => (
           <li
-            className={getGridItemBorderClasses(i, validDirectories.length, {
+            className={getGridItemBorderClasses(i, validRepositories.length, {
               alwaysShowBottomBorder: true,
             })}
-            key={directory._id}
+            key={repository._id}
           >
-            <DirectoryCell directory={directory} />
+            <RepositoryCell repository={repository} />
           </li>
         ))}
       </ul>

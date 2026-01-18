@@ -1,34 +1,34 @@
 "use client";
 
 import { useRouter } from "@ferix/i18n/navigation";
-import { getGithubAvatarUrl } from "@ferix/ui/lib/directories";
+import { getGithubAvatarUrl } from "@ferix/ui/lib/repositories";
 import { cn } from "@ferix/ui/lib/utils";
 
-interface DirectoryLinkProps {
-  directoryId: string;
+interface RepositoryLinkProps {
+  repositoryId: string;
   owner: string;
   repo: string;
   className?: string;
 }
 
-export function DirectoryLink({
-  directoryId,
+export function RepositoryLink({
+  repositoryId: _repositoryId,
   owner,
   repo,
   className,
-}: DirectoryLinkProps) {
+}: RepositoryLinkProps) {
   const router = useRouter();
 
   return (
     <button
       className={cn(
-        "group/directory-link flex cursor-pointer items-center gap-2 text-left",
+        "group/repository-link flex cursor-pointer items-center gap-2 text-left",
         className
       )}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        router.push(`/directory/${directoryId}`);
+        router.push(`/repository/${owner}/${repo}`);
       }}
       type="button"
     >
@@ -39,7 +39,7 @@ export function DirectoryLink({
         src={getGithubAvatarUrl(owner)}
         width={20}
       />
-      <span className="text-xs underline-offset-2 transition-colors group-hover/directory-link:text-foreground group-hover/directory-link:underline">
+      <span className="text-xs underline-offset-2 transition-colors group-hover/repository-link:text-foreground group-hover/repository-link:underline">
         {owner}/{repo}
       </span>
     </button>

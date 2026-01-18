@@ -1,7 +1,7 @@
 "use client";
 
 import type { Prompt } from "@ferix/server/types";
-import { DirectoryLink } from "@ferix/ui/components/directory/directory-link";
+import { RepositoryLink } from "@ferix/ui/components/repository/repository-link";
 import { UserLink } from "@ferix/ui/components/user/user-link";
 
 interface PromptCellSourceProps {
@@ -21,10 +21,10 @@ export function PromptCellSource({ prompt }: PromptCellSourceProps) {
 
   if (prompt.directory) {
     return (
-      <DirectoryLink
-        directoryId={prompt.directory._id}
+      <RepositoryLink
         owner={prompt.directory.owner}
         repo={prompt.directory.repo}
+        repositoryId={prompt.directory._id}
       />
     );
   }

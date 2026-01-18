@@ -3,16 +3,16 @@
 import { Link } from "@ferix/i18n/navigation";
 import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 import {
-  type DirectoryBase,
   formatTitle,
   getGithubAvatarUrl,
-} from "@ferix/ui/lib/directories";
+  type RepositoryBase,
+} from "@ferix/ui/lib/repositories";
 import { cn } from "@ferix/ui/lib/utils";
 import { FolderIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
-interface DirectoryCellProps {
-  directory: DirectoryBase;
+interface RepositoryCellProps {
+  repository: RepositoryBase;
   /** Optional prompt count to display */
   count?: number;
   /** Show GitHub avatar instead of folder icon */
@@ -21,14 +21,14 @@ interface DirectoryCellProps {
   heightClass?: string;
 }
 
-export function DirectoryCell({
-  directory,
+export function RepositoryCell({
+  repository,
   count,
   showAvatar = true,
   heightClass = "h-16",
-}: DirectoryCellProps) {
-  const t = useTranslations("directories");
-  const ownerTitle = formatTitle(directory.owner);
+}: RepositoryCellProps) {
+  const t = useTranslations("repositories");
+  const ownerTitle = formatTitle(repository.owner);
 
   return (
     <Link
@@ -36,14 +36,14 @@ export function DirectoryCell({
         "flex items-center gap-3 px-4 transition-colors hover:bg-muted/50",
         heightClass
       )}
-      href={`/directory/${directory._id}`}
+      href={`/repository/${repository.owner}/${repository.repo}`}
     >
       {showAvatar ? (
         <img
-          alt={directory.owner}
+          alt={repository.owner}
           className="size-10 border border-border"
           height={48}
-          src={getGithubAvatarUrl(directory.owner)}
+          src={getGithubAvatarUrl(repository.owner)}
           width={48}
         />
       ) : (
@@ -52,7 +52,7 @@ export function DirectoryCell({
       <div className="flex min-w-0 flex-col">
         <span className="truncate font-medium text-sm">{ownerTitle}</span>
         <span className="truncate text-muted-foreground text-xs">
-          {directory.owner}/{directory.repo}
+          {repository.owner}/{repository.repo}
         </span>
         {count !== undefined && (
           <span className="text-muted-foreground text-xs">
@@ -60,7 +60,7 @@ export function DirectoryCell({
           </span>
         )}
       </div>
-      {directory.syncStatus === "syncing" && (
+      {repository.syncStatus === "syncing" && (
         <span className="ml-auto text-muted-foreground text-xs">
           Syncing...
         </span>
@@ -70,9 +70,9 @@ export function DirectoryCell({
 }
 
 /**
- * Skeleton version of DirectoryCell for loading states
+ * Skeleton version of RepositoryCell for loading states
  */
-export function DirectoryCellSkeleton({
+export function RepositoryCellSkeleton({
   showAvatar = true,
   heightClass = "h-16",
 }: {

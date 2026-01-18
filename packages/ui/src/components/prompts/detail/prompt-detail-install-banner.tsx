@@ -3,12 +3,12 @@
 import { Link } from "@ferix/i18n/navigation";
 import { Button } from "@ferix/ui/components/ui/button";
 import { useCopy } from "@ferix/ui/hooks/use-copy";
-import { formatTitle, getGithubAvatarUrl } from "@ferix/ui/lib/directories";
+import { formatTitle, getGithubAvatarUrl } from "@ferix/ui/lib/repositories";
 import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
 interface PromptDetailInstallBannerProps {
-  directory: {
+  repository: {
     _id: string;
     owner: string;
     repo: string;
@@ -17,14 +17,14 @@ interface PromptDetailInstallBannerProps {
 }
 
 export function PromptDetailInstallBanner({
-  directory,
+  repository,
   promptCount,
 }: PromptDetailInstallBannerProps) {
   const t = useTranslations("promptDetail");
   const { copy, copied } = useCopy();
 
-  const command = `npx skills add ${directory.owner}/${directory.repo}`;
-  const directoryTitle = formatTitle(directory.owner);
+  const command = `npx skills add ${repository.owner}/${repository.repo}`;
+  const repositoryTitle = formatTitle(repository.owner);
 
   const handleCopy = () => {
     if (!copied) {
@@ -35,12 +35,12 @@ export function PromptDetailInstallBanner({
   return (
     <div className="flex items-center justify-between gap-4 border-border border-b bg-muted/30 px-4 py-3">
       <div className="flex items-center gap-3">
-        <Link href={`/directory/${directory._id}`}>
+        <Link href={`/repository/${repository.owner}/${repository.repo}`}>
           <img
-            alt={directory.owner}
+            alt={repository.owner}
             className="size-8 shrink-0 border border-border"
             height={32}
-            src={getGithubAvatarUrl(directory.owner)}
+            src={getGithubAvatarUrl(repository.owner)}
             width={32}
           />
         </Link>
@@ -48,14 +48,14 @@ export function PromptDetailInstallBanner({
           <span className="text-sm">
             {t("installDescription", {
               count: promptCount,
-              directory: directoryTitle,
+              repository: repositoryTitle,
             })}
           </span>
           <Link
             className="text-muted-foreground text-xs hover:underline"
-            href={`/directory/${directory._id}`}
+            href={`/repository/${repository.owner}/${repository.repo}`}
           >
-            {t("viewDirectory")}
+            {t("viewRepository")}
           </Link>
         </div>
       </div>

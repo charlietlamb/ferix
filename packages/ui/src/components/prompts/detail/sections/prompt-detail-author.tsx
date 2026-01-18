@@ -1,7 +1,7 @@
 "use client";
 
-import { DirectoryLink } from "@ferix/ui/components/directory/directory-link";
 import { PromptSection } from "@ferix/ui/components/prompts/shared/prompt-section";
+import { RepositoryLink } from "@ferix/ui/components/repository/repository-link";
 import { UserLink } from "@ferix/ui/components/user/user-link";
 import { useTranslations } from "next-intl";
 
@@ -11,7 +11,7 @@ interface PromptDetailAuthorProps {
     image: string | null;
     username: string | null;
   } | null;
-  directory: {
+  repository: {
     _id: string;
     owner: string;
     repo: string;
@@ -20,18 +20,18 @@ interface PromptDetailAuthorProps {
 
 export function PromptDetailAuthor({
   creator,
-  directory,
+  repository,
 }: PromptDetailAuthorProps) {
   const t = useTranslations("promptDetail");
 
-  // Show directory if no creator but has directory
-  if (!creator && directory) {
+  // Show repository if no creator but has repository
+  if (!creator && repository) {
     return (
-      <PromptSection title={t("directory")}>
-        <DirectoryLink
-          directoryId={directory._id}
-          owner={directory.owner}
-          repo={directory.repo}
+      <PromptSection title={t("repository")}>
+        <RepositoryLink
+          owner={repository.owner}
+          repo={repository.repo}
+          repositoryId={repository._id}
         />
       </PromptSection>
     );

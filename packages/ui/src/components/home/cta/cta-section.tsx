@@ -22,7 +22,7 @@ export function CTASection() {
 
   const handleImportClick = () => {
     if (isAuthenticated) {
-      openDialog("addDirectoryDialog");
+      openDialog("addRepositoryDialog");
     } else {
       openDialog("signInDialog");
     }

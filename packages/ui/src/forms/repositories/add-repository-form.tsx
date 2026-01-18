@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
-import { GithubRepoPreview } from "@ferix/ui/components/directories/github-repo-preview";
+import { GithubRepoPreview } from "@ferix/ui/components/repositories/github-repo-preview";
 import { Button } from "@ferix/ui/components/ui/button";
 import { Input } from "@ferix/ui/components/ui/input";
 import { Label } from "@ferix/ui/components/ui/label";
@@ -22,26 +22,26 @@ import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import {
-  addDirectoryFormDefaults,
-  addDirectoryFormSchema,
-} from "./add-directory-form-schema";
+  addRepositoryFormDefaults,
+  addRepositoryFormSchema,
+} from "./add-repository-form-schema";
 
-interface AddDirectoryFormProps {
+interface AddRepositoryFormProps {
   onSuccess?: () => void;
 }
 
 const trailingSlashRegex = /\/$/;
 
-export function AddDirectoryForm({ onSuccess }: AddDirectoryFormProps) {
-  const t = useTranslations("addDirectory");
-  const createDirectory = useMutation(api.directories.create);
+export function AddRepositoryForm({ onSuccess }: AddRepositoryFormProps) {
+  const t = useTranslations("addRepository");
+  const createRepository = useMutation(api.directories.create);
   const { status, repoData, error, setUrl } = useGithubRepoValidation();
 
   const tagOptions = useMemo(() => tagsToOptions(), []);
 
   const form = useAppForm({
-    defaultValues: addDirectoryFormDefaults,
-    validators: { onChange: addDirectoryFormSchema },
+    defaultValues: addRepositoryFormDefaults,
+    validators: { onChange: addRepositoryFormSchema },
     onSubmit: async ({ value }) => {
       if (status !== "valid") {
         toast.error(t("invalid"));
@@ -49,14 +49,14 @@ export function AddDirectoryForm({ onSuccess }: AddDirectoryFormProps) {
       }
 
       try {
-        await createDirectory({
+        await createRepository({
           githubUrl: value.githubUrl.replace(trailingSlashRegex, ""),
           tags: value.tags,
         });
         toast.success(t("success"));
         onSuccess?.();
       } catch (err) {
-        console.error("Directory creation error:", err);
+        console.error("Repository creation error:", err);
         if (err instanceof Error) {
           if (err.message.includes("already exists")) {
             toast.error(t("alreadyExists"));

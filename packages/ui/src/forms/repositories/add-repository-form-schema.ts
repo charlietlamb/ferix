@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const githubUrlRegex = /^https:\/\/github\.com\/([\w-]+)\/([\w.-]+)\/?$/;
 
-export const addDirectoryFormSchema = z.object({
+export const addRepositoryFormSchema = z.object({
   githubUrl: z
     .string()
     .min(1, "GitHub URL is required")
@@ -10,9 +10,9 @@ export const addDirectoryFormSchema = z.object({
   tags: z.array(z.string()),
 });
 
-export type AddDirectoryFormValues = z.infer<typeof addDirectoryFormSchema>;
+export type AddRepositoryFormValues = z.infer<typeof addRepositoryFormSchema>;
 
-export const addDirectoryFormDefaults: AddDirectoryFormValues = {
+export const addRepositoryFormDefaults: AddRepositoryFormValues = {
   githubUrl: "",
   tags: [],
 };

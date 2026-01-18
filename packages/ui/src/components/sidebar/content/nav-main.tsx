@@ -19,7 +19,7 @@ import { useTranslations } from "next-intl";
 import type { ComponentType } from "react";
 
 interface NavItem {
-  titleKey: "popular" | "recent" | "tags" | "directories";
+  titleKey: "popular" | "recent" | "tags" | "repositories";
   href: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
   { titleKey: "popular", href: "/popular", icon: FireIcon },
   { titleKey: "recent", href: "/recent", icon: ClockIcon },
   { titleKey: "tags", href: "/tags", icon: TagIcon },
-  { titleKey: "directories", href: "/directories", icon: FolderIcon },
+  { titleKey: "repositories", href: "/repositories", icon: FolderIcon },
 ];
 
 export function NavMain() {

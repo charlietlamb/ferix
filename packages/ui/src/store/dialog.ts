@@ -6,7 +6,7 @@ import { CommandPalette } from "../components/command-palette/command-palette";
 import { ImpersonatePalette } from "../components/command-palette/impersonate-palette";
 import { CreateMenuDialog } from "../components/create/create-menu-dialog";
 import { ConfirmDialog } from "../components/dialog/confirm-dialog";
-import { AddDirectoryDialog } from "../components/directories/add-directory-dialog";
+import { AddRepositoryDialog } from "../components/repositories/add-repository-dialog";
 import { ChangePasswordDialog } from "../components/settings/change-password-dialog";
 import { SettingsDialog } from "../components/settings/settings-dialog";
 import type { ConfirmDialogProps } from "./dialog-types";
@@ -20,7 +20,7 @@ export interface DialogMap {
   impersonatePalette: undefined;
   confirmDialog: ConfirmDialogProps;
   createMenuDialog: undefined;
-  addDirectoryDialog: undefined;
+  addRepositoryDialog: undefined;
 }
 
 export type DialogKey = keyof DialogMap;
@@ -46,7 +46,7 @@ export const dialogRegistry: {
   impersonatePalette: ImpersonatePalette,
   confirmDialog: ConfirmDialog,
   createMenuDialog: CreateMenuDialog,
-  addDirectoryDialog: AddDirectoryDialog,
+  addRepositoryDialog: AddRepositoryDialog,
 };
 
 export const dialogStackAtom = atom<DialogEntry[]>([]);

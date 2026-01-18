@@ -30,70 +30,70 @@ import { toast } from "sonner";
 import { CommandPaletteEmpty } from "./command-palette-empty";
 import { useCommandPalette } from "./hooks/use-command-palette";
 import { useActionsSource } from "./sources/use-actions-source";
-import { useDirectoriesSource } from "./sources/use-directories-source";
-import { useDirectorySearchSource } from "./sources/use-directory-search-source";
 import { usePromptsSource } from "./sources/use-prompts-source";
+import { useRepositoriesSource } from "./sources/use-repositories-source";
+import { useRepositorySearchSource } from "./sources/use-repository-search-source";
 import type { CommandItemData } from "./types";
 
 export function CommandPalette() {
   const t = useTranslations("commandPalette");
-  const tDirectory = useTranslations("pages.directory");
+  const tRepository = useTranslations("pages.repository");
   const router = useRouter();
   const { close, open: openDialog, stack } = useDialog();
   const { setTheme, resolvedTheme } = useTheme();
   const { isAuthenticated } = useAuthenticated();
   const { stopImpersonating } = useImpersonation();
   const triggerSync = useMutation(api.directories.triggerSync);
-  const removeDirectory = useMutation(api.directories.remove);
+  const removeRepository = useMutation(api.directories.remove);
 
   const [query, setQuery] = useState("");
   const { items: promptItems, isLoading: isLoadingPrompts } =
     usePromptsSource(query);
-  const { items: syncDirectoryItems, isLoading: isLoadingSyncDirectories } =
-    useDirectoriesSource(query);
-  const { items: directorySearchItems, isLoading: isLoadingDirectorySearch } =
-    useDirectorySearchSource(query);
+  const { items: syncRepositoryItems, isLoading: isLoadingSyncRepositories } =
+    useRepositoriesSource(query);
+  const { items: repositorySearchItems, isLoading: isLoadingRepositorySearch } =
+    useRepositorySearchSource(query);
   const { items: actionItems } = useActionsSource(query);
   const { groups, isEmpty } = useCommandPalette(
     promptItems,
-    syncDirectoryItems,
-    directorySearchItems,
+    syncRepositoryItems,
+    repositorySearchItems,
     actionItems,
     query
   );
 
-  const isLoadingDirectories =
-    isLoadingSyncDirectories || isLoadingDirectorySearch;
+  const isLoadingRepositories =
+    isLoadingSyncRepositories || isLoadingRepositorySearch;
 
   const isOpen = stack.some((dialog) => dialog.key === "commandPaletteDialog");
 
-  const handleSyncDirectory = async (directoryId: string) => {
+  const handleSyncRepository = async (repositoryId: string) => {
     try {
-      await triggerSync({ directoryId: directoryId as Id<"directories"> });
-      toast.success(tDirectory("syncStarted"));
+      await triggerSync({ directoryId: repositoryId as Id<"directories"> });
+      toast.success(tRepository("syncStarted"));
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       const errorKey = message.includes("already in progress")
         ? "syncInProgress"
         : "syncError";
-      toast.error(tDirectory(errorKey));
+      toast.error(tRepository(errorKey));
     }
   };
 
-  const handleDeleteDirectory = useCallback(
-    async (directoryId: string) => {
+  const handleDeleteRepository = useCallback(
+    async (repositoryId: string) => {
       try {
-        const result = await removeDirectory({
-          directoryId: directoryId as Id<"directories">,
+        const result = await removeRepository({
+          directoryId: repositoryId as Id<"directories">,
         });
         toast.success(
-          tDirectory("deleteSuccess", { count: result?.deletedPrompts ?? 0 })
+          tRepository("deleteSuccess", { count: result?.deletedPrompts ?? 0 })
         );
       } catch {
-        toast.error(tDirectory("deleteError"));
+        toast.error(tRepository("deleteError"));
       }
     },
-    [removeDirectory, tDirectory]
+    [removeRepository, tRepository]
   );
 
   const closeAndReset = () => {
@@ -115,24 +115,24 @@ export function CommandPalette() {
         : openDialog("signInDialog");
     } else if (action === "settingsDialog") {
       isAuthenticated ? router.push("/settings") : openDialog("signInDialog");
-    } else if (action === "addDirectoryDialog") {
+    } else if (action === "addRepositoryDialog") {
       isAuthenticated
-        ? openDialog("addDirectoryDialog")
+        ? openDialog("addRepositoryDialog")
         : openDialog("signInDialog");
     } else if (action === "impersonatePalette") {
       openDialog("impersonatePalette");
     } else if (action === "stopImpersonating") {
       await stopImpersonating();
-    } else if (action?.startsWith("syncDirectory:")) {
-      await handleSyncDirectory(action.replace("syncDirectory:", ""));
-    } else if (action?.startsWith("deleteDirectory:")) {
-      const [, directoryId = "", directoryName = ""] = action.split(":");
+    } else if (action?.startsWith("syncRepository:")) {
+      await handleSyncRepository(action.replace("syncRepository:", ""));
+    } else if (action?.startsWith("deleteRepository:")) {
+      const [, repositoryId = "", repositoryName = ""] = action.split(":");
       openDialog("confirmDialog", {
-        title: tDirectory("deleteTitle"),
-        description: tDirectory("deleteDescription", { name: directoryName }),
-        confirmLabel: tDirectory("deleteConfirm"),
+        title: tRepository("deleteTitle"),
+        description: tRepository("deleteDescription", { name: repositoryName }),
+        confirmLabel: tRepository("deleteConfirm"),
         variant: "destructive",
-        onConfirm: () => handleDeleteDirectory(directoryId),
+        onConfirm: () => handleDeleteRepository(repositoryId),
       });
     } else if (path) {
       router.push(path);
@@ -162,7 +162,7 @@ export function CommandPalette() {
             value={query}
           />
           <CommandList>
-            {isEmpty && !isLoadingPrompts && !isLoadingDirectories ? (
+            {isEmpty && !isLoadingPrompts && !isLoadingRepositories ? (
               <CommandPaletteEmpty query={query} />
             ) : (
               <>
@@ -203,7 +203,7 @@ export function CommandPalette() {
                     </CommandGroup>
                   </div>
                 ))}
-                {(isLoadingPrompts || isLoadingDirectories) && (
+                {(isLoadingPrompts || isLoadingRepositories) && (
                   <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm">
                     <Spinner />
                     <span>{t("loading")}</span>

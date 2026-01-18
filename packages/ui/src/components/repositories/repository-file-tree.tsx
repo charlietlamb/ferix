@@ -8,9 +8,9 @@ import {
   CollapsibleTrigger,
 } from "@ferix/ui/components/ui/collapsible";
 import { Skeleton } from "@ferix/ui/components/ui/skeleton";
-import { formatTitle } from "@ferix/ui/lib/directories";
 import { extractDescription } from "@ferix/ui/lib/markdown";
 import { getPromptTypeConfig } from "@ferix/ui/lib/prompt-types";
+import { formatTitle } from "@ferix/ui/lib/repositories";
 import { getTagById } from "@ferix/ui/lib/tags";
 import { cn } from "@ferix/ui/lib/utils";
 import {
@@ -31,13 +31,10 @@ interface FileTreeNode {
   children: FileTreeNode[];
 }
 
-interface DirectoryFileTreeProps {
+interface RepositoryFileTreeProps {
   prompts: Prompt[];
 }
 
-/**
- * Sort nodes recursively (folders first, then alphabetically)
- */
 function sortNodes(nodes: FileTreeNode[]): FileTreeNode[] {
   return nodes
     .sort((a, b) => {
@@ -52,9 +49,6 @@ function sortNodes(nodes: FileTreeNode[]): FileTreeNode[] {
     }));
 }
 
-/**
- * Insert a prompt into the tree at the correct path
- */
 function insertPromptIntoTree(
   root: FileTreeNode[],
   prompt: Prompt,
@@ -85,9 +79,6 @@ function insertPromptIntoTree(
   }
 }
 
-/**
- * Build a tree structure from flat file paths
- */
 function buildFileTree(prompts: Prompt[]): FileTreeNode[] {
   const root: FileTreeNode[] = [];
   for (const prompt of prompts) {
@@ -100,13 +91,9 @@ function buildFileTree(prompts: Prompt[]): FileTreeNode[] {
   return sortNodes(root);
 }
 
-/**
- * Get the icon for a prompt based on its first tag or type
- */
 function getPromptIcon(
   prompt: Prompt
 ): ComponentType<{ size?: number; className?: string }> {
-  // First, try to get icon from the first tag
   const firstTagId = prompt.tags?.[0];
   if (firstTagId) {
     const firstTag = getTagById(firstTagId);
@@ -115,7 +102,6 @@ function getPromptIcon(
     }
   }
 
-  // Fall back to prompt type icon
   const typeConfig = getPromptTypeConfig(prompt.type);
   return typeConfig.icon;
 }
@@ -237,7 +223,7 @@ function TreeNode({ node, depth, isLast }: TreeNodeProps) {
   return <FileRow depth={depth} isLast={isLast} node={node} />;
 }
 
-export function DirectoryFileTree({ prompts }: DirectoryFileTreeProps) {
+export function RepositoryFileTree({ prompts }: RepositoryFileTreeProps) {
   const tree = buildFileTree(prompts);
 
   if (tree.length === 0) {
@@ -262,9 +248,6 @@ export function DirectoryFileTree({ prompts }: DirectoryFileTreeProps) {
   );
 }
 
-/**
- * Skeleton for a single folder row in the file tree
- */
 function FolderRowSkeleton({ depth }: { depth: number }) {
   return (
     <div className="border-border border-b">
@@ -281,9 +264,6 @@ function FolderRowSkeleton({ depth }: { depth: number }) {
   );
 }
 
-/**
- * Skeleton for a single file row in the file tree
- */
 function FileRowSkeleton({ depth }: { depth: number }) {
   return (
     <div className="border-border border-b">
@@ -304,24 +284,18 @@ function FileRowSkeleton({ depth }: { depth: number }) {
   );
 }
 
-/**
- * Skeleton for the entire file tree loading state
- */
-export function DirectoryFileTreeSkeleton() {
+export function RepositoryFileTreeSkeleton() {
   return (
     <div className="flex-1 overflow-y-auto">
-      {/* Simulate a folder with files */}
       <FolderRowSkeleton depth={0} />
       <FileRowSkeleton depth={1} />
       <FileRowSkeleton depth={1} />
       <FileRowSkeleton depth={1} />
 
-      {/* Another folder */}
       <FolderRowSkeleton depth={0} />
       <FileRowSkeleton depth={1} />
       <FileRowSkeleton depth={1} />
 
-      {/* Root-level files */}
       <FileRowSkeleton depth={0} />
       <FileRowSkeleton depth={0} />
     </div>

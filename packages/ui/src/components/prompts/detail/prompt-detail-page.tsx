@@ -50,8 +50,8 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
     <AppPage>
       {prompt.directory && (
         <PromptDetailInstallBanner
-          directory={prompt.directory}
           promptCount={prompt.directory.promptCount}
+          repository={prompt.directory}
         />
       )}
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
@@ -67,7 +67,7 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
         <aside className="flex flex-col overflow-auto border-border border-t md:w-[320px] md:shrink-0 md:border-t-0 md:border-l">
           <PromptDetailAuthor
             creator={prompt.creator}
-            directory={prompt.directory}
+            repository={prompt.directory}
           />
           <PromptDetailStats
             downloads={prompt.downloads}

@@ -18,9 +18,9 @@ export function CreateMenuDialog() {
     router.push("/create-prompt");
   };
 
-  const handleAddDirectory = () => {
+  const handleAddRepository = () => {
     close();
-    open("addDirectoryDialog");
+    open("addRepositoryDialog");
   };
 
   return (
@@ -39,10 +39,10 @@ export function CreateMenuDialog() {
           title={t("prompt.title")}
         />
         <CreateMenuCell
-          description={t("directory.description")}
+          description={t("repository.description")}
           icon={SiGithub}
-          onClick={handleAddDirectory}
-          title={t("directory.title")}
+          onClick={handleAddRepository}
+          title={t("repository.title")}
         />
       </div>
     </BaseDialog>

@@ -108,6 +108,17 @@ export const getByGithubUrl = query({
   },
 });
 
+export const getByOwnerRepo = query({
+  args: { owner: v.string(), repo: v.string() },
+  handler: async (ctx, args) => {
+    const githubUrl = `https://github.com/${args.owner}/${args.repo}`;
+    return await ctx.db
+      .query("directories")
+      .withIndex("by_githubUrl", (q) => q.eq("githubUrl", githubUrl))
+      .first();
+  },
+});
+
 export const updateTags = mutation({
   args: {
     directoryId: v.id("directories"),

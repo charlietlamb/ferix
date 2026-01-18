@@ -1,23 +1,23 @@
 "use client";
 
 import { BaseDialog } from "@ferix/ui/components/dialog/base-dialog";
-import { AddDirectoryForm } from "@ferix/ui/forms/directories/add-directory-form";
+import { AddRepositoryForm } from "@ferix/ui/forms/repositories/add-repository-form";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
 import { useTranslations } from "next-intl";
 
-export function AddDirectoryDialog() {
-  const t = useTranslations("addDirectory");
+export function AddRepositoryDialog() {
+  const t = useTranslations("addRepository");
   const { close } = useDialog();
 
   return (
     <BaseDialog
       className="overflow-visible"
       description={t("description")}
-      dialogKey="addDirectoryDialog"
+      dialogKey="addRepositoryDialog"
       size="md"
       title={t("title")}
     >
-      <AddDirectoryForm onSuccess={close} />
+      <AddRepositoryForm onSuccess={close} />
     </BaseDialog>
   );
 }

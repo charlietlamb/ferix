@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
-import { parseGithubUrl } from "@ferix/ui/forms/directories/add-directory-form-schema";
+import { parseGithubUrl } from "@ferix/ui/forms/repositories/add-repository-form-schema";
 import { useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
@@ -138,7 +138,7 @@ export function useGithubRepoValidation(): UseGithubRepoValidationResult {
   // Check for conflict after GitHub validation passes
   if (effectiveStatus === "valid" && existingDirectory) {
     effectiveStatus = "conflict";
-    effectiveError = "This directory has already been added";
+    effectiveError = "This repository has already been added";
   }
 
   return {

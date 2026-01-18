@@ -1,24 +1,14 @@
 import { cn } from "@ferix/ui/lib/utils";
 
-/**
- * Top directories to feature on the home page
- * These are GitHub URLs that will be matched against stored directories
- */
-export const TOP_DIRECTORY_URLS = [
+export const TOP_REPOSITORY_URLS = [
   "https://github.com/better-auth/skills",
   "https://github.com/vercel-labs/agent-skills",
   "https://github.com/expo/skills",
   "https://github.com/callstackincubator/agent-skills",
 ];
 
-/**
- * Regex for parsing GitHub URLs
- */
 const GITHUB_URL_REGEX = /^https:\/\/github\.com\/([\w-]+)\/([\w.-]+)\/?$/;
 
-/**
- * Parse a GitHub URL to extract owner and repo
- */
 export function parseGithubUrl(
   url: string
 ): { owner: string; repo: string } | null {
@@ -29,11 +19,8 @@ export function parseGithubUrl(
   return { owner: match[1], repo: match[2] };
 }
 
-/**
- * Get parsed directory info from TOP_DIRECTORY_URLS
- */
-export function getTopDirectories() {
-  return TOP_DIRECTORY_URLS.map((url) => {
+export function getTopRepositories() {
+  return TOP_REPOSITORY_URLS.map((url) => {
     const parsed = parseGithubUrl(url);
     if (!parsed) {
       return null;
@@ -42,35 +29,21 @@ export function getTopDirectories() {
   }).filter((d): d is NonNullable<typeof d> => d !== null);
 }
 
-/**
- * Format a slug/filename into a readable title
- * "my-cool-skill" -> "My Cool Skill"
- */
 export function formatTitle(slug: string): string {
   return slug.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-/**
- * Get GitHub avatar URL for an owner/org
- */
 export function getGithubAvatarUrl(owner: string): string {
   return `https://github.com/${owner}.png`;
 }
 
-/**
- * Base directory type used across components
- */
-export interface DirectoryBase {
+export interface RepositoryBase {
   _id: string;
   owner: string;
   repo: string;
   syncStatus?: "syncing" | "success" | "error";
 }
 
-/**
- * Get responsive grid border classes for a grid item
- * Handles 2-column mobile and 4-column desktop layouts
- */
 export function getGridItemBorderClasses(
   index: number,
   totalItems: number,

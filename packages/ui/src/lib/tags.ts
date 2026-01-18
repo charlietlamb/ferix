@@ -1,3 +1,4 @@
+import { AutumnIcon } from "@ferix/ui/components/icons/autumn-icon";
 import { ConvexIcon } from "@ferix/ui/components/icons/convex-icon";
 import {
   SiAngular,
@@ -305,6 +306,7 @@ export const tags: Tag[] = [
     category: "service",
     icon: SiAnthropic,
   },
+  { id: "autumn", label: "Autumn", category: "service", icon: AutumnIcon },
 
   // Design
   { id: "figma", label: "Figma", category: "design", icon: SiFigma },

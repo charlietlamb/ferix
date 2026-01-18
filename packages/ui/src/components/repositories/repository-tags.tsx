@@ -11,13 +11,13 @@ import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { toast } from "sonner";
 
-interface DirectoryTagsProps {
-  directoryId: string;
+interface RepositoryTagsProps {
+  repositoryId: string;
   tags: string[];
 }
 
-export function DirectoryTags({ directoryId, tags }: DirectoryTagsProps) {
-  const t = useTranslations("pages.directory");
+export function RepositoryTags({ repositoryId, tags }: RepositoryTagsProps) {
+  const t = useTranslations("pages.repository");
   const { isAdmin } = useAuthenticated();
   const updateTags = useMutation(api.directories.updateTags);
 
@@ -26,7 +26,7 @@ export function DirectoryTags({ directoryId, tags }: DirectoryTagsProps) {
     onSubmit: async (newTags) => {
       try {
         await updateTags({
-          directoryId: directoryId as Id<"directories">,
+          directoryId: repositoryId as Id<"directories">,
           tags: newTags,
         });
         toast.success(t("tagsSaved"));

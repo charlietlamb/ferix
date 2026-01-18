@@ -4,8 +4,8 @@ import { Link } from "@ferix/i18n/navigation";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
-export function DirectoryGridHeader() {
-  const t = useTranslations("directories");
+export function RepositoryGridHeader() {
+  const t = useTranslations("repositories");
 
   return (
     <div className="flex items-center justify-between border-border border-b">
@@ -14,7 +14,7 @@ export function DirectoryGridHeader() {
       </div>
       <Link
         className="flex h-full items-center gap-1 pr-2 text-muted-foreground text-xs hover:text-foreground"
-        href="/directories"
+        href="/repositories"
       >
         {t("viewAll")}
         <ArrowRightIcon className="size-4" />

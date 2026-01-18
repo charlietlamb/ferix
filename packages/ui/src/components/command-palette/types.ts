@@ -3,7 +3,7 @@ export type CommandItemType =
   | "prompt"
   | "action"
   | "page"
-  | "directory";
+  | "repository";
 
 export interface CommandItemData {
   id: string;

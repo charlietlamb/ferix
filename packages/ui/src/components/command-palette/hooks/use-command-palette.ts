@@ -6,8 +6,8 @@ import type { CommandGroup, CommandItemData } from "../types";
 
 export function useCommandPalette(
   promptItems: CommandItemData[] | undefined,
-  syncDirectoryItems: CommandItemData[] | undefined,
-  directorySearchItems: CommandItemData[] | undefined,
+  syncRepositoryItems: CommandItemData[] | undefined,
+  repositorySearchItems: CommandItemData[] | undefined,
   actionItems: CommandItemData[] | undefined,
   query: string
 ) {
@@ -29,18 +29,18 @@ export function useCommandPalette(
 
     const dynamicGroups = [
       {
-        id: "directorySearch",
-        label: "Directories",
+        id: "repositorySearch",
+        label: "Repositories",
         priority: 10,
-        items: directorySearchItems,
+        items: repositorySearchItems,
       },
       { id: "prompts", label: "Prompts", priority: 15, items: promptItems },
       { id: "actions", label: "Actions", priority: 70, items: actionItems },
       {
-        id: "directories",
-        label: "Manage Directories",
+        id: "repositories",
+        label: "Manage Repositories",
         priority: 75,
-        items: syncDirectoryItems,
+        items: syncRepositoryItems,
       },
     ];
 
@@ -59,8 +59,8 @@ export function useCommandPalette(
   }, [
     query,
     promptItems,
-    syncDirectoryItems,
-    directorySearchItems,
+    syncRepositoryItems,
+    repositorySearchItems,
     actionItems,
   ]);
 
