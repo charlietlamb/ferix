@@ -1,7 +1,56 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { internalMutation, query } from "./_generated/server";
+
+const STATS_KEY = "global";
 
 export const getStats = query({
+  handler: async (ctx) => {
+    const cached = await ctx.db
+      .query("stats")
+      .withIndex("by_key", (q) => q.eq("key", STATS_KEY))
+      .first();
+
+    if (cached) {
+      return {
+        totalPrompts: cached.totalPrompts,
+        totalDownloads: cached.totalDownloads,
+        totalCreators: cached.totalCreators,
+      };
+    }
+
+    return {
+      totalPrompts: 0,
+      totalDownloads: 0,
+      totalCreators: 0,
+    };
+  },
+});
+
+export const countByTags = query({
+  args: { tags: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    const cached = await ctx.db
+      .query("stats")
+      .withIndex("by_key", (q) => q.eq("key", STATS_KEY))
+      .first();
+
+    if (cached?.tagCounts) {
+      const counts: Record<string, number> = {};
+      for (const tag of args.tags) {
+        counts[tag] = (cached.tagCounts as Record<string, number>)[tag] ?? 0;
+      }
+      return counts;
+    }
+
+    const counts: Record<string, number> = {};
+    for (const tag of args.tags) {
+      counts[tag] = 0;
+    }
+    return counts;
+  },
+});
+
+export const refreshStats = internalMutation({
   handler: async (ctx) => {
     const allPrompts = await ctx.db.query("prompts").collect();
 
@@ -11,28 +60,41 @@ export const getStats = query({
       0
     );
 
-    const uniqueCreators = new Set(allPrompts.map((p) => p.userId));
+    const uniqueCreators = new Set(
+      allPrompts.map((p) => p.userId).filter(Boolean)
+    );
     const totalCreators = uniqueCreators.size;
 
-    return {
-      totalPrompts,
-      totalDownloads,
-      totalCreators,
-    };
-  },
-});
-
-export const countByTags = query({
-  args: { tags: v.array(v.string()) },
-  handler: async (ctx, args) => {
-    const allPrompts = await ctx.db.query("prompts").collect();
-
-    const counts: Record<string, number> = {};
-    for (const tag of args.tags) {
-      counts[tag] = allPrompts.filter((p) => p.tags.includes(tag)).length;
+    const tagCounts: Record<string, number> = {};
+    for (const prompt of allPrompts) {
+      for (const tag of prompt.tags) {
+        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+      }
     }
 
-    return counts;
+    const existing = await ctx.db
+      .query("stats")
+      .withIndex("by_key", (q) => q.eq("key", STATS_KEY))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        totalPrompts,
+        totalDownloads,
+        totalCreators,
+        tagCounts,
+        updatedAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("stats", {
+        key: STATS_KEY,
+        totalPrompts,
+        totalDownloads,
+        totalCreators,
+        tagCounts,
+        updatedAt: Date.now(),
+      });
+    }
   },
 });
 
@@ -41,11 +103,8 @@ export const countByDirectories = query({
   handler: async (ctx, args) => {
     const counts: Record<string, number> = {};
     for (const directoryId of args.directoryIds) {
-      const prompts = await ctx.db
-        .query("prompts")
-        .withIndex("by_directoryId", (q) => q.eq("directoryId", directoryId))
-        .collect();
-      counts[directoryId] = prompts.length;
+      const directory = await ctx.db.get(directoryId);
+      counts[directoryId] = directory?.promptCount ?? 0;
     }
     return counts;
   },

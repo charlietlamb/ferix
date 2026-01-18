@@ -38,7 +38,6 @@ export const create = mutation({
       throw new Error("Directory already exists");
     }
 
-    // Parse owner and repo from URL
     const parsed = parseGithubUrl(args.githubUrl);
     if (!parsed) {
       throw new Error("Invalid GitHub URL");
@@ -51,9 +50,10 @@ export const create = mutation({
       submittedByUserId: user._id,
       createdAt: Date.now(),
       tags: args.tags ?? [],
+      promptCount: 0,
+      totalDownloads: 0,
     });
 
-    // Schedule initial sync
     await ctx.scheduler.runAfter(0, internal.directories.syncDirectory, {
       directoryId,
     });
@@ -64,7 +64,12 @@ export const create = mutation({
 
 export const list = query({
   handler: async (ctx) => {
-    return await ctx.db.query("directories").collect();
+    const directories = await ctx.db.query("directories").collect();
+    return directories.map((dir) => ({
+      ...dir,
+      promptCount: dir.promptCount ?? 0,
+      totalDownloads: dir.totalDownloads ?? 0,
+    }));
   },
 });
 
@@ -72,25 +77,17 @@ export const listTopByDownloads = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const limit = args.limit ?? 10;
-    const directories = await ctx.db.query("directories").collect();
+    const directories = await ctx.db
+      .query("directories")
+      .withIndex("by_totalDownloads")
+      .order("desc")
+      .take(limit);
 
-    const directoriesWithDownloads = await Promise.all(
-      directories.map(async (dir) => {
-        const prompts = await ctx.db
-          .query("prompts")
-          .withIndex("by_directoryId", (q) => q.eq("directoryId", dir._id))
-          .collect();
-        const totalDownloads = prompts.reduce(
-          (sum, p) => sum + (p.downloads ?? 0),
-          0
-        );
-        return { ...dir, totalDownloads, promptCount: prompts.length };
-      })
-    );
-
-    return directoriesWithDownloads
-      .sort((a, b) => b.totalDownloads - a.totalDownloads)
-      .slice(0, limit);
+    return directories.map((dir) => ({
+      ...dir,
+      totalDownloads: dir.totalDownloads ?? 0,
+      promptCount: dir.promptCount ?? 0,
+    }));
   },
 });
 
@@ -111,10 +108,6 @@ export const getByGithubUrl = query({
   },
 });
 
-/**
- * Update directory tags (admin only)
- * After updating, triggers a sync to propagate tags to all prompts
- */
 export const updateTags = mutation({
   args: {
     directoryId: v.id("directories"),
@@ -135,11 +128,8 @@ export const updateTags = mutation({
       throw new Error("Directory not found");
     }
 
-    await ctx.db.patch(args.directoryId, {
-      tags: args.tags,
-    });
+    await ctx.db.patch(args.directoryId, { tags: args.tags });
 
-    // Schedule a sync to propagate tags to all prompts in this directory
     await ctx.scheduler.runAfter(0, internal.directories.syncDirectory, {
       directoryId: args.directoryId,
     });
@@ -168,14 +158,12 @@ export const remove = mutation({
       throw new Error("Unauthorized");
     }
 
-    // Also delete all prompts associated with this directory
     const prompts = await ctx.db
       .query("prompts")
       .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
       .collect();
 
     for (const prompt of prompts) {
-      // Delete associated commits first
       const commits = await ctx.db
         .query("commits")
         .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
@@ -183,7 +171,7 @@ export const remove = mutation({
       for (const commit of commits) {
         await ctx.db.delete(commit._id);
       }
-      // Delete associated saves
+
       const saves = await ctx.db
         .query("saves")
         .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
@@ -191,6 +179,7 @@ export const remove = mutation({
       for (const save of saves) {
         await ctx.db.delete(save._id);
       }
+
       await ctx.db.delete(prompt._id);
     }
 
@@ -200,9 +189,24 @@ export const remove = mutation({
   },
 });
 
-/**
- * Internal mutation to set sync status
- */
+export const updateDirectoryCounts = internalMutation({
+  args: { directoryId: v.id("directories") },
+  handler: async (ctx, args) => {
+    const prompts = await ctx.db
+      .query("prompts")
+      .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
+      .collect();
+
+    const promptCount = prompts.length;
+    const totalDownloads = prompts.reduce(
+      (sum, p) => sum + (p.downloads ?? 0),
+      0
+    );
+
+    await ctx.db.patch(args.directoryId, { promptCount, totalDownloads });
+  },
+});
+
 export const setSyncStatus = internalMutation({
   args: {
     directoryId: v.id("directories"),
@@ -221,9 +225,6 @@ export const setSyncStatus = internalMutation({
   },
 });
 
-/**
- * Internal mutation to process a single file from GitHub sync
- */
 export const processGithubFile = internalMutation({
   args: {
     directoryId: v.id("directories"),
@@ -240,7 +241,6 @@ export const processGithubFile = internalMutation({
       .first();
 
     if (existing) {
-      // Update existing prompt if content or title changed, always sync tags
       const needsUpdate =
         existing.content !== args.content ||
         existing.title !== args.title ||
@@ -255,7 +255,6 @@ export const processGithubFile = internalMutation({
         });
       }
     } else {
-      // Create new prompt
       const baseSlug = slugify(args.title, { lower: true, strict: true });
       const slug = await generateUniqueSlug(ctx, baseSlug);
       const now = Date.now();
@@ -273,7 +272,6 @@ export const processGithubFile = internalMutation({
         filePath: args.filePath,
       });
 
-      // Create initial commit
       await ctx.db.insert("commits", {
         promptId,
         content: args.content,
@@ -283,9 +281,6 @@ export const processGithubFile = internalMutation({
   },
 });
 
-/**
- * Internal mutation to remove prompts for deleted files
- */
 export const removeDeletedFiles = internalMutation({
   args: {
     directoryId: v.id("directories"),
@@ -301,7 +296,6 @@ export const removeDeletedFiles = internalMutation({
 
     for (const prompt of existingPrompts) {
       if (prompt.filePath && !currentPathsSet.has(prompt.filePath)) {
-        // Delete associated commits
         const commits = await ctx.db
           .query("commits")
           .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
@@ -309,7 +303,7 @@ export const removeDeletedFiles = internalMutation({
         for (const commit of commits) {
           await ctx.db.delete(commit._id);
         }
-        // Delete associated saves
+
         const saves = await ctx.db
           .query("saves")
           .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
@@ -317,20 +311,16 @@ export const removeDeletedFiles = internalMutation({
         for (const save of saves) {
           await ctx.db.delete(save._id);
         }
+
         await ctx.db.delete(prompt._id);
       }
     }
   },
 });
 
-/**
- * Internal action to sync a directory's contents from GitHub.
- * Actions can make HTTP requests, then call mutations to write data.
- */
 export const syncDirectory = internalAction({
   args: { directoryId: v.id("directories") },
   handler: async (ctx, args) => {
-    // Get directory info
     const directory = await ctx.runQuery(internal.directories.getInternal, {
       directoryId: args.directoryId,
     });
@@ -342,29 +332,22 @@ export const syncDirectory = internalAction({
     const { owner, repo, tags } = directory;
     const directoryTags = tags ?? [];
 
-    // Set status to syncing
     await ctx.runMutation(internal.directories.setSyncStatus, {
       directoryId: args.directoryId,
       status: "syncing",
     });
 
     try {
-      // Fetch all files from the repo (this is allowed in actions!)
       const tree = await fetchRepoTree(owner, repo);
       const markdownFiles = filterMarkdownFiles(tree);
 
-      // Process each markdown file
       const filePaths: string[] = [];
       for (const file of markdownFiles) {
         filePaths.push(file.path);
 
-        // Fetch file content
         const content = await fetchFileContent(owner, repo, file.path);
-
-        // Extract title from file path (use owner/org name as prefix)
         const title = extractTitle(file.path, owner);
 
-        // Call mutation to process/save the file with directory tags
         await ctx.runMutation(internal.directories.processGithubFile, {
           directoryId: args.directoryId,
           filePath: file.path,
@@ -374,20 +357,21 @@ export const syncDirectory = internalAction({
         });
       }
 
-      // Remove prompts for files that no longer exist
       await ctx.runMutation(internal.directories.removeDeletedFiles, {
         directoryId: args.directoryId,
         currentFilePaths: filePaths,
       });
 
-      // Update status to success
+      await ctx.runMutation(internal.directories.updateDirectoryCounts, {
+        directoryId: args.directoryId,
+      });
+
       await ctx.runMutation(internal.directories.setSyncStatus, {
         directoryId: args.directoryId,
         status: "success",
         lastSyncedAt: Date.now(),
       });
     } catch (error) {
-      // Update status to error
       await ctx.runMutation(internal.directories.setSyncStatus, {
         directoryId: args.directoryId,
         status: "error",
@@ -397,9 +381,6 @@ export const syncDirectory = internalAction({
   },
 });
 
-/**
- * Internal query to get directory (for use in actions)
- */
 export const getInternal = internalQuery({
   args: { directoryId: v.id("directories") },
   handler: async (ctx, args) => {
@@ -407,9 +388,6 @@ export const getInternal = internalQuery({
   },
 });
 
-/**
- * Mutation to manually trigger a sync (admin only)
- */
 export const triggerSync = mutation({
   args: { directoryId: v.id("directories") },
   handler: async (ctx, args) => {
@@ -427,12 +405,10 @@ export const triggerSync = mutation({
       throw new Error("Directory not found");
     }
 
-    // Don't allow triggering if already syncing
     if (directory.syncStatus === "syncing") {
       throw new Error("Sync already in progress");
     }
 
-    // Schedule sync
     await ctx.scheduler.runAfter(0, internal.directories.syncDirectory, {
       directoryId: args.directoryId,
     });
@@ -441,15 +417,11 @@ export const triggerSync = mutation({
   },
 });
 
-/**
- * Internal action to sync all directories (called by cron)
- */
 export const syncAllDirectories = internalAction({
   handler: async (ctx) => {
     const directories = await ctx.runQuery(internal.directories.listInternal);
 
     for (const directory of directories) {
-      // Skip if already syncing or missing owner/repo
       if (
         directory.syncStatus === "syncing" ||
         !directory.owner ||
@@ -458,7 +430,6 @@ export const syncAllDirectories = internalAction({
         continue;
       }
 
-      // Run sync for each directory
       await ctx.runAction(internal.directories.syncDirectory, {
         directoryId: directory._id,
       });
@@ -466,9 +437,6 @@ export const syncAllDirectories = internalAction({
   },
 });
 
-/**
- * Internal query to list all directories (for use in actions)
- */
 export const listInternal = internalQuery({
   handler: async (ctx) => {
     return await ctx.db.query("directories").collect();

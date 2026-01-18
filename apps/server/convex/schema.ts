@@ -15,6 +15,15 @@ export const syncStatusTypes = v.union(
 );
 
 export default defineSchema({
+  stats: defineTable({
+    key: v.string(),
+    totalPrompts: v.number(),
+    totalDownloads: v.number(),
+    totalCreators: v.number(),
+    tagCounts: v.optional(v.any()),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
+
   prompts: defineTable({
     userId: v.optional(v.string()),
     title: v.string(),
@@ -44,7 +53,11 @@ export default defineSchema({
     createdAt: v.number(),
     lastSyncedAt: v.optional(v.number()),
     syncStatus: v.optional(syncStatusTypes),
-  }).index("by_githubUrl", ["githubUrl"]),
+    promptCount: v.optional(v.number()),
+    totalDownloads: v.optional(v.number()),
+  })
+    .index("by_githubUrl", ["githubUrl"])
+    .index("by_totalDownloads", ["totalDownloads"]),
 
   commits: defineTable({
     promptId: v.id("prompts"),
