@@ -181,6 +181,10 @@
     }
   },
   "promptDetail": {
+    "tabs": {
+      "raw": "Raw",
+      "markdown": "Markdown"
+    },
     "author": "Author",
     "repository": "Repository",
     "unknownAuthor": "Unknown",

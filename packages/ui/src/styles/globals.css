@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 @import "./theme.css";
 
+@plugin "@tailwindcss/typography";
+
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../../**/*.{ts,tsx}";
 
