@@ -1,38 +1,50 @@
-"use client";
-
 import { api } from "@ferix/server/_generated/api";
-import { PromptDetailPage } from "@ferix/ui/components/prompts/detail/prompt-detail-page";
-import { PromptDetailSkeleton } from "@ferix/ui/components/prompts/detail/prompt-detail-skeleton";
-import { useQuery } from "convex/react";
-import { notFound } from "next/navigation";
-import { use, useRef } from "react";
+import type { Metadata } from "next";
+import { convexServer } from "@/lib/convex";
+import { buildOgMetadata } from "@/lib/og";
+import { PromptPageClient } from "./prompt-page-client";
 
 interface PromptPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export default function PromptPage({ params }: PromptPageProps) {
-  const { slug } = use(params);
-  const prompt = useQuery(api.prompts.getBySlug, { slug });
-  const hadPromptRef = useRef(false);
+export async function generateMetadata({
+  params,
+}: PromptPageProps): Promise<Metadata> {
+  const { slug } = await params;
 
-  // Loading state
-  if (prompt === undefined) {
-    return <PromptDetailSkeleton />;
-  }
+  try {
+    const prompt = await convexServer.query(api.prompts.getBySlug, { slug });
 
-  // Track that we've successfully loaded a prompt
-  if (prompt) {
-    hadPromptRef.current = true;
-  }
-
-  // Prompt not found - show skeleton if navigating, 404 if fresh load
-  if (prompt === null) {
-    if (hadPromptRef.current) {
-      return <PromptDetailSkeleton />;
+    if (!prompt) {
+      return { title: "Prompt Not Found" };
     }
-    notFound();
-  }
 
-  return <PromptDetailPage prompt={prompt} />;
+    const ogParams: Record<string, string> = { title: prompt.title };
+    if (prompt.directory) {
+      ogParams.owner = prompt.directory.owner;
+      ogParams.repo = prompt.directory.repo;
+    } else if (prompt.creator) {
+      if (prompt.creator.username) {
+        ogParams.username = prompt.creator.username;
+      }
+      if (prompt.creator.image) {
+        ogParams.image = prompt.creator.image;
+      }
+    }
+
+    return buildOgMetadata({
+      title: prompt.title,
+      description: prompt.content?.slice(0, 160) || `${prompt.title} on Ferix`,
+      ogPath: "/api/og/prompt",
+      params: ogParams,
+    });
+  } catch {
+    return { title: "Prompt" };
+  }
+}
+
+export default async function PromptPage({ params }: PromptPageProps) {
+  const { slug } = await params;
+  return <PromptPageClient slug={slug} />;
 }

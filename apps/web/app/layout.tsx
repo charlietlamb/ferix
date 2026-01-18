@@ -16,9 +16,32 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ferix.ai";
+
 export const metadata: Metadata = {
-  title: "Ferix",
-  description: "Ferix",
+  title: {
+    default: "Ferix - AI Agent Skills & Prompts",
+    template: "%s | Ferix",
+  },
+  description:
+    "Discover and share skills, subagents, and rules for AI agents like Claude, Cursor, and more.",
+  openGraph: {
+    type: "website",
+    siteName: "Ferix",
+    locale: "en_US",
+    images: [
+      {
+        url: `${siteUrl}/api/og`,
+        width: 1200,
+        height: 630,
+        alt: "Ferix - AI Agent Skills & Prompts",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [`${siteUrl}/api/og`],
+  },
 };
 
 export default async function RootLayout({

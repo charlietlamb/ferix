@@ -1,57 +1,28 @@
-"use client";
-
-import { api } from "@ferix/server/_generated/api";
-import { AppPage } from "@ferix/ui/components/layout/app-page";
-import {
-  PageHeader,
-  PageHeaderDescription,
-  PageHeaderTitle,
-} from "@ferix/ui/components/layout/page-header";
-import { PromptGrid } from "@ferix/ui/components/prompts/grid/prompt-grid";
 import { getTagById } from "@ferix/ui/lib/tags";
-import { usePaginatedQuery } from "convex/react";
-import { notFound } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { use } from "react";
+import type { Metadata } from "next";
+import { TagPageClient } from "./tag-page-client";
 
 interface TagPageProps {
   params: Promise<{ tag: string }>;
 }
 
-export default function TagPage({ params }: TagPageProps) {
-  const t = useTranslations("pages.tag");
-  const { tag: tagId } = use(params);
+export async function generateMetadata({
+  params,
+}: TagPageProps): Promise<Metadata> {
+  const { tag: tagId } = await params;
   const tag = getTagById(tagId);
 
-  const { results, status, loadMore } = usePaginatedQuery(
-    api.prompts.listByTag,
-    { tag: tagId },
-    { initialNumItems: 20 }
-  );
+  const title = tag?.label || tagId;
+  const description = `Skills and prompts for ${title} on Ferix`;
 
-  if (!tag) {
-    notFound();
-  }
+  return {
+    title,
+    description,
+  };
+}
 
-  const Icon = tag.icon;
+export default async function TagPage({ params }: TagPageProps) {
+  const { tag } = await params;
 
-  return (
-    <AppPage>
-      <PageHeader className="flex flex-row items-center justify-between border-border border-b">
-        <div>
-          <PageHeaderTitle>{tag.label}</PageHeaderTitle>
-          <PageHeaderDescription>
-            {`${t("description")} ${tag.label}`}
-          </PageHeaderDescription>
-        </div>
-        <Icon size={24} />
-      </PageHeader>
-      <PromptGrid
-        hideBorderTop
-        onLoadMore={() => loadMore(20)}
-        prompts={results}
-        status={status}
-      />
-    </AppPage>
-  );
+  return <TagPageClient tag={tag} />;
 }
