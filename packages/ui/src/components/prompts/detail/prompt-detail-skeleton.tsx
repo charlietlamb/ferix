@@ -6,6 +6,20 @@ import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 export function PromptDetailSkeleton() {
   return (
     <AppPage>
+      {/* Install Banner */}
+      <div className="flex items-center justify-between gap-4 border-border border-b bg-muted/30 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="size-8" />
+          <div className="flex flex-col gap-1">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="size-7" />
+        </div>
+      </div>
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         {/* Content - left side */}
         <div className="flex min-h-[400px] flex-1 flex-col md:min-h-0">
@@ -21,13 +35,25 @@ export function PromptDetailSkeleton() {
             </div>
           </div>
 
-          {/* Editor toolbar */}
-          <div className="flex items-center justify-between border-border border-b px-4 py-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-6 w-24" />
+          {/* Filename - mobile only */}
+          <div className="flex items-center gap-2 border-border border-b px-4 py-2 md:hidden">
+            <Skeleton className="size-4" />
+            <Skeleton className="h-4 w-32" />
           </div>
 
-          {/* Textarea */}
+          {/* Tabs row */}
+          <div className="flex items-center justify-between border-border border-b px-4">
+            <div className="flex gap-2 py-2">
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-6 w-14" />
+            </div>
+            <div className="hidden items-center gap-2 md:flex">
+              <Skeleton className="size-4" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+
+          {/* Content area */}
           <div className="flex-1 p-4">
             <Skeleton className="h-full w-full" />
           </div>

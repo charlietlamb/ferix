@@ -19,7 +19,11 @@ import type { PromptType } from "@ferix/ui/lib/prompt-types";
 import { FileTextIcon } from "@phosphor-icons/react";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
+
+const viewTabs = ["markdown", "raw"] as const;
+type ViewTab = (typeof viewTabs)[number];
 
 interface PromptDetailContentProps {
   promptId: Id<"prompts">;
@@ -40,6 +44,10 @@ export function PromptDetailContent({
 }: PromptDetailContentProps) {
   const t = useTranslations("promptDetail");
   const updatePrompt = useMutation(api.prompts.update);
+  const [activeTab, setActiveTab] = useQueryState<ViewTab>(
+    "view",
+    parseAsStringLiteral(viewTabs).withDefault(canEdit ? "raw" : "markdown")
+  );
 
   // usePromptDraft handles localStorage persistence
   const {
@@ -90,7 +98,8 @@ export function PromptDetailContent({
 
             <Tabs
               className="flex min-h-0 flex-1 flex-col"
-              defaultValue={canEdit ? "raw" : "markdown"}
+              onValueChange={(value) => setActiveTab(value as ViewTab)}
+              value={activeTab}
             >
               <div className="flex items-center gap-2 border-border border-b px-4 py-2 text-muted-foreground text-xs md:hidden">
                 <FileTextIcon className="size-4 shrink-0" />
