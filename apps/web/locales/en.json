@@ -1,4 +1,8 @@
 {
+  "twitter": {
+    "title": "Community",
+    "viewOnX": "View on"
+  },
   "search": {
     "placeholder": "Search for skills, repositories, subagents, rules, or tags..."
   },

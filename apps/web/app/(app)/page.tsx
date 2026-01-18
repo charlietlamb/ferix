@@ -5,6 +5,7 @@ import { HeroSection } from "@ferix/ui/components/home/hero/hero-section";
 import { LogoSection } from "@ferix/ui/components/home/logo/logo-section";
 import { RepositoryGrid } from "@ferix/ui/components/home/repositories/repository-grid";
 import { SearchSection } from "@ferix/ui/components/home/search/search-section";
+import { TwitterGrid } from "@ferix/ui/components/home/twitter/twitter-grid";
 import { AppPage } from "@ferix/ui/components/layout/app-page";
 import { PopularPrompts } from "@ferix/ui/components/prompts/data/popular-prompts";
 import { RecentPrompts } from "@ferix/ui/components/prompts/data/recent-prompts";
@@ -22,6 +23,8 @@ export default function DashboardPage() {
       <RecentPrompts />
       <Gutter />
       <CategoryGrid />
+      <Gutter />
+      <TwitterGrid />
       <Gutter />
       <CTASection />
       <Gutter />
