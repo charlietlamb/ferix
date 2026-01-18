@@ -1,8 +1,10 @@
 "use client";
 
+import { env } from "@ferix/env/nextjs";
 import { PostHogProvider } from "@posthog/react";
 import posthog from "posthog-js";
 import { type ReactNode, useEffect } from "react";
+import { PostHogPageview } from "./pageview";
 
 interface AnalyticsProviderProps {
   children: ReactNode;
@@ -17,7 +19,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       return;
     }
 
-    const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+    const key = env.NEXT_PUBLIC_POSTHOG_KEY;
     if (!key) {
       return;
     }
@@ -25,9 +27,17 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     posthog.init(key, {
       api_host: "/ph",
       ui_host: "https://us.posthog.com",
-      defaults: "2025-11-30",
+      capture_pageview: false,
+      capture_pageleave: true,
+      disable_session_recording: false,
+      __add_tracing_headers: [new URL(env.NEXT_PUBLIC_CONVEX_URL).hostname],
     });
   }, []);
 
-  return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
+  return (
+    <PostHogProvider client={posthog}>
+      <PostHogPageview />
+      {children}
+    </PostHogProvider>
+  );
 }
