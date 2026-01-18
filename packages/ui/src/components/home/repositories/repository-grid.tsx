@@ -52,8 +52,8 @@ function RepositoryGridSkeleton() {
     <section className="flex flex-col border-border border-b">
       <RepositoryGridHeader />
       <div className="grid grid-cols-2 md:grid-cols-4">
-        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-          <div className={getGridItemBorderClasses(i, 8)} key={i}>
+        {Array.from({ length: 12 }, (_, i) => (
+          <div className={getGridItemBorderClasses(i, 12)} key={i}>
             <RepositoryCellSkeleton heightClass="h-24" showAvatar />
           </div>
         ))}
@@ -64,7 +64,7 @@ function RepositoryGridSkeleton() {
 
 export function RepositoryGrid() {
   const topRepositories = useQuery(api.directories.listTopByDownloads, {
-    limit: 10,
+    limit: 12,
   });
 
   const sortedRepositories = useMemo(() => {

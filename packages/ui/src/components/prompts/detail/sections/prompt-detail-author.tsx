@@ -15,6 +15,7 @@ interface PromptDetailAuthorProps {
     _id: string;
     owner: string;
     repo: string;
+    name?: string;
   } | null;
 }
 

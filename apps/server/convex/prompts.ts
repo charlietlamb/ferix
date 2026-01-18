@@ -247,6 +247,7 @@ export const getBySlug = query({
             _id: directory._id,
             owner: directory.owner,
             repo: directory.repo,
+            name: directory.name,
             promptCount: directory.promptCount,
           }
         : null,

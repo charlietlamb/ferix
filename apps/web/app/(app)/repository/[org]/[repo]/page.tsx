@@ -1,6 +1,7 @@
 import { api } from "@ferix/server/_generated/api";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { formatName } from "@/app/api/og/shared";
 import { convexServer } from "@/lib/convex";
 import { buildOgMetadata } from "@/lib/og";
 import { RepositoryPageClient } from "./repository-page-client";
@@ -31,13 +32,16 @@ export async function generateMetadata({
       directoryId: repository._id,
     });
 
+    const displayName = repository.name?.trim() || formatName(repository.owner);
+
     return buildOgMetadata({
-      title: `${repository.owner}/${repository.repo}`,
+      title: `${displayName} - ${repository.repo}`,
       description: `${prompts.length} skills from ${repository.owner}/${repository.repo} on Ferix`,
       ogPath: "/api/og/repository",
       params: {
         owner: repository.owner,
         repo: repository.repo,
+        ...(repository.name && { name: repository.name }),
       },
     });
   } catch {

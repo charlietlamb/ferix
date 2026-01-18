@@ -125,15 +125,20 @@ export async function fetchFileContent(
 
 /**
  * Extract title from file path
- * Format: "{Owner Name} - {File/Directory Name}"
+ * Format: "{Display Name} - {File/Directory Name}"
  *
  * Examples:
  *   - "create-auth/SKILL.md" with owner "better-auth" -> "Better Auth - Create Auth"
  *   - "explain-error.md" with owner "better-auth" -> "Better Auth - Explain Error"
  *   - "SKILL.md" (at root) with owner "better-auth" -> "Better Auth"
+ *   - "add-payments.md" with displayName "Autumn" -> "Autumn - Add Payments"
  */
-export function extractTitle(filePath: string, ownerName: string): string {
-  const ownerTitle = formatTitle(ownerName);
+export function extractTitle(
+  filePath: string,
+  ownerName: string,
+  displayName?: string
+): string {
+  const ownerTitle = displayName?.trim() || formatTitle(ownerName);
   const parts = filePath.split("/");
   const filename = parts.at(-1) ?? "";
   // Remove .md extension (case insensitive)

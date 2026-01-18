@@ -34,6 +34,7 @@ interface PromptDetailPageProps {
       _id: string;
       owner: string;
       repo: string;
+      name?: string;
       promptCount: number;
     } | null;
     isCreator: boolean;

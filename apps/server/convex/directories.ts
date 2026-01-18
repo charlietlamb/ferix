@@ -380,7 +380,7 @@ export const syncDirectory = internalAction({
       throw new Error("Directory not found");
     }
 
-    const { owner, repo, tags } = directory;
+    const { owner, repo, name, tags } = directory;
     const directoryTags = tags ?? [];
 
     await ctx.runMutation(internal.directories.setSyncStatus, {
@@ -397,7 +397,7 @@ export const syncDirectory = internalAction({
         filePaths.push(file.path);
 
         const content = await fetchFileContent(owner, repo, file.path);
-        const title = extractTitle(file.path, owner);
+        const title = extractTitle(file.path, owner, name);
 
         await ctx.runMutation(internal.directories.processGithubFile, {
           directoryId: args.directoryId,
