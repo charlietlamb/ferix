@@ -48,6 +48,7 @@ export default defineSchema({
     githubUrl: v.string(),
     owner: v.string(),
     repo: v.string(),
+    name: v.optional(v.string()),
     submittedByUserId: v.string(),
     tags: v.optional(v.array(v.string())),
     createdAt: v.number(),

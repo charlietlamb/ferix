@@ -3,7 +3,10 @@
 import { Link } from "@ferix/i18n/navigation";
 import { Button } from "@ferix/ui/components/ui/button";
 import { useCopy } from "@ferix/ui/hooks/use-copy";
-import { formatTitle, getGithubAvatarUrl } from "@ferix/ui/lib/repositories";
+import {
+  getGithubAvatarUrl,
+  getRepositoryDisplayName,
+} from "@ferix/ui/lib/repositories";
 import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
@@ -12,6 +15,7 @@ interface PromptDetailInstallBannerProps {
     _id: string;
     owner: string;
     repo: string;
+    name?: string;
   };
   promptCount: number;
 }
@@ -24,7 +28,7 @@ export function PromptDetailInstallBanner({
   const { copy, copied } = useCopy();
 
   const command = `npx skills add ${repository.owner}/${repository.repo}`;
-  const repositoryTitle = formatTitle(repository.owner);
+  const repositoryTitle = getRepositoryDisplayName(repository);
 
   const handleCopy = () => {
     if (!copied) {

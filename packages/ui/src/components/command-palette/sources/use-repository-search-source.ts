@@ -1,7 +1,11 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
-import { formatTitle, getGithubAvatarUrl } from "@ferix/ui/lib/repositories";
+import {
+  formatTitle,
+  getGithubAvatarUrl,
+  getRepositoryDisplayName,
+} from "@ferix/ui/lib/repositories";
 import { useQuery } from "convex/react";
 import type { CommandItemData } from "../types";
 
@@ -25,7 +29,9 @@ export function useRepositorySearchSource(
   );
   const filteredRepositories = normalizedQuery
     ? validRepositories.filter((repo) => {
+        const displayName = getRepositoryDisplayName(repo).toLowerCase();
         const ownerTitle = formatTitle(repo.owner).toLowerCase();
+        const matchesName = displayName.includes(normalizedQuery);
         const matchesOwner = repo.owner.toLowerCase().includes(normalizedQuery);
         const matchesOwnerTitle = ownerTitle.includes(normalizedQuery);
         const matchesRepo = repo.repo.toLowerCase().includes(normalizedQuery);
@@ -33,7 +39,11 @@ export function useRepositorySearchSource(
           "repository".includes(normalizedQuery) ||
           "repositories".includes(normalizedQuery);
         return (
-          matchesOwner || matchesOwnerTitle || matchesRepo || matchesRepository
+          matchesName ||
+          matchesOwner ||
+          matchesOwnerTitle ||
+          matchesRepo ||
+          matchesRepository
         );
       })
     : validRepositories;
@@ -42,7 +52,7 @@ export function useRepositorySearchSource(
     items: filteredRepositories.map((repo) => ({
       id: `repository-${repo._id}`,
       type: "repository" as const,
-      label: formatTitle(repo.owner),
+      label: getRepositoryDisplayName(repo),
       description: `${repo.owner}/${repo.repo}`,
       imageUrl: getGithubAvatarUrl(repo.owner),
       path: `/repository/${repo.owner}/${repo.repo}`,

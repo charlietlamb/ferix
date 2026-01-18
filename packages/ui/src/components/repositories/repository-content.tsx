@@ -10,7 +10,10 @@ import {
 import { Button } from "@ferix/ui/components/ui/button";
 import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
-import { formatTitle, getGithubAvatarUrl } from "@ferix/ui/lib/repositories";
+import {
+  getGithubAvatarUrl,
+  getRepositoryDisplayName,
+} from "@ferix/ui/lib/repositories";
 import { ArrowsClockwise, Check, Copy } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "convex/react";
 import { useTranslations } from "next-intl";
@@ -20,6 +23,7 @@ import {
   RepositoryFileTree,
   RepositoryFileTreeSkeleton,
 } from "./repository-file-tree";
+import { RepositoryName } from "./repository-name";
 import { RepositoryTags } from "./repository-tags";
 
 interface RepositoryContentProps {
@@ -52,7 +56,7 @@ export function RepositoryContent({ repositoryId }: RepositoryContentProps) {
     );
   }
 
-  const ownerTitle = formatTitle(repository.owner);
+  const displayName = getRepositoryDisplayName(repository);
   const command = `npx skills add ${repository.owner}/${repository.repo}`;
   const githubAvatarUrl = getGithubAvatarUrl(repository.owner);
   const githubRepoUrl = `https://github.com/${repository.owner}/${repository.repo}`;
@@ -89,7 +93,7 @@ export function RepositoryContent({ repositoryId }: RepositoryContentProps) {
     <div className="flex h-full flex-col">
       <PageHeader className="flex flex-row items-center justify-between border-border border-b">
         <div>
-          <PageHeaderTitle>{ownerTitle}</PageHeaderTitle>
+          <PageHeaderTitle>{displayName}</PageHeaderTitle>
           <PageHeaderDescription>
             {t("description", {
               owner: repository.owner,
@@ -139,6 +143,13 @@ export function RepositoryContent({ repositoryId }: RepositoryContentProps) {
           </a>
         </div>
       </PageHeader>
+      {isAdmin && (
+        <RepositoryName
+          name={repository.name}
+          owner={repository.owner}
+          repositoryId={repositoryId}
+        />
+      )}
       {isAdmin && (
         <RepositoryTags
           repositoryId={repositoryId}

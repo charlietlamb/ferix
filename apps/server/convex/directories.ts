@@ -22,6 +22,7 @@ export const create = mutation({
   args: {
     githubUrl: v.string(),
     tags: v.optional(v.array(v.string())),
+    name: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
@@ -43,10 +44,17 @@ export const create = mutation({
       throw new Error("Invalid GitHub URL");
     }
 
+    const trimmedName = args.name?.trim();
+    const name =
+      trimmedName && trimmedName.length > 0
+        ? trimmedName.slice(0, 32)
+        : undefined;
+
     const directoryId = await ctx.db.insert("directories", {
       githubUrl: args.githubUrl,
       owner: parsed.owner,
       repo: parsed.repo,
+      name,
       submittedByUserId: user._id,
       createdAt: Date.now(),
       tags: args.tags ?? [],
@@ -144,6 +152,38 @@ export const updateTags = mutation({
     await ctx.scheduler.runAfter(0, internal.directories.syncDirectory, {
       directoryId: args.directoryId,
     });
+
+    return { success: true };
+  },
+});
+
+export const updateName = mutation({
+  args: {
+    directoryId: v.id("directories"),
+    name: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    if (user.role !== "admin") {
+      throw new Error("Only admins can update directory name");
+    }
+
+    const directory = await ctx.db.get(args.directoryId);
+    if (!directory) {
+      throw new Error("Directory not found");
+    }
+
+    const trimmedName = args.name?.trim();
+    const name =
+      trimmedName && trimmedName.length > 0
+        ? trimmedName.slice(0, 32)
+        : undefined;
+
+    await ctx.db.patch(args.directoryId, { name });
 
     return { success: true };
   },

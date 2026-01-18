@@ -7,6 +7,7 @@ export const addRepositoryFormSchema = z.object({
     .string()
     .min(1, "GitHub URL is required")
     .regex(githubUrlRegex, "Must be a valid GitHub repository URL"),
+  name: z.string().max(32, "Name must be 32 characters or less").optional(),
   tags: z.array(z.string()),
 });
 
@@ -14,6 +15,7 @@ export type AddRepositoryFormValues = z.infer<typeof addRepositoryFormSchema>;
 
 export const addRepositoryFormDefaults: AddRepositoryFormValues = {
   githubUrl: "",
+  name: "",
   tags: [],
 };
 

@@ -3,8 +3,8 @@
 import { Link } from "@ferix/i18n/navigation";
 import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 import {
-  formatTitle,
   getGithubAvatarUrl,
+  getRepositoryDisplayName,
   type RepositoryBase,
 } from "@ferix/ui/lib/repositories";
 import { cn } from "@ferix/ui/lib/utils";
@@ -28,7 +28,7 @@ export function RepositoryCell({
   heightClass = "h-16",
 }: RepositoryCellProps) {
   const t = useTranslations("repositories");
-  const ownerTitle = formatTitle(repository.owner);
+  const displayName = getRepositoryDisplayName(repository);
 
   return (
     <Link
@@ -50,7 +50,7 @@ export function RepositoryCell({
         <FolderIcon size={20} />
       )}
       <div className="flex min-w-0 flex-col">
-        <span className="truncate font-medium text-sm">{ownerTitle}</span>
+        <span className="truncate font-medium text-sm">{displayName}</span>
         <span className="truncate text-muted-foreground text-xs">
           {repository.owner}/{repository.repo}
         </span>

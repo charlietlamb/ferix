@@ -51,6 +51,7 @@ export function AddRepositoryForm({ onSuccess }: AddRepositoryFormProps) {
       try {
         await createRepository({
           githubUrl: value.githubUrl.replace(trailingSlashRegex, ""),
+          name: value.name?.trim() || undefined,
           tags: value.tags,
         });
         toast.success(t("success"));
@@ -144,6 +145,33 @@ export function AddRepositoryForm({ onSuccess }: AddRepositoryFormProps) {
       </form.AppField>
 
       {status === "valid" && repoData && <GithubRepoPreview repo={repoData} />}
+
+      <form.AppField name="name">
+        {(field) => (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="name">
+              {t("name")}{" "}
+              <span className="text-muted-foreground">({t("optional")})</span>
+            </Label>
+            <div className="relative">
+              <Input
+                autoComplete="off"
+                className="pr-12"
+                id="name"
+                maxLength={32}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder={t("namePlaceholder")}
+                value={field.state.value ?? ""}
+              />
+              <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-xs">
+                {field.state.value?.length ?? 0}/32
+              </span>
+            </div>
+            <p className="text-muted-foreground text-xs">{t("nameHint")}</p>
+          </div>
+        )}
+      </form.AppField>
 
       <form.AppField name="tags">
         {(field) => {

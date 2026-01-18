@@ -33,6 +33,20 @@ export function formatTitle(slug: string): string {
   return slug.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/**
+ * Get the display name for a repository.
+ * Uses the custom name if set, otherwise falls back to formatTitle(owner).
+ */
+export function getRepositoryDisplayName(repository: {
+  name?: string;
+  owner: string;
+}): string {
+  const trimmedName = repository.name?.trim();
+  return trimmedName && trimmedName.length > 0
+    ? trimmedName
+    : formatTitle(repository.owner);
+}
+
 export function getGithubAvatarUrl(owner: string): string {
   return `https://github.com/${owner}.png`;
 }
@@ -41,6 +55,7 @@ export interface RepositoryBase {
   _id: string;
   owner: string;
   repo: string;
+  name?: string;
   syncStatus?: "syncing" | "success" | "error";
 }
 
