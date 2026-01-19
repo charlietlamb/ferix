@@ -3,9 +3,9 @@ import { internal } from "./_generated/api";
 
 const crons = cronJobs();
 
-crons.interval(
+crons.daily(
   "sync directories",
-  { hours: 1 },
+  { hourUTC: 4, minuteUTC: 0 },
   internal.directories.syncAllDirectories
 );
 
