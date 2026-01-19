@@ -1,5 +1,15 @@
 // GitHub API utilities for fetching repository contents
 
+import { env } from "@ferix/env/convex";
+
+function getGitHubHeaders(): HeadersInit {
+  return {
+    Accept: "application/vnd.github.v3+json",
+    "User-Agent": "Ferix-Skills-Directory",
+    Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+  };
+}
+
 const REGEX_UTILS = {
   GITHUB_URL: /^https:\/\/github\.com\/([\w-]+)\/([\w.-]+)\/?$/,
   TRAILING_SLASH: /\/$/,
@@ -62,10 +72,7 @@ export async function fetchRepoTree(
   const repoResponse = await fetch(
     `https://api.github.com/repos/${owner}/${repo}`,
     {
-      headers: {
-        Accept: "application/vnd.github.v3+json",
-        "User-Agent": "Ferix-Skills-Directory",
-      },
+      headers: getGitHubHeaders(),
     }
   );
 
@@ -80,10 +87,7 @@ export async function fetchRepoTree(
   const treeResponse = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`,
     {
-      headers: {
-        Accept: "application/vnd.github.v3+json",
-        "User-Agent": "Ferix-Skills-Directory",
-      },
+      headers: getGitHubHeaders(),
     }
   );
 
