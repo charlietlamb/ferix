@@ -4,6 +4,7 @@ import { internalMutation, query } from "./_generated/server";
 const STATS_KEY = "global";
 
 export const getStats = query({
+  args: {},
   handler: async (ctx) => {
     const cached = await ctx.db
       .query("stats")
@@ -26,6 +27,10 @@ export const getStats = query({
   },
 });
 
+/**
+ * Counts prompts by tags using cached stats.
+ * Falls back to computing if no cached stats exist.
+ */
 export const countByTags = query({
   args: { tags: v.array(v.string()) },
   handler: async (ctx, args) => {
@@ -34,42 +39,53 @@ export const countByTags = query({
       .withIndex("by_key", (q) => q.eq("key", STATS_KEY))
       .first();
 
+    const counts: Record<string, number> = {};
+
     if (cached?.tagCounts) {
-      const counts: Record<string, number> = {};
+      const cachedTagCounts = cached.tagCounts as Record<string, number>;
       for (const tag of args.tags) {
-        counts[tag] = (cached.tagCounts as Record<string, number>)[tag] ?? 0;
+        counts[tag] = cachedTagCounts[tag] ?? 0;
       }
       return counts;
     }
 
-    const counts: Record<string, number> = {};
     for (const tag of args.tags) {
-      counts[tag] = 0;
+      const entries = await ctx.db
+        .query("promptTags")
+        .withIndex("by_tag_promptId", (q) => q.eq("tag", tag))
+        .take(1000);
+      counts[tag] = entries.length;
     }
+
     return counts;
   },
 });
 
+/**
+ * Refreshes global stats by aggregating userStats and promptTags.
+ * Uses .take() with high limits since Convex only allows one paginated query per function.
+ */
 export const refreshStats = internalMutation({
   handler: async (ctx) => {
-    const allPrompts = await ctx.db.query("prompts").collect();
-
-    const totalPrompts = allPrompts.length;
-    const totalDownloads = allPrompts.reduce(
-      (sum, p) => sum + (p.downloads ?? 0),
-      0
-    );
-
-    const uniqueCreators = new Set(
-      allPrompts.map((p) => p.userId).filter(Boolean)
-    );
-    const totalCreators = uniqueCreators.size;
-
+    let totalPrompts = 0;
+    let totalDownloads = 0;
+    let totalCreators = 0;
     const tagCounts: Record<string, number> = {};
-    for (const prompt of allPrompts) {
-      for (const tag of prompt.tags) {
-        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+
+    const userStats = await ctx.db.query("userStats").take(10_000);
+
+    for (const stat of userStats) {
+      totalPrompts += stat.promptCount;
+      totalDownloads += stat.totalDownloads;
+      if (stat.promptCount > 0) {
+        totalCreators++;
       }
+    }
+
+    const promptTags = await ctx.db.query("promptTags").take(50_000);
+
+    for (const pt of promptTags) {
+      tagCounts[pt.tag] = (tagCounts[pt.tag] ?? 0) + 1;
     }
 
     const existing = await ctx.db

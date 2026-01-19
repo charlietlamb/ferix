@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
+import type { Prompt } from "@ferix/server/types";
 import { AppPage } from "@ferix/ui/components/layout/app-page";
 import {
   PageHeader,
@@ -14,10 +15,11 @@ import { useTranslations } from "next-intl";
 export default function PopularPage() {
   const t = useTranslations("pages.popular");
   const { results, status, loadMore } = usePaginatedQuery(
-    api.prompts.listPopular,
-    {},
+    api.prompts.list,
+    { orderBy: "popular" },
     { initialNumItems: 20 }
   );
+  const prompts = results as Prompt[];
 
   return (
     <AppPage>
@@ -28,7 +30,7 @@ export default function PopularPage() {
       <PromptGrid
         hideBorderTop
         onLoadMore={() => loadMore(20)}
-        prompts={results}
+        prompts={prompts}
         status={status}
       />
     </AppPage>

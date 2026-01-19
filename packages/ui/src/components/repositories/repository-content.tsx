@@ -2,6 +2,7 @@
 
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
+import type { Prompt } from "@ferix/server/types";
 import {
   PageHeader,
   PageHeaderDescription,
@@ -15,9 +16,9 @@ import {
   getRepositoryDisplayName,
 } from "@ferix/ui/lib/repositories";
 import { ArrowsClockwise, Check, Copy } from "@phosphor-icons/react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   RepositoryFileTree,
@@ -40,11 +41,25 @@ export function RepositoryContent({ repositoryId }: RepositoryContentProps) {
     directoryId: repositoryId as Id<"directories">,
   });
 
-  const prompts = useQuery(api.prompts.listAllByDirectory, {
-    directoryId: repositoryId as Id<"directories">,
-  });
+  const {
+    results: promptResults,
+    status: promptsStatus,
+    loadMore,
+  } = usePaginatedQuery(
+    api.prompts.list,
+    { directoryId: repositoryId as Id<"directories"> },
+    { initialNumItems: 50 }
+  );
 
-  if (repository === undefined || prompts === undefined) {
+  const prompts = useMemo(
+    () => (promptResults ?? []) as Prompt[],
+    [promptResults]
+  );
+
+  const isLoading =
+    repository === undefined || promptsStatus === "LoadingFirstPage";
+
+  if (isLoading) {
     return <RepositoryContentSkeleton />;
   }
 
@@ -156,7 +171,11 @@ export function RepositoryContent({ repositoryId }: RepositoryContentProps) {
           tags={repository.tags ?? []}
         />
       )}
-      <RepositoryFileTree prompts={prompts} />
+      <RepositoryFileTree
+        loadMore={() => loadMore(50)}
+        prompts={prompts}
+        status={promptsStatus}
+      />
     </div>
   );
 }

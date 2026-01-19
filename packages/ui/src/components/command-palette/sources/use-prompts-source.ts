@@ -1,8 +1,9 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
+import type { Prompt } from "@ferix/server/types";
 import { ChatTextIcon } from "@phosphor-icons/react";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import type { CommandItemData } from "../types";
 
 interface PromptsSourceResult {
@@ -11,9 +12,14 @@ interface PromptsSourceResult {
 }
 
 export function usePromptsSource(query: string): PromptsSourceResult {
-  const prompts = useQuery(api.prompts.search, { query });
+  const { results, status } = usePaginatedQuery(
+    api.prompts.list,
+    { search: query || undefined },
+    { initialNumItems: 10 }
+  );
+  const prompts = results as Prompt[];
 
-  if (prompts === undefined) {
+  if (status === "LoadingFirstPage") {
     return { items: [], isLoading: true };
   }
 

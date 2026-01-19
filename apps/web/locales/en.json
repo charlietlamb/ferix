@@ -307,6 +307,13 @@
     "alreadyExists": "This repository has already been added",
     "unauthorized": "You must be signed in to add a repository"
   },
+  "components": {
+    "repositoryFileTree": {
+      "noFiles": "No files found",
+      "loadMore": "Load more files",
+      "loading": "Loading..."
+    }
+  },
   "auth": {
     "emailVerified": "Email verified successfully",
     "signIn": {

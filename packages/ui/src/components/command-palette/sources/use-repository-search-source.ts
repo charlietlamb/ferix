@@ -6,7 +6,7 @@ import {
   getGithubAvatarUrl,
   getRepositoryDisplayName,
 } from "@ferix/ui/lib/repositories";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import type { CommandItemData } from "../types";
 
 interface RepositorySearchSourceResult {
@@ -17,16 +17,18 @@ interface RepositorySearchSourceResult {
 export function useRepositorySearchSource(
   query: string
 ): RepositorySearchSourceResult {
-  const repositories = useQuery(api.directories.list);
+  const { results, status } = usePaginatedQuery(
+    api.directories.list,
+    { orderBy: "popular" },
+    { initialNumItems: 50 }
+  );
 
-  if (repositories === undefined) {
+  if (status === "LoadingFirstPage") {
     return { items: [], isLoading: true };
   }
 
   const normalizedQuery = query.toLowerCase().trim();
-  const validRepositories = repositories.filter(
-    (repo) => repo.owner && repo.repo
-  );
+  const validRepositories = results.filter((repo) => repo.owner && repo.repo);
   const filteredRepositories = normalizedQuery
     ? validRepositories.filter((repo) => {
         const displayName = getRepositoryDisplayName(repo).toLowerCase();
@@ -49,7 +51,7 @@ export function useRepositorySearchSource(
     : validRepositories;
 
   return {
-    items: filteredRepositories.map((repo) => ({
+    items: filteredRepositories.slice(0, 10).map((repo) => ({
       id: `repository-${repo._id}`,
       type: "repository" as const,
       label: getRepositoryDisplayName(repo),

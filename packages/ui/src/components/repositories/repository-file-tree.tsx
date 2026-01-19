@@ -2,6 +2,7 @@
 
 import { Link } from "@ferix/i18n/navigation";
 import type { Prompt } from "@ferix/server/types";
+import { Button } from "@ferix/ui/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
@@ -19,7 +20,10 @@ import {
   DownloadSimple,
   FolderOpen,
   FolderSimple,
+  SpinnerGap,
 } from "@phosphor-icons/react";
+import type { PaginationStatus } from "convex/browser";
+import { useTranslations } from "next-intl";
 import type { ComponentType } from "react";
 import { useState } from "react";
 
@@ -33,6 +37,8 @@ interface FileTreeNode {
 
 interface RepositoryFileTreeProps {
   prompts: Prompt[];
+  status: PaginationStatus;
+  loadMore: () => void;
 }
 
 function sortNodes(nodes: FileTreeNode[]): FileTreeNode[] {
@@ -223,13 +229,21 @@ function TreeNode({ node, depth, isLast }: TreeNodeProps) {
   return <FileRow depth={depth} isLast={isLast} node={node} />;
 }
 
-export function RepositoryFileTree({ prompts }: RepositoryFileTreeProps) {
+export function RepositoryFileTree({
+  prompts,
+  status,
+  loadMore,
+}: RepositoryFileTreeProps) {
+  const t = useTranslations("components.repositoryFileTree");
   const tree = buildFileTree(prompts);
 
-  if (tree.length === 0) {
+  const canLoadMore = status === "CanLoadMore";
+  const isLoadingMore = status === "LoadingMore";
+
+  if (tree.length === 0 && status === "Exhausted") {
     return (
       <div className="flex flex-1 items-center justify-center py-12">
-        <span className="text-muted-foreground text-sm">No files found</span>
+        <span className="text-muted-foreground text-sm">{t("noFiles")}</span>
       </div>
     );
   }
@@ -239,11 +253,30 @@ export function RepositoryFileTree({ prompts }: RepositoryFileTreeProps) {
       {tree.map((node, i) => (
         <TreeNode
           depth={0}
-          isLast={i === tree.length - 1}
+          isLast={i === tree.length - 1 && !canLoadMore}
           key={node.path}
           node={node}
         />
       ))}
+      {canLoadMore && (
+        <div className="flex justify-center border-border border-t py-4">
+          <Button
+            disabled={isLoadingMore}
+            onClick={loadMore}
+            size="sm"
+            variant="outline"
+          >
+            {isLoadingMore ? (
+              <>
+                <SpinnerGap className="size-4 animate-spin" />
+                <span className="ml-2">{t("loading")}</span>
+              </>
+            ) : (
+              t("loadMore")
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

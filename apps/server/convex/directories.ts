@@ -1,6 +1,8 @@
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import slugify from "slugify";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import {
   action,
   internalAction,
@@ -11,6 +13,11 @@ import {
 } from "./_generated/server";
 import { authComponent } from "./auth";
 import {
+  deletePromptTags,
+  syncPromptTags,
+  updateDirectoryStats,
+} from "./lib/denormalized";
+import {
   extractTitle,
   fetchFileContent,
   fetchRepoInfo,
@@ -18,6 +25,7 @@ import {
   filterMarkdownFiles,
   parseGithubUrl,
 } from "./lib/github";
+import { orderByValidator, paginate } from "./lib/pagination";
 import { generateUniqueSlug } from "./lib/slug";
 
 export const create = mutation({
@@ -72,32 +80,43 @@ export const create = mutation({
   },
 });
 
+/**
+ * Unified directory listing endpoint with pagination, ordering, and search.
+ */
 export const list = query({
-  handler: async (ctx) => {
-    const directories = await ctx.db.query("directories").collect();
-    return directories.map((dir) => ({
-      ...dir,
-      promptCount: dir.promptCount ?? 0,
-      totalDownloads: dir.totalDownloads ?? 0,
-    }));
+  args: {
+    paginationOpts: paginationOptsValidator,
+    orderBy: orderByValidator,
+    search: v.optional(v.string()),
   },
-});
-
-export const listTopByDownloads = query({
-  args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const limit = args.limit ?? 10;
-    const directories = await ctx.db
-      .query("directories")
-      .withIndex("by_totalDownloads")
-      .order("desc")
-      .take(limit);
+    const index =
+      args.orderBy === "recent" ? "by_createdAt" : "by_totalDownloads";
 
-    return directories.map((dir) => ({
-      ...dir,
-      totalDownloads: dir.totalDownloads ?? 0,
-      promptCount: dir.promptCount ?? 0,
-    }));
+    const results = await ctx.db
+      .query("directories")
+      .withIndex(index)
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    let page = results.page;
+    if (args.search?.trim()) {
+      const searchLower = args.search.toLowerCase();
+      page = page.filter(
+        (d) =>
+          d.owner.toLowerCase().includes(searchLower) ||
+          d.repo.toLowerCase().includes(searchLower) ||
+          d.name?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return paginate({ ...results, page }, async (items) =>
+      items.map((dir) => ({
+        ...dir,
+        promptCount: dir.promptCount ?? 0,
+        totalDownloads: dir.totalDownloads ?? 0,
+      }))
+    );
   },
 });
 
@@ -211,50 +230,87 @@ export const remove = mutation({
       throw new Error("Unauthorized");
     }
 
-    const prompts = await ctx.db
-      .query("prompts")
-      .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
-      .collect();
+    let deletedPrompts = 0;
+    let cursor: string | null = null;
+    let isDone = false;
 
-    for (const prompt of prompts) {
-      const commits = await ctx.db
-        .query("commits")
-        .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-        .collect();
-      for (const commit of commits) {
-        await ctx.db.delete(commit._id);
+    while (!isDone) {
+      const result: {
+        page: Array<{ _id: Id<"prompts"> }>;
+        isDone: boolean;
+        continueCursor: string;
+      } = await ctx.db
+        .query("prompts")
+        .withIndex("by_directoryId", (q) =>
+          q.eq("directoryId", args.directoryId)
+        )
+        .paginate({ numItems: 50, cursor });
+
+      for (const prompt of result.page) {
+        const [commits, saves] = await Promise.all([
+          ctx.db
+            .query("commits")
+            .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+            .take(100),
+          ctx.db
+            .query("saves")
+            .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+            .take(100),
+        ]);
+
+        await Promise.all([
+          ...commits.map((c) => ctx.db.delete(c._id)),
+          ...saves.map((s) => ctx.db.delete(s._id)),
+        ]);
+
+        await deletePromptTags(ctx, prompt._id);
+        await ctx.db.delete(prompt._id);
+        deletedPrompts++;
       }
 
-      const saves = await ctx.db
-        .query("saves")
-        .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-        .collect();
-      for (const save of saves) {
-        await ctx.db.delete(save._id);
-      }
-
-      await ctx.db.delete(prompt._id);
+      isDone = result.isDone;
+      cursor = result.continueCursor;
     }
 
     await ctx.db.delete(args.directoryId);
 
-    return { success: true, deletedPrompts: prompts.length };
+    return { success: true, deletedPrompts };
   },
 });
 
+/**
+ * Recalculates directory counts by paginating through prompts.
+ * Used as a reconciliation step after sync operations.
+ */
 export const updateDirectoryCounts = internalMutation({
   args: { directoryId: v.id("directories") },
   handler: async (ctx, args) => {
-    const prompts = await ctx.db
-      .query("prompts")
-      .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
-      .collect();
+    let promptCount = 0;
+    let totalDownloads = 0;
+    let isDone = false;
+    let cursor: string | null = null;
 
-    const promptCount = prompts.length;
-    const totalDownloads = prompts.reduce(
-      (sum, p) => sum + (p.downloads ?? 0),
-      0
-    );
+    while (!isDone) {
+      const result: {
+        page: Array<{ downloads?: number }>;
+        isDone: boolean;
+        continueCursor: string;
+      } = await ctx.db
+        .query("prompts")
+        .withIndex("by_directoryId", (q) =>
+          q.eq("directoryId", args.directoryId)
+        )
+        .paginate({ numItems: 100, cursor });
+
+      promptCount += result.page.length;
+      totalDownloads += result.page.reduce(
+        (sum, p) => sum + (p.downloads ?? 0),
+        0
+      );
+
+      isDone = result.isDone;
+      cursor = result.continueCursor;
+    }
 
     await ctx.db.patch(args.directoryId, { promptCount, totalDownloads });
   },
@@ -289,15 +345,18 @@ export const processGithubFile = internalMutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("prompts")
-      .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
-      .filter((q) => q.eq(q.field("filePath"), args.filePath))
+      .withIndex("by_directoryId_filePath", (q) =>
+        q.eq("directoryId", args.directoryId).eq("filePath", args.filePath)
+      )
       .first();
 
     if (existing) {
+      const tagsChanged =
+        JSON.stringify(existing.tags) !== JSON.stringify(args.tags);
       const needsUpdate =
         existing.content !== args.content ||
         existing.title !== args.title ||
-        JSON.stringify(existing.tags) !== JSON.stringify(args.tags);
+        tagsChanged;
 
       if (needsUpdate) {
         await ctx.db.patch(existing._id, {
@@ -306,31 +365,41 @@ export const processGithubFile = internalMutation({
           tags: args.tags,
           updatedAt: Date.now(),
         });
+
+        if (tagsChanged) {
+          await syncPromptTags(ctx, existing._id, args.tags);
+        }
       }
-    } else {
-      const baseSlug = slugify(args.title, { lower: true, strict: true });
-      const slug = await generateUniqueSlug(ctx, baseSlug);
-      const now = Date.now();
-
-      const promptId = await ctx.db.insert("prompts", {
-        title: args.title,
-        slug,
-        content: args.content,
-        type: "skill",
-        tags: args.tags,
-        downloads: 0,
-        createdAt: now,
-        updatedAt: now,
-        directoryId: args.directoryId,
-        filePath: args.filePath,
-      });
-
-      await ctx.db.insert("commits", {
-        promptId,
-        content: args.content,
-        createdAt: now,
-      });
+      return { created: false };
     }
+
+    const baseSlug = slugify(args.title, { lower: true, strict: true });
+    const slug = await generateUniqueSlug(ctx, baseSlug);
+    const now = Date.now();
+
+    const promptId = await ctx.db.insert("prompts", {
+      title: args.title,
+      slug,
+      content: args.content,
+      type: "skill",
+      tags: args.tags,
+      downloads: 0,
+      createdAt: now,
+      updatedAt: now,
+      directoryId: args.directoryId,
+      filePath: args.filePath,
+    });
+
+    await ctx.db.insert("commits", {
+      promptId,
+      content: args.content,
+      createdAt: now,
+    });
+
+    await syncPromptTags(ctx, promptId, args.tags);
+    await updateDirectoryStats(ctx, args.directoryId, { promptCount: 1 });
+
+    return { created: true };
   },
 });
 
@@ -340,34 +409,49 @@ export const removeDeletedFiles = internalMutation({
     currentFilePaths: v.array(v.string()),
   },
   handler: async (ctx, args) => {
+    const currentPathsSet = new Set(args.currentFilePaths);
+    let deletedCount = 0;
+    let deletedDownloads = 0;
+
     const existingPrompts = await ctx.db
       .query("prompts")
       .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
-      .collect();
-
-    const currentPathsSet = new Set(args.currentFilePaths);
+      .take(500);
 
     for (const prompt of existingPrompts) {
       if (prompt.filePath && !currentPathsSet.has(prompt.filePath)) {
-        const commits = await ctx.db
-          .query("commits")
-          .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-          .collect();
-        for (const commit of commits) {
-          await ctx.db.delete(commit._id);
-        }
+        const [commits, saves] = await Promise.all([
+          ctx.db
+            .query("commits")
+            .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+            .take(100),
+          ctx.db
+            .query("saves")
+            .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+            .take(100),
+        ]);
 
-        const saves = await ctx.db
-          .query("saves")
-          .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-          .collect();
-        for (const save of saves) {
-          await ctx.db.delete(save._id);
-        }
+        await Promise.all([
+          ...commits.map((c) => ctx.db.delete(c._id)),
+          ...saves.map((s) => ctx.db.delete(s._id)),
+        ]);
 
+        await deletePromptTags(ctx, prompt._id);
         await ctx.db.delete(prompt._id);
+
+        deletedCount++;
+        deletedDownloads += prompt.downloads ?? 0;
       }
     }
+
+    if (deletedCount > 0) {
+      await updateDirectoryStats(ctx, args.directoryId, {
+        promptCount: -deletedCount,
+        downloads: -deletedDownloads,
+      });
+    }
+
+    return { deletedCount };
   },
 });
 
@@ -472,27 +556,49 @@ export const triggerSync = mutation({
 
 export const syncAllDirectories = internalAction({
   handler: async (ctx) => {
-    const directories = await ctx.runQuery(internal.directories.listInternal);
+    let cursor: string | null = null;
+    let isDone = false;
 
-    for (const directory of directories) {
-      if (
-        directory.syncStatus === "syncing" ||
-        !directory.owner ||
-        !directory.repo
-      ) {
-        continue;
+    while (!isDone) {
+      const result: {
+        page: Array<{
+          _id: Id<"directories">;
+          syncStatus?: "syncing" | "success" | "error";
+          owner: string;
+          repo: string;
+        }>;
+        isDone: boolean;
+        continueCursor: string;
+      } = await ctx.runQuery(internal.directories.listInternal, {
+        paginationOpts: { numItems: 50, cursor },
+      });
+
+      for (const directory of result.page) {
+        if (
+          directory.syncStatus === "syncing" ||
+          !directory.owner ||
+          !directory.repo
+        ) {
+          continue;
+        }
+
+        await ctx.runAction(internal.directories.syncDirectory, {
+          directoryId: directory._id,
+        });
       }
 
-      await ctx.runAction(internal.directories.syncDirectory, {
-        directoryId: directory._id,
-      });
+      isDone = result.isDone;
+      cursor = result.continueCursor;
     }
   },
 });
 
 export const listInternal = internalQuery({
-  handler: async (ctx) => {
-    return await ctx.db.query("directories").collect();
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.query("directories").paginate(args.paginationOpts);
   },
 });
 

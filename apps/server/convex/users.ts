@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import slugify from "slugify";
 import { components } from "./_generated/api";
 import { type QueryCtx, query } from "./_generated/server";
+import { authComponent } from "./auth";
 
 type RunQuery = QueryCtx["runQuery"];
 
@@ -54,9 +55,19 @@ interface UserRecord {
   role?: string | null;
 }
 
+/**
+ * Lists users for admin impersonation feature.
+ * Limited to 100 users without cursor pagination - this is intentional
+ * as it's an admin-only feature and 100 users is sufficient for the use case.
+ */
 export const listForImpersonation = query({
   args: { search: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user || user.role !== "admin") {
+      return [];
+    }
+
     const result = await ctx.runQuery(components.betterAuth.adapter.findMany, {
       model: "user",
       limit: 100,

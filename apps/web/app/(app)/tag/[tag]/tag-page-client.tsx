@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
+import type { Prompt } from "@ferix/server/types";
 import { AppPage } from "@ferix/ui/components/layout/app-page";
 import {
   PageHeader,
@@ -22,10 +23,11 @@ export function TagPageClient({ tag: tagId }: TagPageClientProps) {
   const tag = getTagById(tagId);
 
   const { results, status, loadMore } = usePaginatedQuery(
-    api.prompts.listByTag,
+    api.prompts.list,
     { tag: tagId },
     { initialNumItems: 20 }
   );
+  const prompts = results as Prompt[];
 
   if (!tag) {
     notFound();
@@ -47,7 +49,7 @@ export function TagPageClient({ tag: tagId }: TagPageClientProps) {
       <PromptGrid
         hideBorderTop
         onLoadMore={() => loadMore(20)}
-        prompts={results}
+        prompts={prompts}
         status={status}
       />
     </AppPage>

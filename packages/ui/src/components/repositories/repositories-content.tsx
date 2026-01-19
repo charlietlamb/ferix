@@ -5,10 +5,12 @@ import {
   RepositoryCell,
   RepositoryCellSkeleton,
 } from "@ferix/ui/components/repositories/repository-cell";
+import { useInfiniteScroll } from "@ferix/ui/hooks/use-infinite-scroll";
 import { getGridItemBorderClasses } from "@ferix/ui/lib/repositories";
 import { FolderIcon } from "@phosphor-icons/react";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import { useTranslations } from "next-intl";
+import { useMemo } from "react";
 
 function RepositoriesGridSkeleton() {
   return (
@@ -31,15 +33,26 @@ function RepositoriesGridSkeleton() {
 
 export function RepositoriesContent() {
   const t = useTranslations("pages.repositories");
-  const repositories = useQuery(api.directories.list);
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.directories.list,
+    { orderBy: "popular" },
+    { initialNumItems: 20 }
+  );
 
-  if (repositories === undefined) {
+  const validRepositories = useMemo(
+    () => results.filter((repo) => repo.owner && repo.repo),
+    [results]
+  );
+
+  const loadMoreRef = useInfiniteScroll({
+    hasMore: status === "CanLoadMore",
+    isLoading: status === "LoadingMore",
+    onLoadMore: () => loadMore(20),
+  });
+
+  if (status === "LoadingFirstPage") {
     return <RepositoriesGridSkeleton />;
   }
-
-  const validRepositories = repositories.filter(
-    (repo) => repo.owner && repo.repo
-  );
 
   if (validRepositories.length === 0) {
     return (
@@ -64,6 +77,21 @@ export function RepositoriesContent() {
           </li>
         ))}
       </ul>
+      <div ref={loadMoreRef} />
+      {status === "LoadingMore" && (
+        <div className="grid grid-cols-2 md:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              className={getGridItemBorderClasses(i, 4, {
+                alwaysShowBottomBorder: true,
+              })}
+              key={i}
+            >
+              <RepositoryCellSkeleton />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

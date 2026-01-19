@@ -4,7 +4,7 @@ import { api } from "@ferix/server/_generated/api";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { getGithubAvatarUrl } from "@ferix/ui/lib/repositories";
 import { ArrowsClockwiseIcon, TrashIcon } from "@phosphor-icons/react";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import type { CommandItemData } from "../types";
 
 interface RepositoriesSourceResult {
@@ -14,22 +14,23 @@ interface RepositoriesSourceResult {
 
 export function useRepositoriesSource(query: string): RepositoriesSourceResult {
   const { isAdmin } = useAuthenticated();
-  const repositories = useQuery(api.directories.list, isAdmin ? {} : "skip");
+  const { results, status } = usePaginatedQuery(
+    api.directories.list,
+    isAdmin ? { orderBy: "popular" } : "skip",
+    { initialNumItems: 50 }
+  );
 
   if (!isAdmin) {
     return { items: [], isLoading: false };
   }
 
-  if (repositories === undefined) {
+  if (status === "LoadingFirstPage") {
     return { items: [], isLoading: true };
   }
 
   const normalizedQuery = query.toLowerCase().trim();
 
-  // Filter out repositories without owner/repo (legacy data) and filter by query
-  const validRepositories = repositories.filter(
-    (repo) => repo.owner && repo.repo
-  );
+  const validRepositories = results.filter((repo) => repo.owner && repo.repo);
 
   const filteredRepositories = normalizedQuery
     ? validRepositories.filter((repo) => {
@@ -43,10 +44,9 @@ export function useRepositoriesSource(query: string): RepositoriesSourceResult {
 
   const items: CommandItemData[] = [];
 
-  for (const repo of filteredRepositories) {
+  for (const repo of filteredRepositories.slice(0, 10)) {
     const avatarUrl = getGithubAvatarUrl(repo.owner);
 
-    // Sync action
     items.push({
       id: `sync-repository-${repo._id}`,
       type: "repository" as const,
@@ -57,7 +57,6 @@ export function useRepositoriesSource(query: string): RepositoriesSourceResult {
       action: `syncRepository:${repo._id}`,
     });
 
-    // Delete action
     items.push({
       id: `delete-repository-${repo._id}`,
       type: "repository" as const,

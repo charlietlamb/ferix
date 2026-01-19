@@ -1,10 +1,16 @@
-import { paginationOptsValidator } from "convex/server";
+import { type PaginationOptions, paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import slugify from "slugify";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
+import {
+  deletePromptTags,
+  syncPromptTags,
+  updateUserStats,
+} from "./lib/denormalized";
+import { emptyPage, orderByValidator, paginate } from "./lib/pagination";
 import { generateUniqueSlug, validateSlugUnique } from "./lib/slug";
 import { promptTypes } from "./schema";
 import { enrichPrompts } from "./utils";
@@ -13,10 +19,6 @@ type AuthUser = NonNullable<
   Awaited<ReturnType<typeof authComponent.safeGetAuthUser>>
 >;
 
-/**
- * Get the authenticated user and prompt, checking if user can edit the prompt.
- * User can edit if they are the owner or an admin.
- */
 async function getEditablePrompt(
   ctx: QueryCtx | MutationCtx,
   promptId: Id<"prompts">
@@ -33,13 +35,214 @@ async function getEditablePrompt(
 
   const isAdmin = user.role === "admin";
   const isOwner = prompt.userId === user._id;
-
   if (!(isOwner || isAdmin)) {
     return null;
   }
 
   return { user, prompt };
 }
+
+async function handleSearch(ctx: QueryCtx, search: string, limit: number) {
+  const normalizedQuery = search.trim();
+  const maxResults = Math.min(limit, 20);
+
+  if (!normalizedQuery) {
+    const popular = await ctx.db
+      .query("prompts")
+      .withIndex("by_downloads")
+      .order("desc")
+      .take(maxResults);
+    return paginate(
+      { page: popular, isDone: true, continueCursor: "" },
+      (page) => enrichPrompts(ctx, page)
+    );
+  }
+
+  const searchResults = await ctx.db
+    .query("prompts")
+    .withSearchIndex("search_title", (q) => q.search("title", normalizedQuery))
+    .take(maxResults * 2);
+
+  if (searchResults.length > 0) {
+    return paginate(
+      {
+        page: searchResults.slice(0, maxResults),
+        isDone: true,
+        continueCursor: "",
+      },
+      (page) => enrichPrompts(ctx, page)
+    );
+  }
+
+  const slugMatches = await ctx.db
+    .query("prompts")
+    .withIndex("by_slug", (q) => q.gte("slug", normalizedQuery.toLowerCase()))
+    .take(maxResults * 2);
+
+  const filtered = slugMatches
+    .filter((p) => p.slug.toLowerCase().includes(normalizedQuery.toLowerCase()))
+    .slice(0, maxResults);
+
+  return paginate(
+    { page: filtered, isDone: true, continueCursor: "" },
+    (page) => enrichPrompts(ctx, page)
+  );
+}
+
+async function handleTagFilter(
+  ctx: QueryCtx,
+  tag: string,
+  paginationOpts: PaginationOptions
+) {
+  const tagResults = await ctx.db
+    .query("promptTags")
+    .withIndex("by_tag_promptId", (q) => q.eq("tag", tag))
+    .paginate(paginationOpts);
+
+  if (tagResults.page.length === 0 && paginationOpts.cursor === null) {
+    return emptyPage();
+  }
+
+  const prompts = await Promise.all(
+    tagResults.page.map((t) => ctx.db.get(t.promptId))
+  );
+  const validPrompts = prompts.filter((p): p is Doc<"prompts"> => p !== null);
+
+  return {
+    page: await enrichPrompts(ctx, validPrompts),
+    isDone: tagResults.isDone,
+    continueCursor: tagResults.continueCursor,
+  };
+}
+
+async function handleSavedFilter(
+  ctx: QueryCtx,
+  savedByUserId: string,
+  paginationOpts: PaginationOptions
+) {
+  const savesPage = await ctx.db
+    .query("saves")
+    .withIndex("by_userId", (q) => q.eq("userId", savedByUserId))
+    .order("desc")
+    .paginate(paginationOpts);
+
+  const prompts = await Promise.all(
+    savesPage.page.map((save) => ctx.db.get(save.promptId))
+  );
+  const validPrompts = prompts.filter((p): p is Doc<"prompts"> => p !== null);
+
+  return {
+    page: await enrichPrompts(ctx, validPrompts),
+    isDone: savesPage.isDone,
+    continueCursor: savesPage.continueCursor,
+  };
+}
+
+async function handleDirectoryFilter(
+  ctx: QueryCtx,
+  directoryId: Id<"directories">,
+  paginationOpts: PaginationOptions
+) {
+  const results = await ctx.db
+    .query("prompts")
+    .withIndex("by_directoryId", (q) => q.eq("directoryId", directoryId))
+    .paginate(paginationOpts);
+
+  return paginate(results, (page) => enrichPrompts(ctx, page));
+}
+
+async function handleUserFilter(
+  ctx: QueryCtx,
+  userId: string,
+  orderBy: "recent" | "popular" | undefined,
+  paginationOpts: PaginationOptions
+) {
+  const usePopularIndex = orderBy === "popular";
+
+  const results = usePopularIndex
+    ? await ctx.db
+        .query("prompts")
+        .withIndex("by_userId_downloads", (q) => q.eq("userId", userId))
+        .order("desc")
+        .paginate(paginationOpts)
+    : await ctx.db
+        .query("prompts")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .order("desc")
+        .paginate(paginationOpts);
+
+  return paginate(results, (page) => enrichPrompts(ctx, page));
+}
+
+async function handleDefaultList(
+  ctx: QueryCtx,
+  orderBy: "recent" | "popular" | undefined,
+  paginationOpts: PaginationOptions
+) {
+  const usePopularIndex = orderBy === "popular";
+
+  const results = usePopularIndex
+    ? await ctx.db
+        .query("prompts")
+        .withIndex("by_downloads")
+        .order("desc")
+        .paginate(paginationOpts)
+    : await ctx.db.query("prompts").order("desc").paginate(paginationOpts);
+
+  return paginate(results, (page) => enrichPrompts(ctx, page));
+}
+
+/**
+ * Unified prompt listing endpoint with filters for tag, directory, user, saved, and search.
+ * Supports orderBy for sorting (recent/popular) where applicable.
+ */
+export const list = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    tag: v.optional(v.string()),
+    directoryId: v.optional(v.id("directories")),
+    userId: v.optional(v.string()),
+    savedByUserId: v.optional(v.string()),
+    orderBy: orderByValidator,
+    search: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (args.search?.trim()) {
+      return await handleSearch(ctx, args.search, args.paginationOpts.numItems);
+    }
+
+    if (args.tag) {
+      return await handleTagFilter(ctx, args.tag, args.paginationOpts);
+    }
+
+    if (args.savedByUserId) {
+      return await handleSavedFilter(
+        ctx,
+        args.savedByUserId,
+        args.paginationOpts
+      );
+    }
+
+    if (args.directoryId) {
+      return await handleDirectoryFilter(
+        ctx,
+        args.directoryId,
+        args.paginationOpts
+      );
+    }
+
+    if (args.userId) {
+      return await handleUserFilter(
+        ctx,
+        args.userId,
+        args.orderBy,
+        args.paginationOpts
+      );
+    }
+
+    return await handleDefaultList(ctx, args.orderBy, args.paginationOpts);
+  },
+});
 
 export const create = mutation({
   args: {
@@ -57,6 +260,7 @@ export const create = mutation({
     const now = Date.now();
     const baseSlug = slugify(args.title, { lower: true, strict: true });
     const slug = await generateUniqueSlug(ctx, baseSlug);
+    const tags = args.tags ?? [];
 
     const promptId = await ctx.db.insert("prompts", {
       userId: user._id,
@@ -64,7 +268,7 @@ export const create = mutation({
       slug,
       content: args.content,
       type: args.type,
-      tags: args.tags ?? [],
+      tags,
       downloads: 0,
       createdAt: now,
       updatedAt: now,
@@ -76,30 +280,10 @@ export const create = mutation({
       createdAt: now,
     });
 
+    await syncPromptTags(ctx, promptId, tags);
+    await updateUserStats(ctx, user._id, { promptCount: 1 });
+
     return { promptId, slug };
-  },
-});
-
-export const list = query({
-  args: {
-    paginationOpts: paginationOptsValidator,
-  },
-  handler: async (ctx, args) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) {
-      return { page: [], isDone: true, continueCursor: "" as string };
-    }
-
-    const results = await ctx.db
-      .query("prompts")
-      .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .order("desc")
-      .paginate(args.paginationOpts);
-
-    return {
-      ...results,
-      page: await enrichPrompts(ctx, results.page),
-    };
   },
 });
 
@@ -173,13 +357,30 @@ export const remove = mutation({
       throw new Error("Prompt not found");
     }
 
-    const commits = await ctx.db
-      .query("commits")
-      .withIndex("by_promptId", (q) => q.eq("promptId", args.promptId))
-      .collect();
+    const { prompt } = result;
 
-    for (const commit of commits) {
-      await ctx.db.delete(commit._id);
+    const [commits, saves] = await Promise.all([
+      ctx.db
+        .query("commits")
+        .withIndex("by_promptId", (q) => q.eq("promptId", args.promptId))
+        .take(100),
+      ctx.db
+        .query("saves")
+        .withIndex("by_promptId", (q) => q.eq("promptId", args.promptId))
+        .take(100),
+    ]);
+
+    await Promise.all([
+      ...commits.map((c) => ctx.db.delete(c._id)),
+      ...saves.map((s) => ctx.db.delete(s._id)),
+    ]);
+
+    await deletePromptTags(ctx, args.promptId);
+    if (prompt.userId) {
+      await updateUserStats(ctx, prompt.userId, {
+        promptCount: -1,
+        downloads: -(prompt.downloads ?? 0),
+      });
     }
 
     await ctx.db.delete(args.promptId);
@@ -207,31 +408,29 @@ export const getBySlug = query({
       ? await authComponent.getAnyUserById(ctx, prompt.userId)
       : null;
 
-    // Fetch directory info if this prompt belongs to a directory
     let directory: (Doc<"directories"> & { promptCount: number }) | null = null;
     if (prompt.directoryId) {
       const dir = await ctx.db.get(prompt.directoryId);
       if (dir) {
-        const directoryPrompts = await ctx.db
-          .query("prompts")
-          .withIndex("by_directoryId", (q) => q.eq("directoryId", dir._id))
-          .collect();
         directory = {
           ...dir,
-          promptCount: directoryPrompts.length,
+          promptCount: dir.promptCount ?? 0,
         };
       }
     }
 
-    const saves = await ctx.db
-      .query("saves")
-      .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-      .collect();
-
     let isSaved = false;
     if (currentUser) {
-      isSaved = saves.some((s) => s.userId === currentUser._id);
+      const userSave = await ctx.db
+        .query("saves")
+        .withIndex("by_user_prompt", (q) =>
+          q.eq("userId", currentUser._id).eq("promptId", prompt._id)
+        )
+        .first();
+      isSaved = userSave !== null;
     }
+
+    const saveCount = prompt.saveCount ?? 0;
 
     const basePrompt = {
       ...prompt,
@@ -253,7 +452,7 @@ export const getBySlug = query({
         : null,
       isCreator: currentUser ? currentUser._id === prompt.userId : false,
       isSaved,
-      saveCount: saves.length,
+      saveCount,
     };
 
     if (args.commitId) {
@@ -268,6 +467,10 @@ export const getBySlug = query({
   },
 });
 
+/**
+ * Records a download for a prompt. Intentionally public to allow anonymous
+ * download tracking. Rate limiting should be handled at the HTTP/CDN layer.
+ */
 export const recordDownload = mutation({
   args: { promptId: v.id("prompts") },
   handler: async (ctx, args) => {
@@ -278,84 +481,10 @@ export const recordDownload = mutation({
     await ctx.db.patch(args.promptId, {
       downloads: (prompt.downloads ?? 0) + 1,
     });
-  },
-});
 
-export const listPopular = query({
-  args: {
-    paginationOpts: paginationOptsValidator,
-  },
-  handler: async (ctx, args) => {
-    const results = await ctx.db
-      .query("prompts")
-      .withIndex("by_downloads")
-      .order("desc")
-      .paginate(args.paginationOpts);
-
-    return {
-      ...results,
-      page: await enrichPrompts(ctx, results.page),
-    };
-  },
-});
-
-export const listRecent = query({
-  args: {
-    paginationOpts: paginationOptsValidator,
-  },
-  handler: async (ctx, args) => {
-    const results = await ctx.db
-      .query("prompts")
-      .order("desc")
-      .paginate(args.paginationOpts);
-
-    return {
-      ...results,
-      page: await enrichPrompts(ctx, results.page),
-    };
-  },
-});
-
-/**
- * Lists prompts filtered by a specific tag with pagination.
- *
- * @limitation Convex does not support "array contains" filtering in queries,
- * so we must collect all prompts and filter in JavaScript. This is the
- * recommended approach from Convex docs but doesn't scale well.
- *
- * @todo If this becomes a performance issue, create a `prompt_tags` junction
- * table with an index on `tag` to enable proper indexed queries.
- */
-export const listByTag = query({
-  args: {
-    tag: v.string(),
-    paginationOpts: paginationOptsValidator,
-  },
-  handler: async (ctx, args) => {
-    const allPrompts = await ctx.db.query("prompts").collect();
-    const filtered = allPrompts
-      .filter((prompt) => prompt.tags.includes(args.tag))
-      .sort((a, b) => (b.downloads ?? 0) - (a.downloads ?? 0));
-
-    // Manual pagination on filtered results
-    const startIndex = args.paginationOpts.cursor
-      ? filtered.findIndex(
-          (p) => p._id === (args.paginationOpts.cursor as unknown)
-        ) + 1
-      : 0;
-
-    const pageData = filtered.slice(
-      startIndex,
-      startIndex + args.paginationOpts.numItems
-    );
-    const hasMore = startIndex + args.paginationOpts.numItems < filtered.length;
-    const nextCursor = hasMore ? pageData.at(-1)?._id : null;
-
-    return {
-      page: await enrichPrompts(ctx, pageData),
-      isDone: !hasMore,
-      continueCursor: (nextCursor ?? "") as string,
-    };
+    if (prompt.userId) {
+      await updateUserStats(ctx, prompt.userId, { downloads: 1 });
+    }
   },
 });
 
@@ -374,6 +503,8 @@ export const updateTags = mutation({
       tags: args.tags,
       updatedAt: Date.now(),
     });
+
+    await syncPromptTags(ctx, args.promptId, args.tags);
 
     return args.promptId;
   },
@@ -407,6 +538,11 @@ export const toggleSave = mutation({
       throw new Error("Unauthorized");
     }
 
+    const prompt = await ctx.db.get(args.promptId);
+    if (!prompt) {
+      throw new Error("Prompt not found");
+    }
+
     const existing = await ctx.db
       .query("saves")
       .withIndex("by_user_prompt", (q) =>
@@ -416,6 +552,9 @@ export const toggleSave = mutation({
 
     if (existing) {
       await ctx.db.delete(existing._id);
+      await ctx.db.patch(args.promptId, {
+        saveCount: Math.max(0, (prompt.saveCount ?? 0) - 1),
+      });
       return false;
     }
 
@@ -424,100 +563,9 @@ export const toggleSave = mutation({
       promptId: args.promptId,
       createdAt: Date.now(),
     });
+    await ctx.db.patch(args.promptId, {
+      saveCount: (prompt.saveCount ?? 0) + 1,
+    });
     return true;
-  },
-});
-
-export const listSaved = query({
-  args: { paginationOpts: paginationOptsValidator },
-  handler: async (ctx, args) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) {
-      return { page: [], isDone: true, continueCursor: "" as string };
-    }
-
-    // Use proper Convex pagination instead of collect + manual slicing
-    const savesPage = await ctx.db
-      .query("saves")
-      .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .order("desc")
-      .paginate(args.paginationOpts);
-
-    const prompts = await Promise.all(
-      savesPage.page.map((save) => ctx.db.get(save.promptId))
-    );
-    const validPrompts = prompts.filter((p): p is Doc<"prompts"> => p !== null);
-
-    return {
-      page: await enrichPrompts(ctx, validPrompts),
-      isDone: savesPage.isDone,
-      continueCursor: savesPage.continueCursor,
-    };
-  },
-});
-
-export const search = query({
-  args: { query: v.string() },
-  handler: async (ctx, args) => {
-    const normalizedQuery = args.query.toLowerCase().trim();
-
-    if (!normalizedQuery) {
-      const popular = await ctx.db
-        .query("prompts")
-        .withIndex("by_downloads")
-        .order("desc")
-        .take(6);
-      return enrichPrompts(ctx, popular);
-    }
-
-    const allPrompts = await ctx.db.query("prompts").order("desc").take(100);
-
-    const filtered = allPrompts
-      .filter((prompt) => {
-        const matchesTitle = prompt.title
-          .toLowerCase()
-          .includes(normalizedQuery);
-        const matchesSlug = prompt.slug.toLowerCase().includes(normalizedQuery);
-        return matchesTitle || matchesSlug;
-      })
-      .slice(0, 8);
-
-    return enrichPrompts(ctx, filtered);
-  },
-});
-
-export const listByDirectory = query({
-  args: {
-    directoryId: v.id("directories"),
-    paginationOpts: paginationOptsValidator,
-  },
-  handler: async (ctx, args) => {
-    const results = await ctx.db
-      .query("prompts")
-      .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
-      .order("desc")
-      .paginate(args.paginationOpts);
-
-    return {
-      ...results,
-      page: await enrichPrompts(ctx, results.page),
-    };
-  },
-});
-
-/**
- * List all prompts in a directory (non-paginated, for file tree view)
- */
-export const listAllByDirectory = query({
-  args: {
-    directoryId: v.id("directories"),
-  },
-  handler: async (ctx, args) => {
-    const prompts = await ctx.db
-      .query("prompts")
-      .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
-      .collect();
-
-    return enrichPrompts(ctx, prompts);
   },
 });

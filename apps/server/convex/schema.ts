@@ -32,6 +32,7 @@ export default defineSchema({
     type: promptTypes,
     tags: v.array(v.string()),
     downloads: v.number(),
+    saveCount: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
     directoryId: v.optional(v.id("directories")),
@@ -42,7 +43,20 @@ export default defineSchema({
     .index("by_type", ["type"])
     .index("by_downloads", ["downloads"])
     .index("by_userId_downloads", ["userId", "downloads"])
-    .index("by_directoryId", ["directoryId"]),
+    .index("by_directoryId", ["directoryId"])
+    .index("by_directoryId_filePath", ["directoryId", "filePath"])
+    .searchIndex("search_title", {
+      searchField: "title",
+      filterFields: ["type"],
+    }),
+
+  /** Junction table for efficient tag-based queries. */
+  promptTags: defineTable({
+    promptId: v.id("prompts"),
+    tag: v.string(),
+  })
+    .index("by_promptId", ["promptId"])
+    .index("by_tag_promptId", ["tag", "promptId"]),
 
   directories: defineTable({
     githubUrl: v.string(),
@@ -58,7 +72,8 @@ export default defineSchema({
     totalDownloads: v.optional(v.number()),
   })
     .index("by_githubUrl", ["githubUrl"])
-    .index("by_totalDownloads", ["totalDownloads"]),
+    .index("by_totalDownloads", ["totalDownloads"])
+    .index("by_createdAt", ["createdAt"]),
 
   commits: defineTable({
     promptId: v.id("prompts"),
@@ -74,4 +89,12 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_promptId", ["promptId"])
     .index("by_user_prompt", ["userId", "promptId"]),
+
+  /** Denormalized user stats for efficient profile queries. */
+  userStats: defineTable({
+    userId: v.string(),
+    promptCount: v.number(),
+    totalDownloads: v.number(),
+    updatedAt: v.number(),
+  }).index("by_userId", ["userId"]),
 });

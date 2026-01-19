@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@ferix/server/_generated/api";
+import type { Prompt } from "@ferix/server/types";
 import { PromptGrid } from "@ferix/ui/components/prompts/grid/prompt-grid";
 import {
   Tabs,
@@ -27,24 +28,22 @@ export function UserProfileTabs({
   const t = useTranslations("pages.user");
 
   const {
-    results: createdPrompts,
+    results: createdResults,
     status: createdStatus,
     loadMore: loadMoreCreated,
-  } = usePaginatedQuery(
-    api.profiles.listCreatedPrompts,
-    { userId },
-    { initialNumItems: 20 }
-  );
+  } = usePaginatedQuery(api.prompts.list, { userId }, { initialNumItems: 20 });
+  const createdPrompts = createdResults as Prompt[];
 
   const {
-    results: savedPrompts,
+    results: savedResults,
     status: savedStatus,
     loadMore: loadMoreSaved,
   } = usePaginatedQuery(
-    api.profiles.listSavedPrompts,
-    { userId },
+    api.prompts.list,
+    { savedByUserId: userId },
     { initialNumItems: 20 }
   );
+  const savedPrompts = savedResults as Prompt[];
 
   return (
     <Tabs
