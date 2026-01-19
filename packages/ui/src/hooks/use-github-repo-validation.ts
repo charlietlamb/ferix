@@ -2,8 +2,8 @@
 
 import { api } from "@ferix/server/_generated/api";
 import { parseGithubUrl } from "@ferix/ui/forms/repositories/add-repository-form-schema";
-import { useQuery } from "convex/react";
-import { useCallback, useEffect, useState } from "react";
+import { useAction, useQuery } from "convex/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 
 export type GithubRepoStatus =
@@ -38,6 +38,9 @@ export function useGithubRepoValidation(): UseGithubRepoValidationResult {
   const [status, setStatus] = useState<GithubRepoStatus>("idle");
   const [repoData, setRepoData] = useState<GithubRepoData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef(false);
+
+  const validateRepo = useAction(api.directories.validateGithubRepo);
 
   // Normalize URL for database lookup (remove trailing slash)
   const normalizedUrl = debouncedUrl.replace(trailingSlashRegex, "");
@@ -77,48 +80,38 @@ export function useGithubRepoValidation(): UseGithubRepoValidationResult {
       return;
     }
 
-    // Fetch from GitHub API
-    const controller = new AbortController();
     const { owner, repo } = parsed;
+    abortRef.current = false;
 
     async function fetchRepo() {
       setStatus("checking");
       setError(null);
 
       try {
-        const response = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}`,
-          { signal: controller.signal }
-        );
+        const data = await validateRepo({ owner, repo });
 
-        if (!response.ok) {
-          if (response.status === 404) {
-            setStatus("invalid");
-            setError("Repository not found or is private");
-          } else {
-            setStatus("error");
-            setError(`GitHub API error: ${response.status}`);
-          }
-          setRepoData(null);
+        if (abortRef.current) {
           return;
         }
 
-        const data = await response.json();
-        setRepoData({
-          fullName: data.full_name,
-          description: data.description,
-          avatarUrl: data.owner.avatar_url,
-          stars: data.stargazers_count,
-          htmlUrl: data.html_url,
-        });
+        setRepoData(data);
         setStatus("valid");
         setError(null);
       } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") {
+        if (abortRef.current) {
           return;
         }
-        setStatus("error");
-        setError("Failed to fetch repository");
+
+        const message =
+          err instanceof Error ? err.message : "Failed to fetch repository";
+
+        if (message.includes("not found") || message.includes("private")) {
+          setStatus("invalid");
+          setError("Repository not found or is private");
+        } else {
+          setStatus("error");
+          setError(message);
+        }
         setRepoData(null);
       }
     }
@@ -126,9 +119,9 @@ export function useGithubRepoValidation(): UseGithubRepoValidationResult {
     fetchRepo();
 
     return () => {
-      controller.abort();
+      abortRef.current = true;
     };
-  }, [debouncedUrl, url]);
+  }, [debouncedUrl, url, validateRepo]);
 
   // Show checking while debouncing
   let effectiveStatus: GithubRepoStatus =

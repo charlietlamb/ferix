@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import slugify from "slugify";
 import { internal } from "./_generated/api";
 import {
+  action,
   internalAction,
   internalMutation,
   internalQuery,
@@ -12,6 +13,7 @@ import { authComponent } from "./auth";
 import {
   extractTitle,
   fetchFileContent,
+  fetchRepoInfo,
   fetchRepoTree,
   filterMarkdownFiles,
   parseGithubUrl,
@@ -491,5 +493,12 @@ export const syncAllDirectories = internalAction({
 export const listInternal = internalQuery({
   handler: async (ctx) => {
     return await ctx.db.query("directories").collect();
+  },
+});
+
+export const validateGithubRepo = action({
+  args: { owner: v.string(), repo: v.string() },
+  handler: async (_ctx, args) => {
+    return await fetchRepoInfo(args.owner, args.repo);
   },
 });
