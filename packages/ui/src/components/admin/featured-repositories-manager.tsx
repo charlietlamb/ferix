@@ -19,7 +19,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { api } from "@ferix/server/_generated/api";
 import type { Id } from "@ferix/server/_generated/dataModel";
-import { Button } from "@ferix/ui/components/ui/button";
 import { getGithubAvatarUrl } from "@ferix/ui/lib/repositories";
 import {
   DotsSixVerticalIcon,
@@ -47,7 +46,7 @@ function RepositoryRow({
   dragHandle?: React.ReactNode;
 }) {
   return (
-    <div className="flex h-full gap-3 p-4">
+    <div className="flex h-full gap-3 p-3">
       {dragHandle}
       <img
         alt={repository.owner}
@@ -79,7 +78,7 @@ function SortableItem({
 
   return (
     <div
-      className="border-border border-r border-b transition-colors hover:bg-muted/50"
+      className="border-border border-b transition-colors hover:bg-muted/50"
       ref={setNodeRef}
       style={{
         transform: CSS.Transform.toString(transform),
@@ -137,7 +136,7 @@ function AvailableItem({
   );
 }
 
-export function FeaturedRepositoriesManager() {
+export function useFeaturedRepositories() {
   const [featuredIds, setFeaturedIds] = useState<string[] | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -155,6 +154,42 @@ export function FeaturedRepositoriesManager() {
 
   const currentIds = featuredIds ?? savedFeaturedIds ?? [];
 
+  const hasChanges =
+    featuredIds !== null &&
+    JSON.stringify(featuredIds) !== JSON.stringify(savedFeaturedIds ?? []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await setSetting({ key: "featuredRepositories", value: currentIds });
+      setFeaturedIds(null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return {
+    featuredIds,
+    setFeaturedIds,
+    currentIds,
+    allRepositories,
+    hasChanges,
+    isSaving,
+    handleSave,
+  };
+}
+
+interface FeaturedRepositoriesManagerProps {
+  setFeaturedIds: (ids: string[] | null) => void;
+  currentIds: string[];
+  allRepositories: Repository[] | undefined;
+}
+
+export function FeaturedRepositoriesManager({
+  setFeaturedIds,
+  currentIds,
+  allRepositories,
+}: FeaturedRepositoriesManagerProps) {
   const featuredRepositories = currentIds
     .map((id) => allRepositories?.find((d) => d._id === id))
     .filter((d) => d !== undefined);
@@ -183,30 +218,8 @@ export function FeaturedRepositoriesManager() {
   const handleRemove = (id: string) =>
     setFeaturedIds(currentIds.filter((i) => i !== id));
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await setSetting({ key: "featuredRepositories", value: currentIds });
-      setFeaturedIds(null);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const hasChanges =
-    featuredIds !== null &&
-    JSON.stringify(featuredIds) !== JSON.stringify(savedFeaturedIds ?? []);
-
   return (
     <div className="flex flex-col">
-      {hasChanges && (
-        <div className="flex justify-end border-border border-b p-4">
-          <Button disabled={isSaving} onClick={handleSave} size="sm">
-            {isSaving ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
-      )}
-
       <div className="border-border border-b p-4">
         <span className="text-muted-foreground text-xs">
           Current Order ({featuredRepositories.length})
@@ -227,7 +240,7 @@ export function FeaturedRepositoriesManager() {
             items={currentIds}
             strategy={verticalListSortingStrategy}
           >
-            <div className="-mr-px grid auto-rows-fr grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-col">
               {featuredRepositories.map((repo) => (
                 <SortableItem
                   key={repo._id}

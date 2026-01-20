@@ -1,27 +1,31 @@
 "use client";
 
-import { Link, useRouter } from "@ferix/i18n/navigation";
-import { FeaturedRepositoriesManager } from "@ferix/ui/components/admin/featured-repositories-manager";
+import { useRouter } from "@ferix/i18n/navigation";
+import { AdminBreadcrumbs } from "@ferix/ui/components/admin/admin-breadcrumbs";
+import {
+  FeaturedRepositoriesManager,
+  useFeaturedRepositories,
+} from "@ferix/ui/components/admin/featured-repositories-manager";
 import { AppPage } from "@ferix/ui/components/layout/app-page";
 import {
-  PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
 } from "@ferix/ui/components/layout/page-header";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@ferix/ui/components/ui/breadcrumb";
+import { Button } from "@ferix/ui/components/ui/button";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { useEffect } from "react";
 
 export function FeaturedRepositoriesPageClient() {
   const { isAdmin, isPending } = useAuthenticated();
   const router = useRouter();
+  const {
+    setFeaturedIds,
+    currentIds,
+    allRepositories,
+    hasChanges,
+    isSaving,
+    handleSave,
+  } = useFeaturedRepositories();
 
   useEffect(() => {
     if (!(isPending || isAdmin)) {
@@ -43,27 +47,28 @@ export function FeaturedRepositoriesPageClient() {
 
   return (
     <AppPage>
-      <PageHeader className="border-border border-b">
-        <Breadcrumb className="mb-2">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink render={<Link href="/admin" />}>
-                Admin
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Featured Repositories</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <PageHeaderTitle>Featured Repositories</PageHeaderTitle>
-        <PageHeaderDescription>
-          Drag to reorder. These appear first on the home page.
-        </PageHeaderDescription>
-      </PageHeader>
+      <div className="border-border border-b">
+        <AdminBreadcrumbs current="Featured Repositories" />
+        <div className="flex items-center justify-between gap-4 px-4 py-2">
+          <div className="flex flex-col gap-1">
+            <PageHeaderTitle>Featured Repositories</PageHeaderTitle>
+            <PageHeaderDescription>
+              Drag to reorder. These appear first on the home page.
+            </PageHeaderDescription>
+          </div>
+          {hasChanges && (
+            <Button disabled={isSaving} onClick={handleSave} size="sm">
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+          )}
+        </div>
+      </div>
       <div className="scrollbar-none h-full overflow-auto">
-        <FeaturedRepositoriesManager />
+        <FeaturedRepositoriesManager
+          allRepositories={allRepositories}
+          currentIds={currentIds}
+          setFeaturedIds={setFeaturedIds}
+        />
       </div>
     </AppPage>
   );
