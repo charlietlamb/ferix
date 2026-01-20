@@ -1,20 +1,15 @@
-"use client";
+import type { Metadata } from "next";
+import { CreatePromptPageClient } from "./create-prompt-page-client";
 
-import { PromptDetailSkeleton } from "@ferix/ui/components/prompts/detail/prompt-detail-skeleton";
-import { PromptNewAuthGuard } from "@ferix/ui/components/prompts/new/prompt-new-auth-guard";
-import { PromptNewPage } from "@ferix/ui/components/prompts/new/prompt-new-page";
-import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
+export const metadata: Metadata = {
+  title: "Create Skill",
+  description: "Create and share a new AI agent skill or prompt on Ferix.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function CreatePromptPage() {
-  const { isAuthenticated, isPending } = useAuthenticated();
-
-  if (isPending) {
-    return <PromptDetailSkeleton />;
-  }
-
-  if (!isAuthenticated) {
-    return <PromptNewAuthGuard />;
-  }
-
-  return <PromptNewPage />;
+  return <CreatePromptPageClient />;
 }

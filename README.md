@@ -55,7 +55,7 @@ ferix/
 
 ```bash
 # Clone the repository
-git clone https://github.com/charlielamb/ferix.git
+git clone https://github.com/charlietlamb/ferix.git
 cd ferix
 
 # Install dependencies

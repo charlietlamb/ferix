@@ -38,6 +38,7 @@ export async function generateMetadata({
       description: prompt.content?.slice(0, 160) || `${prompt.title} on Ferix`,
       ogPath: "/api/og/prompt",
       params: ogParams,
+      canonicalPath: `/prompt/${slug}`,
     });
   } catch {
     return { title: "Prompt" };

@@ -6,6 +6,7 @@ interface OgMetadataOptions {
   description: string;
   ogPath: string;
   params?: Record<string, string>;
+  canonicalPath?: string;
 }
 
 export function buildOgMetadata({
@@ -13,6 +14,7 @@ export function buildOgMetadata({
   description,
   ogPath,
   params = {},
+  canonicalPath,
 }: OgMetadataOptions): Metadata {
   const ogImageUrl = new URL(ogPath, env.NEXT_PUBLIC_SITE_URL);
   for (const [key, value] of Object.entries(params)) {
@@ -24,6 +26,11 @@ export function buildOgMetadata({
   return {
     title,
     description,
+    ...(canonicalPath && {
+      alternates: {
+        canonical: canonicalPath,
+      },
+    }),
     openGraph: {
       title,
       description,

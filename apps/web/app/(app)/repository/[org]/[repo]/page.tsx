@@ -40,6 +40,7 @@ export async function generateMetadata({
         repo: repository.repo,
         ...(repository.name && { name: repository.name }),
       },
+      canonicalPath: `/repository/${org}/${repo}`,
     });
   } catch {
     return { title: "Repository" };

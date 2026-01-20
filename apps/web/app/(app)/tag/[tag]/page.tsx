@@ -13,11 +13,23 @@ export async function generateMetadata({
   const tag = getTagById(tagId);
 
   const title = tag?.label || tagId;
-  const description = `Skills and prompts for ${title} on Ferix`;
+  const description = `Discover AI agent skills and prompts for ${title}. Find configurations and rules for Claude, Cursor, and other AI coding assistants.`;
 
   return {
     title,
     description,
+    alternates: {
+      canonical: `/tag/${tagId}`,
+    },
+    openGraph: {
+      title: `${title} Skills`,
+      description,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} Skills`,
+      description,
+    },
   };
 }
 

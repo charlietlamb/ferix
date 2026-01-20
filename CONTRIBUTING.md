@@ -6,7 +6,7 @@ Thank you for your interest in contributing to Ferix! This document provides gui
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/charlielamb/ferix.git
+   git clone https://github.com/charlietlamb/ferix.git
    cd ferix
    ```
 

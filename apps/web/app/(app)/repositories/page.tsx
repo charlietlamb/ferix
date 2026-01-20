@@ -1,24 +1,15 @@
-"use client";
+import type { Metadata } from "next";
+import { RepositoriesPageClient } from "./repositories-page-client";
 
-import { AppPage } from "@ferix/ui/components/layout/app-page";
-import {
-  PageHeader,
-  PageHeaderDescription,
-  PageHeaderTitle,
-} from "@ferix/ui/components/layout/page-header";
-import { RepositoriesContent } from "@ferix/ui/components/repositories/repositories-content";
-import { useTranslations } from "next-intl";
+export const metadata: Metadata = {
+  title: "Repositories",
+  description:
+    "Explore GitHub repositories with AI agent skills and prompts. Sync and discover prompt collections for Claude, Cursor, and other AI coding assistants.",
+  alternates: {
+    canonical: "/repositories",
+  },
+};
 
 export default function RepositoriesPage() {
-  const t = useTranslations("pages.repositories");
-
-  return (
-    <AppPage>
-      <PageHeader className="border-border border-b">
-        <PageHeaderTitle>{t("title")}</PageHeaderTitle>
-        <PageHeaderDescription>{t("description")}</PageHeaderDescription>
-      </PageHeader>
-      <RepositoriesContent />
-    </AppPage>
-  );
+  return <RepositoriesPageClient />;
 }

@@ -9,8 +9,15 @@ import { TwitterGrid } from "@ferix/ui/components/home/twitter/twitter-grid";
 import { AppPage } from "@ferix/ui/components/layout/app-page";
 import { PopularPrompts } from "@ferix/ui/components/prompts/data/popular-prompts";
 import { RecentPrompts } from "@ferix/ui/components/prompts/data/recent-prompts";
+import type { Metadata } from "next";
 
-export default function DashboardPage() {
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+};
+
+export default function HomePage() {
   return (
     <AppPage className="scrollbar-none h-auto overflow-visible">
       <HeroSection />
