@@ -7,7 +7,8 @@
   "linter": {
     "rules": {
       "performance": {
-        "noImgElement": "off"
+        "noImgElement": "off",
+        "noBarrelFile": "off"
       }
     }
   }

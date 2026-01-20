@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "build:cli": "bun run --filter=@ferix/cli build",
+    "cli": "bun build:cli && node apps/cli/dist/index.js",
     "dev": "turbo run dev",
     "lint": "bunx biome lint",
     "format": "bunx biome format --write",
@@ -74,7 +76,12 @@
       "@posthog/react": "^1.5.2",
       "@dnd-kit/core": "^6.3.1",
       "@dnd-kit/sortable": "^10.0.0",
-      "@dnd-kit/utilities": "^3.2.2"
+      "@dnd-kit/utilities": "^3.2.2",
+      "@clack/prompts": "^0.10.0",
+      "commander": "^14.0.0",
+      "execa": "^9.5.2",
+      "picocolors": "^1.1.1",
+      "tsup": "^8.4.0"
     }
   }
 }

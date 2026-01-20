@@ -1,0 +1,41 @@
+{
+  "name": "@ferix/cli",
+  "version": "0.1.0",
+  "description": "Composable RALPH loops for AI coding agents",
+  "type": "module",
+  "bin": {
+    "ferix": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clack/prompts": "catalog:",
+    "commander": "catalog:",
+    "execa": "catalog:",
+    "picocolors": "catalog:"
+  },
+  "devDependencies": {
+    "@ferix/typescript-config": "*",
+    "@types/node": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "cli",
+    "ai",
+    "ralph",
+    "claude",
+    "coding-agent",
+    "automation"
+  ],
+  "license": "MIT"
+}
