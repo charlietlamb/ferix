@@ -608,3 +608,81 @@ export const validateGithubRepo = action({
     return await fetchRepoInfo(args.owner, args.repo);
   },
 });
+
+/**
+ * Lists featured directories in admin-defined order, falling back to popular.
+ * Returns exactly `limit` directories, filling with popular ones if needed.
+ */
+export const listFeatured = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 12;
+
+    const setting = await ctx.db
+      .query("settings")
+      .withIndex("by_key", (q) => q.eq("key", "featuredRepositories"))
+      .first();
+
+    const featuredIds: string[] = setting?.value ?? [];
+
+    const featuredDirs: Array<{
+      _id: Id<"directories">;
+      githubUrl: string;
+      owner: string;
+      repo: string;
+      name?: string;
+      promptCount: number;
+      totalDownloads: number;
+    }> = [];
+
+    for (const id of featuredIds) {
+      if (featuredDirs.length >= limit) {
+        break;
+      }
+      const dir = await ctx.db.get(id as Id<"directories">);
+      if (dir) {
+        featuredDirs.push({
+          _id: dir._id,
+          githubUrl: dir.githubUrl,
+          owner: dir.owner,
+          repo: dir.repo,
+          name: dir.name,
+          promptCount: dir.promptCount ?? 0,
+          totalDownloads: dir.totalDownloads ?? 0,
+        });
+      }
+    }
+
+    if (featuredDirs.length >= limit) {
+      return featuredDirs;
+    }
+
+    const featuredIdSet = new Set(featuredDirs.map((d) => d._id));
+    const remaining = limit - featuredDirs.length;
+
+    const popularDirs = await ctx.db
+      .query("directories")
+      .withIndex("by_totalDownloads")
+      .order("desc")
+      .take(remaining + featuredDirs.length);
+
+    for (const dir of popularDirs) {
+      if (featuredDirs.length >= limit) {
+        break;
+      }
+      if (!featuredIdSet.has(dir._id)) {
+        featuredDirs.push({
+          _id: dir._id,
+          githubUrl: dir.githubUrl,
+          owner: dir.owner,
+          repo: dir.repo,
+          name: dir.name,
+          promptCount: dir.promptCount ?? 0,
+          totalDownloads: dir.totalDownloads ?? 0,
+        });
+      }
+    }
+
+    return featuredDirs;
+  },
+});

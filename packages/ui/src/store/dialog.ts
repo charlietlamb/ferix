@@ -4,12 +4,17 @@ import { SignInDialog } from "../components/auth/sign-in/sign-in-dialog";
 import { SignUpDialog } from "../components/auth/sign-up/sign-up-dialog";
 import { CommandPalette } from "../components/command-palette/command-palette";
 import { ImpersonatePalette } from "../components/command-palette/impersonate-palette";
+import {
+  DeleteRepositoryPalette,
+  SyncRepositoryPalette,
+} from "../components/command-palette/repository-palette";
 import { CreateMenuDialog } from "../components/create/create-menu-dialog";
 import { ConfirmDialog } from "../components/dialog/confirm-dialog";
 import { AddRepositoryDialog } from "../components/repositories/add-repository-dialog";
 import { ChangePasswordDialog } from "../components/settings/change-password-dialog";
 import { SettingsDialog } from "../components/settings/settings-dialog";
 import type { ConfirmDialogProps } from "./dialog-types";
+
 export interface DialogMap {
   signInDialog: undefined;
   signUpDialog: undefined;
@@ -18,6 +23,8 @@ export interface DialogMap {
   forgotPasswordDialog: undefined;
   commandPaletteDialog: undefined;
   impersonatePalette: undefined;
+  syncRepositoryPalette: undefined;
+  deleteRepositoryPalette: undefined;
   confirmDialog: ConfirmDialogProps;
   createMenuDialog: undefined;
   addRepositoryDialog: undefined;
@@ -44,6 +51,8 @@ export const dialogRegistry: {
   forgotPasswordDialog: ForgotPasswordDialog,
   commandPaletteDialog: CommandPalette,
   impersonatePalette: ImpersonatePalette,
+  syncRepositoryPalette: SyncRepositoryPalette,
+  deleteRepositoryPalette: DeleteRepositoryPalette,
   confirmDialog: ConfirmDialog,
   createMenuDialog: CreateMenuDialog,
   addRepositoryDialog: AddRepositoryDialog,

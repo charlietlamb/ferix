@@ -49,7 +49,9 @@
     "viewAll": "View All",
     "personal": "Personal",
     "myProfile": "My Profile",
-    "saved": "Saved"
+    "saved": "Saved",
+    "admin": "Admin",
+    "adminDashboard": "Dashboard"
   },
   "pages": {
     "popular": {
@@ -247,13 +249,30 @@
     "actionsImportRepository": "Import Repository",
     "actionsSettings": "Settings",
     "actionsToggleTheme": "Toggle Theme",
+    "actionsHome": "Home",
+    "actionsPopular": "Popular",
+    "actionsRecent": "Recent",
+    "actionsTags": "Tags",
+    "actionsRepositories": "Repositories",
+    "actionsMyProfile": "My Profile",
+    "actionsSaved": "Saved",
+    "actionsAdminDashboard": "Admin Dashboard",
+    "actionsFeaturedRepositories": "Featured Repositories",
+    "actionsSyncRepository": "Sync Repository",
+    "actionsDeleteRepository": "Delete Repository",
     "actionsImpersonate": "Impersonate User",
     "actionsStopImpersonating": "Stop Impersonating",
     "impersonateTitle": "Impersonate User",
     "impersonateDescription": "Select a user to impersonate",
     "impersonatePlaceholder": "Search users...",
     "impersonateNoUsers": "No users found",
-    "impersonateUsers": "Users"
+    "impersonateUsers": "Users",
+    "syncRepositoryTitle": "Sync Repository",
+    "syncRepositoryDescription": "Select a repository to sync",
+    "deleteRepositoryTitle": "Delete Repository",
+    "deleteRepositoryDescription": "Select a repository to delete",
+    "repositoryPlaceholder": "Search repositories...",
+    "noRepositories": "No repositories found"
   },
   "promptNew": {
     "title": "New Prompt",

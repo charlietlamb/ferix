@@ -1,8 +1,6 @@
 "use client";
 
 import { useRouter } from "@ferix/i18n/navigation";
-import { api } from "@ferix/server/_generated/api";
-import type { Id } from "@ferix/server/_generated/dataModel";
 import {
   Command,
   CommandGroup,
@@ -22,128 +20,156 @@ import { Spinner } from "@ferix/ui/components/ui/spinner";
 import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
 import { useDialog } from "@ferix/ui/hooks/use-dialog";
 import { useImpersonation } from "@ferix/ui/hooks/use-impersonation";
-import { useMutation } from "convex/react";
+import type { DialogKey } from "@ferix/ui/store/dialog";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
 import { CommandPaletteEmpty } from "./command-palette-empty";
 import { useCommandPalette } from "./hooks/use-command-palette";
 import { useActionsSource } from "./sources/use-actions-source";
 import { usePromptsSource } from "./sources/use-prompts-source";
-import { useRepositoriesSource } from "./sources/use-repositories-source";
 import { useRepositorySearchSource } from "./sources/use-repository-search-source";
 import type { CommandItemData } from "./types";
 
+const DIALOG_ACTIONS: Record<string, DialogKey> = {
+  addRepositoryDialog: "addRepositoryDialog",
+  impersonatePalette: "impersonatePalette",
+  syncRepositoryPalette: "syncRepositoryPalette",
+  deleteRepositoryPalette: "deleteRepositoryPalette",
+};
+
+const AUTH_REQUIRED_ROUTES: Record<string, string> = {
+  createPromptDialog: "/create-prompt",
+  settingsDialog: "/settings",
+};
+
+const NAVIGATION_ROUTES: Record<string, string> = {
+  navigateHome: "/",
+  navigatePopular: "/popular",
+  navigateRecent: "/recent",
+  navigateTags: "/tags",
+  navigateRepositories: "/repositories",
+};
+
+const ADMIN_NAVIGATION_ROUTES: Record<string, string> = {
+  navigateAdmin: "/admin",
+  navigateFeaturedRepositories: "/admin/featured-repositories",
+};
+
+const getUserRoutes = (username: string | null): Record<string, string> =>
+  username
+    ? {
+        navigateMyProfile: `/user/${username}`,
+        navigateSaved: `/user/${username}?tab=saved`,
+      }
+    : {};
+
 export function CommandPalette() {
   const t = useTranslations("commandPalette");
-  const tRepository = useTranslations("pages.repository");
   const router = useRouter();
   const { close, open: openDialog, stack } = useDialog();
   const { setTheme, resolvedTheme } = useTheme();
-  const { isAuthenticated } = useAuthenticated();
+  const { isAuthenticated, user } = useAuthenticated();
+  const username =
+    (user as { username?: string | null } | undefined)?.username ?? null;
   const { stopImpersonating } = useImpersonation();
-  const triggerSync = useMutation(api.directories.triggerSync);
-  const removeRepository = useMutation(api.directories.remove);
 
   const [query, setQuery] = useState("");
   const { items: promptItems, isLoading: isLoadingPrompts } =
     usePromptsSource(query);
-  const { items: syncRepositoryItems, isLoading: isLoadingSyncRepositories } =
-    useRepositoriesSource(query);
-  const { items: repositorySearchItems, isLoading: isLoadingRepositorySearch } =
+  const { items: repositorySearchItems, isLoading: isLoadingRepositories } =
     useRepositorySearchSource(query);
   const { items: actionItems } = useActionsSource(query);
   const { groups, isEmpty } = useCommandPalette(
     promptItems,
-    syncRepositoryItems,
     repositorySearchItems,
     actionItems,
     query
   );
 
-  const isLoadingRepositories =
-    isLoadingSyncRepositories || isLoadingRepositorySearch;
-
   const isOpen = stack.some((dialog) => dialog.key === "commandPaletteDialog");
 
-  const handleSyncRepository = async (repositoryId: string) => {
-    try {
-      await triggerSync({ directoryId: repositoryId as Id<"directories"> });
-      toast.success(tRepository("syncStarted"));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      const errorKey = message.includes("already in progress")
-        ? "syncInProgress"
-        : "syncError";
-      toast.error(tRepository(errorKey));
-    }
-  };
-
-  const handleDeleteRepository = useCallback(
-    async (repositoryId: string) => {
-      try {
-        const result = await removeRepository({
-          directoryId: repositoryId as Id<"directories">,
-        });
-        toast.success(
-          tRepository("deleteSuccess", { count: result?.deletedPrompts ?? 0 })
-        );
-      } catch {
-        toast.error(tRepository("deleteError"));
-      }
-    },
-    [removeRepository, tRepository]
-  );
-
-  const closeAndReset = () => {
+  const closeAndReset = useCallback(() => {
     close();
     setQuery("");
-  };
+  }, [close]);
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: refactor later
-  const handleSelect = async (item: CommandItemData) => {
-    closeAndReset();
+  const handleAction = useCallback(
+    async (action: string) => {
+      if (action === "toggleTheme") {
+        setTheme(resolvedTheme === "dark" ? "light" : "dark");
+        return true;
+      }
 
-    const { action, path } = item;
+      if (action === "stopImpersonating") {
+        await stopImpersonating();
+        return true;
+      }
 
-    if (action === "toggleTheme") {
-      setTheme(resolvedTheme === "dark" ? "light" : "dark");
-    } else if (action === "createPromptDialog") {
-      isAuthenticated
-        ? router.push("/create-prompt")
-        : openDialog("signInDialog");
-    } else if (action === "settingsDialog") {
-      isAuthenticated ? router.push("/settings") : openDialog("signInDialog");
-    } else if (action === "addRepositoryDialog") {
-      isAuthenticated
-        ? openDialog("addRepositoryDialog")
-        : openDialog("signInDialog");
-    } else if (action === "impersonatePalette") {
-      openDialog("impersonatePalette");
-    } else if (action === "stopImpersonating") {
-      await stopImpersonating();
-    } else if (action?.startsWith("syncRepository:")) {
-      await handleSyncRepository(action.replace("syncRepository:", ""));
-    } else if (action?.startsWith("deleteRepository:")) {
-      const [, repositoryId = "", repositoryName = ""] = action.split(":");
-      openDialog("confirmDialog", {
-        title: tRepository("deleteTitle"),
-        description: tRepository("deleteDescription", { name: repositoryName }),
-        confirmLabel: tRepository("deleteConfirm"),
-        variant: "destructive",
-        onConfirm: () => handleDeleteRepository(repositoryId),
-      });
-    } else if (path) {
-      router.push(path);
-    }
-  };
+      if (action in DIALOG_ACTIONS) {
+        openDialog(DIALOG_ACTIONS[action] as "impersonatePalette");
+        return true;
+      }
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
+      const authRoute = AUTH_REQUIRED_ROUTES[action];
+      if (authRoute) {
+        if (isAuthenticated) {
+          router.push(authRoute);
+        } else {
+          openDialog("signInDialog");
+        }
+        return true;
+      }
+
+      const navRoute =
+        NAVIGATION_ROUTES[action] ||
+        ADMIN_NAVIGATION_ROUTES[action] ||
+        getUserRoutes(username)[action];
+      if (navRoute) {
+        router.push(navRoute);
+        return true;
+      }
+
+      return false;
+    },
+    [
+      isAuthenticated,
+      openDialog,
+      resolvedTheme,
+      router,
+      setTheme,
+      stopImpersonating,
+      username,
+    ]
+  );
+
+  const handleSelect = useCallback(
+    async (item: CommandItemData) => {
       closeAndReset();
-    }
-  };
+      const { action, path } = item;
+
+      if (action) {
+        const handled = await handleAction(action);
+        if (handled) {
+          return;
+        }
+      }
+
+      if (path) {
+        router.push(path);
+      }
+    },
+    [closeAndReset, handleAction, router]
+  );
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        closeAndReset();
+      }
+    },
+    [closeAndReset]
+  );
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={isOpen}>

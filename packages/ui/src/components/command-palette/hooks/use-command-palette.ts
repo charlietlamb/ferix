@@ -6,7 +6,6 @@ import type { CommandGroup, CommandItemData } from "../types";
 
 export function useCommandPalette(
   promptItems: CommandItemData[] | undefined,
-  syncRepositoryItems: CommandItemData[] | undefined,
   repositorySearchItems: CommandItemData[] | undefined,
   actionItems: CommandItemData[] | undefined,
   query: string
@@ -36,12 +35,6 @@ export function useCommandPalette(
       },
       { id: "prompts", label: "Prompts", priority: 15, items: promptItems },
       { id: "actions", label: "Actions", priority: 70, items: actionItems },
-      {
-        id: "repositories",
-        label: "Manage Repositories",
-        priority: 75,
-        items: syncRepositoryItems,
-      },
     ];
 
     for (const g of dynamicGroups) {
@@ -56,13 +49,7 @@ export function useCommandPalette(
     }
 
     return result.sort((a, b) => a.priority - b.priority);
-  }, [
-    query,
-    promptItems,
-    syncRepositoryItems,
-    repositorySearchItems,
-    actionItems,
-  ]);
+  }, [query, promptItems, repositorySearchItems, actionItems]);
 
   return { groups, isEmpty: groups.length === 0 };
 }

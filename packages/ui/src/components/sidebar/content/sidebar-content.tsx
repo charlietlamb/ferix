@@ -1,3 +1,4 @@
+import { NavAdmin } from "./nav-admin";
 import { NavCategories } from "./nav-categories";
 import { NavMain } from "./nav-main";
 import { NavPersonal } from "./nav-personal";
@@ -8,6 +9,7 @@ export function SidebarMainContent() {
       <NavMain />
       <NavCategories />
       <NavPersonal />
+      <NavAdmin />
     </>
   );
 }

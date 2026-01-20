@@ -97,4 +97,11 @@ export default defineSchema({
     totalDownloads: v.number(),
     updatedAt: v.number(),
   }).index("by_userId", ["userId"]),
+
+  /** Key-value settings store for admin-configurable options. */
+  settings: defineTable({
+    key: v.string(),
+    value: v.any(),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
 });

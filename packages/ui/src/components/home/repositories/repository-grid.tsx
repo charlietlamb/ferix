@@ -7,16 +7,13 @@ import {
   RepositoryCellSkeleton,
 } from "@ferix/ui/components/repositories/repository-cell";
 import { getGridItemBorderClasses } from "@ferix/ui/lib/repositories";
-import { usePaginatedQuery } from "convex/react";
-import { useMemo } from "react";
-
-const FEATURED_URLS = ["https://github.com/useautumn/skills"];
+import { useQuery } from "convex/react";
 
 interface Repository {
   _id: string;
-  githubUrl: string;
   owner: string;
   repo: string;
+  name?: string;
   promptCount: number;
   totalDownloads: number;
 }
@@ -63,43 +60,20 @@ function RepositoryGridSkeleton() {
 }
 
 export function RepositoryGrid() {
-  const { results, status } = usePaginatedQuery(
-    api.directories.list,
-    { orderBy: "popular" },
-    { initialNumItems: 12 }
-  );
+  const repositories = useQuery(api.directories.listFeatured, { limit: 12 });
 
-  const sortedRepositories = useMemo(() => {
-    if (status === "LoadingFirstPage") {
-      return null;
-    }
-
-    const featured: Repository[] = [];
-    const rest: Repository[] = [];
-
-    for (const repo of results) {
-      if (FEATURED_URLS.includes(repo.githubUrl)) {
-        featured.push(repo);
-      } else {
-        rest.push(repo);
-      }
-    }
-
-    return [...featured, ...rest];
-  }, [results, status]);
-
-  if (!sortedRepositories) {
+  if (repositories === undefined) {
     return <RepositoryGridSkeleton />;
   }
 
-  if (sortedRepositories.length === 0) {
+  if (repositories.length === 0) {
     return null;
   }
 
   return (
     <section className="flex flex-col border-border border-b">
       <RepositoryGridHeader />
-      <RepositoryGridInner repositories={sortedRepositories} />
+      <RepositoryGridInner repositories={repositories} />
     </section>
   );
 }
