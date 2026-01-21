@@ -11,6 +11,12 @@ export const SIGNALS = {
   TASKS_START: "<ferix:tasks>",
   TASKS_END: "</ferix:tasks>",
   TASK_DONE: "<ferix:task-done",
+  // Phase tracking signals
+  PHASES_START: "<ferix:phases",
+  PHASES_END: "</ferix:phases>",
+  PHASE_START: "<ferix:phase-start",
+  PHASE_DONE: "<ferix:phase-done",
+  PHASE_FAILED: "<ferix:phase-failed",
 } as const;
 
 /** Default values */

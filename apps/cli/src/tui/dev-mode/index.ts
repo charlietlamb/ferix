@@ -3,7 +3,7 @@
  * Retro/dev style with bordered layout, header, and footer
  */
 
-import type { Task } from "../../types/config.js";
+import type { Phase, Task } from "../../types/config.js";
 import type { DevModeState } from "../../types/tui.js";
 import {
   disableRawMode,
@@ -74,15 +74,10 @@ export class DevMode {
   }
 
   /**
-   * Handle keypress for scrolling and control
+   * Handle scroll-related keypresses
+   * Returns true if the key was handled as a scroll action
    */
-  private handleKeypress(key: string): void {
-    // Ctrl+C - exit
-    if (key === "\x03") {
-      this.cleanup();
-      process.exit(0);
-    }
-
+  private handleScrollKey(key: string): boolean {
     const { rows } = getTerminalSize();
     const outputHeight = rows - FIXED_ROWS;
 
@@ -96,33 +91,54 @@ export class DevMode {
       } else if (button === 65) {
         this.scrollDown(outputHeight, 3);
       }
-      return;
+      return true;
     }
 
     // Up arrow or k
     if (key === "\x1b[A" || key === "k") {
       this.scrollUp();
+      return true;
     }
     // Down arrow or j
-    else if (key === "\x1b[B" || key === "j") {
+    if (key === "\x1b[B" || key === "j") {
       this.scrollDown(outputHeight);
+      return true;
     }
     // Page up
-    else if (key === "\x1b[5~") {
+    if (key === "\x1b[5~") {
       this.scrollUp(outputHeight);
+      return true;
     }
     // Page down
-    else if (key === "\x1b[6~") {
+    if (key === "\x1b[6~") {
       this.scrollDown(outputHeight, outputHeight);
+      return true;
     }
     // Home - scroll to top
-    else if (key === "g" || key === "\x1b[H") {
+    if (key === "g" || key === "\x1b[H") {
       this.scrollToTop();
+      return true;
     }
     // End - scroll to bottom (G or End key)
-    else if (key === "G" || key === "\x1b[F") {
+    if (key === "G" || key === "\x1b[F") {
       this.scrollToBottom(outputHeight);
+      return true;
     }
+
+    return false;
+  }
+
+  /**
+   * Handle keypress for scrolling and control
+   */
+  private handleKeypress(key: string): void {
+    // Ctrl+C - exit
+    if (key === "\x03") {
+      this.cleanup();
+      process.exit(0);
+    }
+
+    this.handleScrollKey(key);
   }
 
   /**
@@ -237,6 +253,64 @@ export class DevMode {
   }
 
   /**
+   * Set phases for a task
+   */
+  setPhases(taskId: string, phases: Phase[]): void {
+    const task = this.state.tasks.find((t) => t.id === taskId);
+    if (task) {
+      task.phases = phases;
+      this.render();
+    }
+  }
+
+  /**
+   * Mark a phase as in progress
+   */
+  setPhaseInProgress(phaseId: string): void {
+    for (const task of this.state.tasks) {
+      const phase = task.phases.find((p) => p.id === phaseId);
+      if (phase) {
+        phase.status = "in_progress";
+        this.render();
+        return;
+      }
+    }
+  }
+
+  /**
+   * Mark a phase as done
+   */
+  markPhaseDone(phaseId: string): void {
+    for (const task of this.state.tasks) {
+      const phase = task.phases.find((p) => p.id === phaseId);
+      if (phase) {
+        phase.status = "done";
+        // Check if all phases are done - auto-complete task
+        const allPhasesDone = task.phases.every((p) => p.status === "done");
+        if (allPhasesDone && task.phases.length > 0) {
+          task.done = true;
+        }
+        this.render();
+        return;
+      }
+    }
+  }
+
+  /**
+   * Mark a phase as failed
+   */
+  markPhaseFailed(phaseId: string): void {
+    for (const task of this.state.tasks) {
+      const phase = task.phases.find((p) => p.id === phaseId);
+      if (phase) {
+        phase.status = "failed";
+        this.render();
+        return;
+      }
+    }
+  }
+
+  /**
    * Add output text (streaming)
    */
   addOutput(text: string): void {
@@ -303,6 +377,34 @@ export class DevMode {
   setError(): void {
     this.state.status = "error";
     this.render();
+  }
+
+  /**
+   * Wait for user to press Ctrl+C before exiting
+   * Returns a promise that resolves when the user exits
+   */
+  waitForExit(): Promise<void> {
+    return new Promise((resolve) => {
+      // Replace the existing key handler with one that only listens for Ctrl+C
+      if (this.keyHandler) {
+        process.stdin.removeListener("data", this.keyHandler);
+      }
+
+      this.keyHandler = (data: Buffer) => {
+        const key = data.toString();
+
+        // Ctrl+C - exit
+        if (key === "\x03") {
+          resolve();
+          return;
+        }
+
+        // Still allow scrolling while waiting
+        this.handleScrollKey(key);
+      };
+
+      process.stdin.on("data", this.keyHandler);
+    });
   }
 
   /**

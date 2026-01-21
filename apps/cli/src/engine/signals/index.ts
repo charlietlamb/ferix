@@ -3,4 +3,9 @@
  */
 
 export { mightContainFerixTagStart } from "./detector.js";
-export { extractError, extractTasks, stripSignalTags } from "./parser.js";
+export {
+  extractError,
+  extractPhases,
+  extractTasks,
+  stripSignalTags,
+} from "./parser.js";

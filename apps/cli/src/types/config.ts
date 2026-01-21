@@ -73,6 +73,23 @@ export interface PromptFragment {
 }
 
 /**
+ * Phase status for tracking progress
+ */
+export type PhaseStatus = "pending" | "in_progress" | "done" | "failed";
+
+/**
+ * A phase within a task - a smaller unit of work
+ */
+export interface Phase {
+  /** Unique identifier (e.g., "1.1", "1.2") */
+  id: string;
+  /** Brief description of the phase */
+  description: string;
+  /** Current status of the phase */
+  status: PhaseStatus;
+}
+
+/**
  * A task extracted from the work to be done
  */
 export interface Task {
@@ -82,4 +99,6 @@ export interface Task {
   description: string;
   /** Whether the task has been completed */
   done: boolean;
+  /** Phases within this task (empty until phases are defined) */
+  phases: Phase[];
 }

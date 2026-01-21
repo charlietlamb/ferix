@@ -56,5 +56,8 @@ export function createProcessorState(): ProcessorState {
     textBuffer: "",
     tasksEmitted: false,
     completedTaskIds: new Set(),
+    phasesEmittedForTasks: new Set(),
+    startedPhaseIds: new Set(),
+    completedPhaseIds: new Set(),
   };
 }

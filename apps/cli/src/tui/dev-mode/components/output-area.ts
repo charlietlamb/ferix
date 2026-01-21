@@ -69,6 +69,41 @@ function styleFerixTags(line: string, width: number): string {
     `${colors.brightRed}ERROR:${colors.reset} ${colors.red}$1${colors.reset}`
   );
 
+  // Style <ferix:phases task="N"> - phases header
+  if (styled.includes("<ferix:phases")) {
+    styled = styled.replace(
+      /<ferix:phases task="(\d+)">/g,
+      `${colors.cyan}│${colors.reset}   ${colors.dim}Phases for task $1:${colors.reset}`
+    );
+  }
+
+  // Style </ferix:phases>
+  styled = styled.replace(/<\/ferix:phases>/g, "");
+
+  // Style <phase id="N.M">...</phase> with tree structure
+  styled = styled.replace(
+    /<phase id="([^"]+)">([^<]+)<\/phase>/g,
+    `${colors.cyan}│${colors.reset}   ${colors.dim}├─${colors.reset} ${colors.dim}○${colors.reset} ${colors.dim}[$1]${colors.reset} $2`
+  );
+
+  // Style <ferix:phase-start id="N.M"/>
+  styled = styled.replace(
+    /<ferix:phase-start id="([^"]+)"\/>/g,
+    `${colors.cyan}│${colors.reset}   ${colors.yellow}●${colors.reset} ${colors.dim}Phase $1 started${colors.reset}`
+  );
+
+  // Style <ferix:phase-done id="N.M"/>
+  styled = styled.replace(
+    /<ferix:phase-done id="([^"]+)"\/>/g,
+    `${colors.cyan}│${colors.reset}   ${colors.green}✓${colors.reset} ${colors.dim}Phase $1 complete${colors.reset}`
+  );
+
+  // Style <ferix:phase-failed id="N.M">reason</ferix:phase-failed>
+  styled = styled.replace(
+    /<ferix:phase-failed id="([^"]+)">([^<]*)<\/ferix:phase-failed>/g,
+    `${colors.cyan}│${colors.reset}   ${colors.red}✗${colors.reset} ${colors.dim}Phase $1 failed:${colors.reset} ${colors.red}$2${colors.reset}`
+  );
+
   return styled;
 }
 

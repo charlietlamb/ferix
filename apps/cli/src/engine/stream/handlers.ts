@@ -11,10 +11,18 @@ import type {
   StreamMessage,
 } from "../../types/events.js";
 import {
+  extractPhases,
   extractTasks,
   mightContainFerixTagStart,
   stripSignalTags,
 } from "../signals/index.js";
+
+// Top-level regex patterns for phase signal detection
+const PHASE_START_REGEX = /<ferix:phase-start id="([\d.]+)"\/>/g;
+const PHASE_DONE_REGEX = /<ferix:phase-done id="([\d.]+)"\/>/g;
+const PHASE_FAILED_REGEX =
+  /<ferix:phase-failed id="([\d.]+)">([^<]*)<\/ferix:phase-failed>/g;
+
 import { getToolColor, getToolDetail } from "../tools/index.js";
 
 /**
@@ -54,6 +62,53 @@ export function handleToolStart(
 }
 
 /**
+ * Check for phase-related signals
+ */
+function checkPhaseSignals(
+  state: ProcessorState,
+  emit: (e: ClaudeEvent) => void
+): void {
+  // Check for phases definition
+  const phasesResult = extractPhases(state.fullOutput);
+  if (phasesResult && !state.phasesEmittedForTasks.has(phasesResult.taskId)) {
+    state.phasesEmittedForTasks.add(phasesResult.taskId);
+    emit({
+      type: "phases_defined",
+      taskId: phasesResult.taskId,
+      phases: phasesResult.phases,
+    });
+  }
+
+  // Check for phase start signals
+  for (const match of state.fullOutput.matchAll(PHASE_START_REGEX)) {
+    const phaseId = match[1];
+    if (phaseId && !state.startedPhaseIds.has(phaseId)) {
+      state.startedPhaseIds.add(phaseId);
+      emit({ type: "phase_start", id: phaseId });
+    }
+  }
+
+  // Check for phase done signals
+  for (const match of state.fullOutput.matchAll(PHASE_DONE_REGEX)) {
+    const phaseId = match[1];
+    if (phaseId && !state.completedPhaseIds.has(phaseId)) {
+      state.completedPhaseIds.add(phaseId);
+      emit({ type: "phase_done", id: phaseId });
+    }
+  }
+
+  // Check for phase failed signals
+  for (const match of state.fullOutput.matchAll(PHASE_FAILED_REGEX)) {
+    const phaseId = match[1];
+    const reason = match[2] || "Unknown error";
+    if (phaseId && !state.completedPhaseIds.has(phaseId)) {
+      state.completedPhaseIds.add(phaseId);
+      emit({ type: "phase_failed", id: phaseId, reason });
+    }
+  }
+}
+
+/**
  * Check for and emit task-related signals from buffer
  */
 export function checkTaskSignals(
@@ -69,11 +124,13 @@ export function checkTaskSignals(
     }
   }
 
+  // Check phase signals
+  checkPhaseSignals(state, emit);
+
   // Check for task completion signals
-  const taskDoneMatches = state.fullOutput.matchAll(
+  for (const match of state.fullOutput.matchAll(
     /<ferix:task-done id="(\d+)"\/>/g
-  );
-  for (const match of taskDoneMatches) {
+  )) {
     const taskId = match[1];
     if (taskId && !state.completedTaskIds.has(taskId)) {
       state.completedTaskIds.add(taskId);

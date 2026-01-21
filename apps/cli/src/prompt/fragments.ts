@@ -139,7 +139,34 @@ Before starting any work, analyze the task and break it into discrete subtasks.
 - For complex requests (PRDs, multiple features), break into logical chunks
 - Keep descriptions concise (under 60 characters)
 
-**After completing each task, immediately output:**
+## Phase Breakdown
+
+Before starting each task, break it down into phases. This helps track granular progress.
+
+**When starting a task, first output its phases:**
+<ferix:phases task="N">
+  <phase id="N.1">Brief description of first phase</phase>
+  <phase id="N.2">Brief description of second phase</phase>
+</ferix:phases>
+
+**Rules for phases:**
+- Every task MUST have at least one phase
+- Phase IDs use format: taskId.phaseNumber (e.g., "1.1", "1.2", "2.1")
+- Each phase should be a small, trackable unit of work
+- Keep phase descriptions concise (one sentence, under 60 characters)
+
+**Phase progress signals:**
+
+When starting a phase:
+<ferix:phase-start id="N.M"/>
+
+When completing a phase:
+<ferix:phase-done id="N.M"/>
+
+If a phase fails:
+<ferix:phase-failed id="N.M">Brief reason for failure</ferix:phase-failed>
+
+**After completing ALL phases of a task, output:**
 <ferix:task-done id="N"/>
 
 Where N is the task ID. This tracks progress through the work.`,

@@ -175,6 +175,18 @@ async function executeLoopDevMode(
           case "task_done":
             tui.markTaskDone(event.id);
             break;
+          case "phases_defined":
+            tui.setPhases(event.taskId, event.phases);
+            break;
+          case "phase_start":
+            tui.setPhaseInProgress(event.id);
+            break;
+          case "phase_done":
+            tui.markPhaseDone(event.id);
+            break;
+          case "phase_failed":
+            tui.markPhaseFailed(event.id);
+            break;
           case "complete":
             // Will be handled after execute returns
             break;
@@ -197,6 +209,8 @@ async function executeLoopDevMode(
         tui.addOutput(
           `\n${colors.red}[ERROR]${colors.reset} ${result.errorMessage}`
         );
+        tui.addOutput(`\n${colors.dim}Press Ctrl+C to exit${colors.reset}`);
+        await tui.waitForExit();
         tui.cleanup();
         const { type, message } = parseErrorType(result.errorMessage);
         throw new AgentError(type, message);
@@ -207,12 +221,16 @@ async function executeLoopDevMode(
         tui.addOutput(
           `\n${colors.green}[DONE]${colors.reset} All tasks complete after ${i} iteration(s)`
         );
+        tui.addOutput(`\n${colors.dim}Press Ctrl+C to exit${colors.reset}`);
+        await tui.waitForExit();
         break;
       }
 
       if (!result.success) {
         tui.setError();
         tui.addOutput(`\n${colors.red}[ERROR]${colors.reset} Iteration failed`);
+        tui.addOutput(`\n${colors.dim}Press Ctrl+C to exit${colors.reset}`);
+        await tui.waitForExit();
         tui.cleanup();
         throw new ExecutionError("Iteration failed");
       }
@@ -221,6 +239,8 @@ async function executeLoopDevMode(
         tui.addOutput(
           `\n${colors.dim}[INFO]${colors.reset} Completed ${maxIterations} iteration(s)`
         );
+        tui.addOutput(`\n${colors.dim}Press Ctrl+C to exit${colors.reset}`);
+        await tui.waitForExit();
       }
     }
   } finally {
