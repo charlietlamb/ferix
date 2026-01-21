@@ -23,6 +23,31 @@ export interface PlanPhase {
 }
 
 /**
+ * Status of a success criterion
+ */
+export type CriterionStatus = "pending" | "passed" | "failed";
+
+/**
+ * A success criterion for verifying task completion
+ *
+ * Criteria are extracted during breakdown and verified by the reviewer.
+ * ALL criteria must pass for a task to be marked as done.
+ *
+ * @example
+ * { id: "1.c1", description: "Config loads from CWD", status: "passed" }
+ */
+export interface SuccessCriterion {
+  /** Criterion ID in format "taskId.cN" (e.g., "1.c1", "1.c2") */
+  id: string;
+  /** Human-readable criterion description */
+  description: string;
+  /** Current verification status */
+  status: CriterionStatus;
+  /** Reason for failure (only set when status is "failed") */
+  failureReason?: string;
+}
+
+/**
  * Task status values representing the lifecycle of a task
  *
  * - pending: Task not yet started
@@ -59,6 +84,10 @@ export interface PlanTask {
   phases?: PlanPhase[];
   /** Files to modify (added by planner) */
   filesToModify?: string[];
+  /** Success criteria for this task (extracted during breakdown) */
+  criteria?: SuccessCriterion[];
+  /** Number of execution attempts (max 5) */
+  attempts?: number;
   /** Completion notes (added by worker on success) */
   completionNotes?: string;
   /** Error message (added by worker on failure) */

@@ -54,7 +54,9 @@ export type ClaudeEvent =
   | { type: "phases_defined"; taskId: string; phases: Phase[] }
   | { type: "phase_start"; id: string }
   | { type: "phase_done"; id: string }
-  | { type: "phase_failed"; id: string; reason: string };
+  | { type: "phase_failed"; id: string; reason: string }
+  | { type: "criterion_passed"; id: string }
+  | { type: "criterion_failed"; id: string; reason: string };
 
 /**
  * Event handler callback type
@@ -86,4 +88,6 @@ export interface ProcessorState {
   startedPhaseIds: Set<string>;
   /** Track which phases have been completed */
   completedPhaseIds: Set<string>;
+  /** Track which criteria have been reported (passed or failed) */
+  reportedCriterionIds: Set<string>;
 }

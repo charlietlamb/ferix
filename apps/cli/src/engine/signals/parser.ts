@@ -15,6 +15,13 @@ const PHASE_FAILED_REGEX =
 const EXTRACT_PHASES_REGEX =
   /<ferix:phases task="(\d+)">([\s\S]*?)<\/ferix:phases>/;
 
+// Criterion signal patterns
+const CRITERION_PASSED_REGEX = /<ferix:criterion-passed id="[\d.c]+"\/>/g;
+const CRITERION_FAILED_REGEX =
+  /<ferix:criterion-failed id="[\d.c]+" reason="[^"]*"\/>/g;
+const REVIEW_PASSED_REGEX = /<ferix:review-passed\/>/g;
+const REVIEW_FAILED_REGEX = /<ferix:review-failed\/>/g;
+
 /**
  * Extract error message from output containing <ferix:error>...</ferix:error>
  * Only matches when the tag appears at the start of a line (not in code blocks)
@@ -44,7 +51,11 @@ export function stripSignalTags(text: string): string {
     .replace(PHASES_BLOCK_REGEX, "")
     .replace(PHASE_START_REGEX, "")
     .replace(PHASE_DONE_REGEX, "")
-    .replace(PHASE_FAILED_REGEX, "");
+    .replace(PHASE_FAILED_REGEX, "")
+    .replace(CRITERION_PASSED_REGEX, "")
+    .replace(CRITERION_FAILED_REGEX, "")
+    .replace(REVIEW_PASSED_REGEX, "")
+    .replace(REVIEW_FAILED_REGEX, "");
 }
 
 /**
@@ -110,4 +121,64 @@ export function extractPhases(
   }
 
   return phases.length > 0 ? { taskId, phases } : undefined;
+}
+
+/**
+ * Result of a criterion signal extraction
+ */
+export interface CriterionResult {
+  /** Criterion ID (e.g., "1.c1") */
+  id: string;
+  /** Whether the criterion passed */
+  passed: boolean;
+  /** Reason for failure (only if passed is false) */
+  reason?: string;
+}
+
+/**
+ * Extract all criterion signals from output.
+ * Returns an array of criterion results (passed or failed).
+ */
+export function extractCriterionSignals(output: string): CriterionResult[] {
+  const results: CriterionResult[] = [];
+
+  // Extract passed criteria
+  const passedMatches = output.matchAll(
+    /<ferix:criterion-passed id="([\d.c]+)"\/>/g
+  );
+  for (const match of passedMatches) {
+    if (match[1]) {
+      results.push({ id: match[1], passed: true });
+    }
+  }
+
+  // Extract failed criteria
+  const failedMatches = output.matchAll(
+    /<ferix:criterion-failed id="([\d.c]+)" reason="([^"]*)"\/>/g
+  );
+  for (const match of failedMatches) {
+    if (match[1]) {
+      results.push({
+        id: match[1],
+        passed: false,
+        reason: match[2] || "Unknown reason",
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Check if the review passed (all criteria met).
+ */
+export function extractReviewPassed(output: string): boolean {
+  return output.includes("<ferix:review-passed/>");
+}
+
+/**
+ * Check if the review failed (one or more criteria not met).
+ */
+export function extractReviewFailed(output: string): boolean {
+  return output.includes("<ferix:review-failed/>");
 }

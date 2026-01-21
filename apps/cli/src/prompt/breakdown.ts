@@ -105,6 +105,25 @@ The implementation details (module structure, loading, validation, types, integr
 - "Implement user authentication" (1 task) - NOT 8 tasks for middleware, login, logout, tests, etc.
 - PRD with Config + Summary features (2-3 tasks) - NOT 14 implementation steps
 
+### Step 3.5: Extract Success Criteria
+
+For EACH task, extract **testable success criteria** from the requirements.
+
+**IMPORTANT: If the task references a PRD or requirements file:**
+1. READ the PRD/requirements file FIRST
+2. Verify the file exists before extracting criteria
+3. Extract criteria directly from the documented acceptance criteria or requirements
+
+**Rules for good criteria:**
+- Must be objectively verifiable (yes/no answer, not subjective)
+- Cover functional requirements ("loads config from CWD")
+- Cover error handling and edge cases ("shows error on invalid JSON")
+- Cover integration points ("config is merged with CLI args")
+- No minimum or maximum - use as many as needed to fully cover the task
+
+**Criteria will be verified by a reviewer after implementation.**
+If ANY criterion fails after 5 attempts, the task will be marked as failed and execution will stop.
+
 ### Step 4: Create the Plan File
 
 After outputting the tasks signal, create the plan file at \`${planPath}\`.
@@ -128,12 +147,21 @@ The plan file format:
 
 [Detailed description of what this task involves]
 
+**Success Criteria:**
+- [ ] First criterion from requirements
+- [ ] Second criterion
+- [ ] Third criterion
+- [ ] ...
+
 ---
 
 ## Task 2: [title]
 **Status**: pending
 
 [Detailed description]
+
+**Success Criteria:**
+- [ ] Criteria for this task...
 
 ---
 
@@ -144,6 +172,7 @@ The plan file format:
 - The Status should be "pending" for all tasks
 - Include enough detail in each task description that a fresh LLM context can understand what to do
 - Do NOT include phases yet - those will be added by the planner phase
+- Success criteria use checkbox format: \`- [ ]\` for pending, \`- [x]\` for passed
 
 ## What NOT to Do
 

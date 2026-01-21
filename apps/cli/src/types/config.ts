@@ -97,6 +97,25 @@ export interface Phase {
 }
 
 /**
+ * Status of a success criterion for TUI display
+ */
+export type CriterionStatus = "pending" | "passed" | "failed";
+
+/**
+ * A success criterion for TUI display
+ */
+export interface Criterion {
+  /** Criterion ID (e.g., "1.c1") */
+  id: string;
+  /** Human-readable description */
+  description: string;
+  /** Verification status */
+  status: CriterionStatus;
+  /** Reason for failure (only when failed) */
+  failureReason?: string;
+}
+
+/**
  * A task extracted from the work to be done
  */
 export interface Task {
@@ -108,6 +127,10 @@ export interface Task {
   done: boolean;
   /** Phases within this task (empty until phases are defined) */
   phases: Phase[];
+  /** Success criteria for this task */
+  criteria?: Criterion[];
+  /** Number of execution attempts (max 5) */
+  attempts?: number;
   /** Unix timestamp when task work began */
   startedAt?: number;
   /** Unix timestamp when task completed */

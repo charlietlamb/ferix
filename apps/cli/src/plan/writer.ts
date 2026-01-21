@@ -9,7 +9,12 @@
  * @see parser.ts for the inverse operation (markdown → Plan)
  */
 
-import type { Plan, PlanPhase, PlanTask } from "../types/plan.js";
+import type {
+  Plan,
+  PlanPhase,
+  PlanTask,
+  SuccessCriterion,
+} from "../types/plan.js";
 
 /**
  * Serializes a Plan object to markdown string.
@@ -62,7 +67,9 @@ export function writePlanFile(plan: Plan): string {
  * Output includes:
  * - Task header with ID and title
  * - Status indicator (pending, in_progress, done, failed, skipped)
+ * - Attempts counter (for reviewer retry tracking)
  * - Optional description
+ * - Optional success criteria checklist
  * - Optional phases checklist
  * - Optional files list
  * - Optional completion notes or error message
@@ -76,11 +83,25 @@ function writeTask(task: PlanTask): string[] {
   // Task header
   lines.push(`## Task ${task.id}: ${task.title}`);
   lines.push(`**Status**: ${task.status}`);
+
+  // Attempts (only write if > 0 to keep output clean for new tasks)
+  if (task.attempts !== undefined && task.attempts > 0) {
+    lines.push(`**Attempts**: ${task.attempts}`);
+  }
   lines.push("");
 
   // Description
   if (task.description) {
     lines.push(task.description);
+    lines.push("");
+  }
+
+  // Success Criteria (before phases)
+  if (task.criteria && task.criteria.length > 0) {
+    lines.push("**Success Criteria:**");
+    for (const criterion of task.criteria) {
+      lines.push(...writeCriterion(criterion));
+    }
     lines.push("");
   }
 
@@ -128,4 +149,30 @@ function writeTask(task: PlanTask): string[] {
 function writePhase(phase: PlanPhase): string {
   const checkbox = phase.completed ? "[x]" : "[ ]";
   return `- ${checkbox} ${phase.id}: ${phase.description}`;
+}
+
+/**
+ * Formats a success criterion as markdown checkbox with optional failure reason.
+ *
+ * Output formats:
+ * - Passed: `- [x] Criterion description`
+ * - Pending: `- [ ] Criterion description`
+ * - Failed: `- [ ] Criterion description`
+ *           `  > Reason: explanation`
+ *
+ * @param criterion - The criterion to format
+ * @returns Array of markdown lines (1 line for passed/pending, 2 for failed with reason)
+ */
+function writeCriterion(criterion: SuccessCriterion): string[] {
+  const lines: string[] = [];
+  const checkbox = criterion.status === "passed" ? "[x]" : "[ ]";
+
+  lines.push(`- ${checkbox} ${criterion.description}`);
+
+  // Add failure reason on indented line
+  if (criterion.status === "failed" && criterion.failureReason) {
+    lines.push(`  > Reason: ${criterion.failureReason}`);
+  }
+
+  return lines;
 }

@@ -104,6 +104,30 @@ function styleFerixTags(line: string, width: number): string {
     `${colors.cyan}│${colors.reset}   ${colors.red}✗${colors.reset} ${colors.dim}Phase $1 failed:${colors.reset} ${colors.red}$2${colors.reset}`
   );
 
+  // Style <ferix:criterion-passed id="N.cM"/>
+  styled = styled.replace(
+    /<ferix:criterion-passed id="([^"]+)"\/>/g,
+    `${colors.green}✓${colors.reset} ${colors.dim}Criterion $1 passed${colors.reset}`
+  );
+
+  // Style <ferix:criterion-failed id="N.cM" reason="..."/>
+  styled = styled.replace(
+    /<ferix:criterion-failed id="([^"]+)" reason="([^"]*)"\/>/g,
+    `${colors.red}✗${colors.reset} ${colors.dim}Criterion $1 failed:${colors.reset} ${colors.red}$2${colors.reset}`
+  );
+
+  // Style <ferix:review-passed/>
+  styled = styled.replace(
+    /<ferix:review-passed\/>/g,
+    `${colors.brightGreen}━━━ REVIEW PASSED ━━━${colors.reset}`
+  );
+
+  // Style <ferix:review-failed/>
+  styled = styled.replace(
+    /<ferix:review-failed\/>/g,
+    `${colors.brightRed}━━━ REVIEW FAILED ━━━${colors.reset}`
+  );
+
   return styled;
 }
 

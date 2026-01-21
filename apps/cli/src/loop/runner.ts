@@ -40,6 +40,10 @@ import { MESSAGES } from "../constants.js";
 import type { ClaudeEvent, Engine } from "../engine/index.js";
 import { getEngine } from "../engine/index.js";
 import {
+  extractReviewFailed,
+  extractReviewPassed,
+} from "../engine/signals/index.js";
+import {
   createBranch,
   createPullRequest,
   getCurrentBranch,
@@ -53,10 +57,11 @@ import {
 } from "../plan/index.js";
 import { createBreakdownPrompt } from "../prompt/breakdown.js";
 import { createPlannerPrompt } from "../prompt/planner.js";
+import { createReviewerPrompt } from "../prompt/reviewer.js";
 import { createWorkerPrompt } from "../prompt/worker.js";
 import { colors } from "../tui/ansi.js";
 import { DevMode } from "../tui/dev-mode.js";
-import type { Phase, Task } from "../types/config.js";
+import type { Criterion, Phase, Task } from "../types/config.js";
 import {
   AgentError,
   DependencyError,
@@ -204,6 +209,12 @@ function handleTuiEvent(tui: DevMode, event: ClaudeEvent): void {
     case "phase_failed":
       tui.markPhaseFailed(event.id);
       break;
+    case "criterion_passed":
+      tui.markCriterionPassed(event.id);
+      break;
+    case "criterion_failed":
+      tui.markCriterionFailed(event.id, event.reason);
+      break;
     case "error":
       tui.setError();
       break;
@@ -319,6 +330,87 @@ function executeWorker(
     onEvent,
     writeToStdout: !tui,
   });
+}
+
+/** Maximum number of review attempts before marking task as failed */
+const MAX_REVIEW_ATTEMPTS = 5;
+
+/**
+ * Result of a review phase
+ */
+interface ReviewResult {
+  /** Whether all criteria passed */
+  passed: boolean;
+  /** The raw output from the reviewer */
+  output: string;
+}
+
+/**
+ * Executes the reviewer phase for a completed task with a fresh LLM context.
+ *
+ * The reviewer verifies each success criterion and signals pass/fail for each.
+ * If any criterion fails, the task should be retried.
+ *
+ * @param engine - LLM engine instance
+ * @param plan - Current plan (embedded in prompt for context)
+ * @param task - The task to review (should be in done/in_progress state)
+ * @param attemptNumber - Current attempt number (1-5)
+ * @param tui - Optional TUI for output display
+ * @param onEvent - Optional event handler for progress tracking
+ * @returns Review result indicating pass/fail and raw output
+ */
+async function executeReviewer(
+  engine: Engine,
+  plan: Plan,
+  task: PlanTask,
+  attemptNumber: number,
+  tui: DevMode | null,
+  onEvent?: (event: ClaudeEvent) => void
+): Promise<ReviewResult> {
+  const prompt = createReviewerPrompt(plan, task, attemptNumber);
+
+  if (tui) {
+    tui.addOutput(
+      `\n${colors.cyan}[REVIEWING]${colors.reset} Task ${task.id}: ${task.title} (attempt ${attemptNumber}/${MAX_REVIEW_ATTEMPTS})\n`
+    );
+  } else {
+    logger.info(
+      `Reviewing task ${task.id}: ${task.title} (attempt ${attemptNumber}/${MAX_REVIEW_ATTEMPTS})`
+    );
+  }
+
+  const result = await engine.execute(prompt, {
+    onEvent,
+    writeToStdout: !tui,
+  });
+
+  // Determine pass/fail from the output signals
+  const passed = extractReviewPassed(result.output);
+  const failed = extractReviewFailed(result.output);
+
+  // If neither signal found, default to checking if there were errors
+  if (!(passed || failed)) {
+    // No explicit signal - assume failed if execution had errors
+    return {
+      passed: result.success && !result.hasError,
+      output: result.output,
+    };
+  }
+
+  return {
+    passed: passed && !failed,
+    output: result.output,
+  };
+}
+
+/**
+ * Checks if a task has success criteria that need verification.
+ *
+ * @param task - The task to check
+ * @returns True if the task has criteria to verify
+ */
+function taskHasCriteria(task: PlanTask): boolean {
+  return Boolean(task.criteria && task.criteria.length > 0);
 }
 
 /**
@@ -461,13 +553,15 @@ async function executeBreakdownPhase(
 }
 
 /**
- * Executes a single task (planner + worker phases) in TUI mode.
+ * Executes a single task (planner + worker + reviewer phases) in TUI mode.
  *
- * This is the core of the planner/worker loop:
+ * This is the core of the planner/worker/reviewer loop:
  * 1. Run planner to break task into phases
  * 2. Reload plan to get phases
  * 3. Run worker to execute phases
- * 4. Reload and return updated plan
+ * 4. Run reviewer to verify success criteria (if task has criteria)
+ * 5. If review fails, retry worker (up to MAX_REVIEW_ATTEMPTS)
+ * 6. Reload and return updated plan
  *
  * @param engine - LLM engine instance
  * @param plan - Current plan
@@ -476,7 +570,7 @@ async function executeBreakdownPhase(
  * @param tui - DevMode TUI instance
  * @param onEvent - Event handler for TUI updates
  * @returns Updated plan after task completion
- * @throws AgentError if planner or worker fails
+ * @throws AgentError if planner, worker, or reviewer fails after max attempts
  */
 async function executeTaskTui(
   engine: Engine,
@@ -496,31 +590,93 @@ async function executeTaskTui(
   }
 
   // Reload and get task with phases
-  const updatedPlan = loadPlan();
-  const taskWithPhases = updatedPlan.tasks.find((t) => t.id === task.id);
+  let currentPlan = loadPlan();
+  let taskWithPhases = currentPlan.tasks.find((t) => t.id === task.id);
 
   if (!taskWithPhases) {
     return handleTuiError(tui, `Task ${task.id} not found after planning`);
   }
 
-  // Phase B: Execute the task
-  tui.setExecutionMode("working", task.id);
-  const workerResult = await executeWorker(
-    engine,
-    updatedPlan,
-    taskWithPhases,
-    config,
-    tui,
-    onEvent
-  );
-  const workerCheck = checkResult(workerResult);
+  // Phase B + C: Execute task and review with retry loop
+  const hasCriteria = taskHasCriteria(taskWithPhases);
+  let attemptNumber = (taskWithPhases.attempts ?? 0) + 1;
 
-  if (workerCheck.failed) {
-    return handleTuiError(tui, workerCheck.error ?? "Worker failed");
+  while (attemptNumber <= MAX_REVIEW_ATTEMPTS) {
+    // Phase B: Execute the task
+    tui.setExecutionMode("working", task.id);
+    const workerResult = await executeWorker(
+      engine,
+      currentPlan,
+      taskWithPhases,
+      config,
+      tui,
+      onEvent
+    );
+    const workerCheck = checkResult(workerResult);
+
+    if (workerCheck.failed) {
+      return handleTuiError(tui, workerCheck.error ?? "Worker failed");
+    }
+
+    // Reload plan after worker
+    currentPlan = loadPlan();
+    taskWithPhases =
+      currentPlan.tasks.find((t) => t.id === task.id) ?? taskWithPhases;
+
+    // Phase C: Review if task has criteria
+    if (!hasCriteria) {
+      // No criteria to verify - task is complete
+      return currentPlan;
+    }
+
+    tui.setExecutionMode("reviewing", task.id);
+    const reviewResult = await executeReviewer(
+      engine,
+      currentPlan,
+      taskWithPhases,
+      attemptNumber,
+      tui,
+      onEvent
+    );
+
+    // Reload plan after review (reviewer updates criteria statuses)
+    currentPlan = loadPlan();
+    taskWithPhases =
+      currentPlan.tasks.find((t) => t.id === task.id) ?? taskWithPhases;
+
+    if (reviewResult.passed) {
+      // All criteria passed - task is complete
+      tui.addOutput(
+        `\n${colors.green}[REVIEW PASSED]${colors.reset} All criteria verified for task ${task.id}\n`
+      );
+      return currentPlan;
+    }
+
+    // Review failed - check if we can retry
+    attemptNumber++;
+
+    if (attemptNumber > MAX_REVIEW_ATTEMPTS) {
+      // Max attempts reached - fail the task
+      const failedCriteria =
+        taskWithPhases.criteria?.filter((c) => c.status === "failed") ?? [];
+      const failedList = failedCriteria
+        .map((c) => `  - ${c.description}: ${c.failureReason ?? "Unknown"}`)
+        .join("\n");
+
+      return handleTuiError(
+        tui,
+        `Task ${task.id} failed after ${MAX_REVIEW_ATTEMPTS} attempts.\n\nFailed criteria:\n${failedList}`
+      );
+    }
+
+    // Log retry
+    tui.addOutput(
+      `\n${colors.yellow}[REVIEW FAILED]${colors.reset} Retrying task ${task.id} (attempt ${attemptNumber}/${MAX_REVIEW_ATTEMPTS})\n`
+    );
   }
 
-  // Return updated plan
-  return loadPlan();
+  // This should never be reached, but TypeScript needs it
+  return currentPlan;
 }
 
 /**
@@ -540,11 +696,21 @@ function planToTuiTasks(plan: Plan): Task[] {
       status: p.completed ? "done" : "pending",
     }));
 
+    // Map criteria from plan to TUI format
+    const criteria: Criterion[] = (task.criteria ?? []).map((c) => ({
+      id: c.id,
+      description: c.description,
+      status: c.status,
+      failureReason: c.failureReason,
+    }));
+
     return {
       id: String(task.id),
       description: task.title,
       done: task.status === "done",
       phases,
+      criteria: criteria.length > 0 ? criteria : undefined,
+      attempts: task.attempts,
     };
   });
 }
@@ -604,6 +770,8 @@ async function executeLoopDevMode(
     // Phase 0: Breakdown (if no plan loaded)
     if (!plan) {
       plan = await executeBreakdownPhase(engine, config, tui, onEvent);
+      // Update TUI with tasks from plan (includes criteria extracted during breakdown)
+      tui.setTasks(planToTuiTasks(plan));
     }
 
     // Main loop: planner → worker for each task
@@ -657,6 +825,98 @@ function handleExistingPlanStandard(config: FerixConfig): Plan | null {
 }
 
 /**
+ * Executes worker + review loop for a task in standard mode.
+ *
+ * @param engine - LLM engine instance
+ * @param plan - Current plan
+ * @param task - Task to execute (with phases)
+ * @param config - Ferix configuration
+ * @returns Updated plan after task completion
+ * @throws AgentError if worker or reviewer fails after max attempts
+ */
+async function executeTaskStandard(
+  engine: Engine,
+  plan: Plan,
+  task: PlanTask,
+  config: FerixConfig
+): Promise<Plan> {
+  let currentPlan = plan;
+  let currentTask = task;
+
+  const hasCriteria = taskHasCriteria(currentTask);
+  let attemptNumber = (currentTask.attempts ?? 0) + 1;
+
+  while (attemptNumber <= MAX_REVIEW_ATTEMPTS) {
+    // Phase B: Execute the task
+    logger.info(
+      `--- Executing (attempt ${attemptNumber}/${MAX_REVIEW_ATTEMPTS}) ---`
+    );
+    const workerResult = await executeWorker(
+      engine,
+      currentPlan,
+      currentTask,
+      config,
+      null
+    );
+    const workerCheck = checkResult(workerResult);
+
+    if (workerCheck.failed) {
+      throw new AgentError("Worker", workerCheck.error || "Failed");
+    }
+
+    currentPlan = loadPlan();
+    currentTask =
+      currentPlan.tasks.find((t) => t.id === task.id) ?? currentTask;
+
+    // Phase C: Review if task has criteria
+    if (!hasCriteria) {
+      return currentPlan;
+    }
+
+    logger.info(
+      `--- Reviewing (attempt ${attemptNumber}/${MAX_REVIEW_ATTEMPTS}) ---`
+    );
+    const reviewResult = await executeReviewer(
+      engine,
+      currentPlan,
+      currentTask,
+      attemptNumber,
+      null
+    );
+
+    currentPlan = loadPlan();
+    currentTask =
+      currentPlan.tasks.find((t) => t.id === task.id) ?? currentTask;
+
+    if (reviewResult.passed) {
+      logger.success(`All criteria verified for task ${task.id}`);
+      return currentPlan;
+    }
+
+    attemptNumber++;
+
+    if (attemptNumber > MAX_REVIEW_ATTEMPTS) {
+      const failedCriteria =
+        currentTask.criteria?.filter((c) => c.status === "failed") ?? [];
+      const failedList = failedCriteria
+        .map((c) => `  - ${c.description}: ${c.failureReason ?? "Unknown"}`)
+        .join("\n");
+
+      throw new AgentError(
+        "Review",
+        `Task ${task.id} failed after ${MAX_REVIEW_ATTEMPTS} attempts.\n\nFailed criteria:\n${failedList}`
+      );
+    }
+
+    logger.warn(
+      `Review failed. Retrying task ${task.id} (attempt ${attemptNumber}/${MAX_REVIEW_ATTEMPTS})`
+    );
+  }
+
+  return currentPlan;
+}
+
+/**
  * Executes the main loop in standard mode (no TUI).
  *
  * Used in CI environments or when stdout is piped. Uses simple
@@ -690,7 +950,7 @@ async function executeLoopStandard(
     }
   }
 
-  // Main loop: planner → worker for each task
+  // Main loop: planner → worker → reviewer for each task
   let taskCount = 0;
   while (plan) {
     const nextTask = getNextTask(plan);
@@ -719,22 +979,8 @@ async function executeLoopStandard(
       throw new ExecutionError(`Task ${nextTask.id} not found after planning`);
     }
 
-    // Phase B: Execute the task
-    logger.info("--- Executing ---");
-    const workerResult = await executeWorker(
-      engine,
-      plan,
-      taskWithPhases,
-      config,
-      null
-    );
-    const workerCheck = checkResult(workerResult);
-
-    if (workerCheck.failed) {
-      throw new AgentError("Worker", workerCheck.error || "Failed");
-    }
-
-    plan = loadPlan();
+    // Phase B + C: Execute and review
+    plan = await executeTaskStandard(engine, plan, taskWithPhases, config);
   }
 
   // Handle post-loop operations

@@ -14,7 +14,14 @@
  *
  * ## Task 1: Task title
  * **Status**: pending
+ * **Attempts**: 0
  * Task description...
+ *
+ * **Success Criteria:**
+ * - [ ] Criterion description
+ * - [x] Passed criterion
+ * - [ ] Failed criterion
+ *   > Reason: Why it failed
  *
  * ### Phases
  * - [ ] 1.1: Phase description
@@ -29,13 +36,25 @@
  * ```
  */
 
-import type { Plan, PlanPhase, PlanTask, TaskStatus } from "../types/plan.js";
+import type {
+  CriterionStatus,
+  Plan,
+  PlanPhase,
+  PlanTask,
+  SuccessCriterion,
+  TaskStatus,
+} from "../types/plan.js";
 
 // Regex patterns defined at module level for performance
 const TASK_HEADER_REGEX = /^## Task (\d+): (.+)$/;
 const STATUS_REGEX = /^\*\*Status\*\*:\s*(.+)$/;
+const ATTEMPTS_REGEX = /^\*\*Attempts\*\*:\s*(\d+)$/;
 const PHASE_REGEX = /^- \[([ x])\] ([\d.]+): (.+)$/;
 const FILE_REGEX = /^- (.+?)(?:\s+\(new\))?$/;
+// Criterion regex: - [x] Description or - [ ] Description
+const CRITERION_REGEX = /^- \[([ x])\] (.+)$/;
+// Failure reason regex: > Reason: explanation
+const FAILURE_REASON_REGEX = /^>\s*Reason:\s*(.+)$/;
 
 /**
  * Parse the plan file content into a Plan object
@@ -110,9 +129,17 @@ function extractContext(lines: string[]): string | null {
  */
 interface TaskParseState {
   currentTask: Partial<PlanTask> | null;
-  currentSection: "description" | "phases" | "files" | "completed" | null;
+  currentSection:
+    | "description"
+    | "phases"
+    | "files"
+    | "completed"
+    | "criteria"
+    | null;
   descriptionLines: string[];
   completedLines: string[];
+  /** Track the last criterion parsed for attaching failure reasons */
+  lastCriterionIndex: number;
 }
 
 /**
@@ -124,6 +151,7 @@ function createParseState(): TaskParseState {
     currentSection: null,
     descriptionLines: [],
     completedLines: [],
+    lastCriterionIndex: -1,
   };
 }
 
@@ -201,18 +229,38 @@ function handleStatusLine(line: string, state: TaskParseState): boolean {
 }
 
 /**
+ * Handle **Attempts**: value line
+ */
+function handleAttemptsLine(line: string, state: TaskParseState): boolean {
+  if (!state.currentTask) {
+    return false;
+  }
+
+  const match = line.match(ATTEMPTS_REGEX);
+  if (!match?.[1]) {
+    return false;
+  }
+
+  state.currentTask.attempts = Number.parseInt(match[1], 10);
+  return true;
+}
+
+/**
  * Handle ### section headers (Phases, Files, Completed, Error)
+ * Also handles **Success Criteria:** marker
  */
 function handleSectionHeader(line: string, state: TaskParseState): boolean {
   const sectionMap: Record<string, TaskParseState["currentSection"]> = {
     "### Phases": "phases",
     "### Files": "files",
     "### Completed": "completed",
+    "**Success Criteria:**": "criteria",
   };
 
   const section = sectionMap[line];
   if (section) {
     state.currentSection = section;
+    state.lastCriterionIndex = -1;
     return true;
   }
 
@@ -265,6 +313,80 @@ function handleFileLine(line: string, state: TaskParseState): void {
 }
 
 /**
+ * Parse a criterion line: - [x] Description or - [ ] Description
+ * Returns true if line was a criterion
+ */
+function handleCriterionLine(line: string, state: TaskParseState): boolean {
+  if (state.currentSection !== "criteria" || !state.currentTask) {
+    return false;
+  }
+
+  const match = line.match(CRITERION_REGEX);
+  if (!match) {
+    return false;
+  }
+
+  const [, checkMark, description] = match;
+  if (!(checkMark !== undefined && description)) {
+    return false;
+  }
+
+  // Determine status based on checkbox
+  // [x] = passed, [ ] = pending or failed (failed if has reason later)
+  const status: CriterionStatus = checkMark === "x" ? "passed" : "pending";
+
+  state.currentTask.criteria ??= [];
+  const criterionIndex = state.currentTask.criteria.length;
+  const taskId = state.currentTask.id ?? 0;
+
+  const criterion: SuccessCriterion = {
+    id: `${taskId}.c${criterionIndex + 1}`,
+    description,
+    status,
+  };
+
+  state.currentTask.criteria.push(criterion);
+  state.lastCriterionIndex = criterionIndex;
+
+  return true;
+}
+
+/**
+ * Parse a failure reason line: > Reason: explanation
+ * Attaches to the last parsed criterion
+ */
+function handleFailureReasonLine(line: string, state: TaskParseState): boolean {
+  if (state.currentSection !== "criteria" || !state.currentTask) {
+    return false;
+  }
+
+  const match = line.match(FAILURE_REASON_REGEX);
+  if (!match?.[1]) {
+    return false;
+  }
+
+  const reason = match[1].trim();
+
+  // Attach to last criterion
+  if (
+    state.lastCriterionIndex >= 0 &&
+    state.currentTask.criteria &&
+    state.lastCriterionIndex < state.currentTask.criteria.length
+  ) {
+    const criterion = state.currentTask.criteria[state.lastCriterionIndex];
+    if (criterion) {
+      criterion.failureReason = reason;
+      // If it has a failure reason and wasn't marked [x], it's failed
+      if (criterion.status === "pending") {
+        criterion.status = "failed";
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
  * Handle content lines based on current section
  */
 function handleContentLine(line: string, state: TaskParseState): void {
@@ -285,6 +407,16 @@ function handleContentLine(line: string, state: TaskParseState): void {
   // Completion notes
   if (state.currentSection === "completed" && trimmed !== "") {
     state.completedLines.push(trimmed);
+  }
+
+  // Criteria section - try criterion first, then failure reason
+  if (state.currentSection === "criteria") {
+    if (handleCriterionLine(trimmed, state)) {
+      return;
+    }
+    if (handleFailureReasonLine(trimmed, state)) {
+      return;
+    }
   }
 
   // Delegate to specialized handlers
@@ -348,7 +480,12 @@ function extractTasks(lines: string[]): PlanTask[] {
       continue;
     }
 
-    // Section headers: ### Phases, ### Files, ### Completed
+    // Attempts line: **Attempts**: N
+    if (handleAttemptsLine(trimmed, state)) {
+      continue;
+    }
+
+    // Section headers: ### Phases, ### Files, ### Completed, **Success Criteria:**
     if (handleSectionHeader(trimmed, state)) {
       continue;
     }

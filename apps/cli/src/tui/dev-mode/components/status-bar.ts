@@ -36,6 +36,9 @@ export function getStatus(state: DevModeState): {
         case "working":
           modeText = currentTaskId ? `WORK #${currentTaskId}` : "WORKING";
           break;
+        case "reviewing":
+          modeText = currentTaskId ? `REVIEW #${currentTaskId}` : "REVIEWING";
+          break;
         default:
           modeText = "RUN";
       }

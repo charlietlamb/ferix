@@ -3,11 +3,18 @@
  * Shows full details for a selected task including phases, timestamps, and git info
  */
 
-import type { Phase, Task } from "../../../types/config.js";
+import type { Criterion, Phase, Task } from "../../../types/config.js";
 import type { DevModeState, GitInfo } from "../../../types/tui.js";
 import { colors, hyperlink } from "../../ansi.js";
 import { STATUS_ICONS } from "../layout.js";
 import { formatDuration, formatTime } from "../state.js";
+
+/** Criterion status icons */
+const CRITERION_ICONS = {
+  passed: `${colors.green}✓${colors.reset}`,
+  failed: `${colors.red}✗${colors.reset}`,
+  pending: `${colors.dim}○${colors.reset}`,
+};
 
 /** Status text with colors */
 const STATUS_TEXT = {
@@ -93,6 +100,40 @@ function buildPhaseLines(phases: Phase[]): string[] {
 }
 
 /**
+ * Build criteria lines with tree structure
+ */
+function buildCriteriaLines(criteria: Criterion[]): string[] {
+  const lines: string[] = [];
+
+  for (let i = 0; i < criteria.length; i++) {
+    const criterion = criteria[i];
+    if (!criterion) {
+      continue;
+    }
+
+    const isLast = i === criteria.length - 1;
+    const prefix = isLast ? "└─" : "├─";
+    const continuePrefix = isLast ? "  " : "│ ";
+
+    const icon = CRITERION_ICONS[criterion.status];
+
+    // Main criterion line
+    lines.push(
+      `   ${colors.dim}${prefix}${colors.reset} ${icon} ${criterion.description}`
+    );
+
+    // Failure reason line (if failed)
+    if (criterion.status === "failed" && criterion.failureReason) {
+      lines.push(
+        `   ${colors.dim}${continuePrefix}   ${colors.red}↳ ${criterion.failureReason}${colors.reset}`
+      );
+    }
+  }
+
+  return lines;
+}
+
+/**
  * Build git info section lines
  */
 function buildGitInfoLines(gitInfo: GitInfo): string[] {
@@ -119,6 +160,33 @@ function buildGitInfoLines(gitInfo: GitInfo): string[] {
   if (gitInfo.prUrl) {
     const prLink = hyperlink(gitInfo.prUrl, gitInfo.prUrl);
     lines.push(`   ${colors.dim}PR:${colors.reset} ${prLink}`);
+  }
+
+  return lines;
+}
+
+/**
+ * Build criteria section lines for a task
+ */
+function buildCriteriaSection(task: Task, innerWidth: number): string[] {
+  const lines: string[] = [];
+
+  if (!task.criteria || task.criteria.length === 0) {
+    return lines;
+  }
+
+  lines.push(`  ${colors.dim}${"─".repeat(innerWidth - 4)}${colors.reset}`);
+
+  const attemptsDisplay = task.attempts
+    ? ` ${colors.dim}(attempt ${task.attempts}/5)${colors.reset}`
+    : "";
+  lines.push(
+    `   ${colors.brightWhite}SUCCESS CRITERIA${colors.reset}${attemptsDisplay}`
+  );
+
+  const criteriaLines = buildCriteriaLines(task.criteria);
+  for (const line of criteriaLines) {
+    lines.push(line);
   }
 
   return lines;
@@ -190,6 +258,12 @@ export function buildTaskDetailContent(
     for (const line of phaseLines) {
       lines.push(line);
     }
+  }
+
+  // Criteria section (if task has criteria)
+  const criteriaSectionLines = buildCriteriaSection(task, innerWidth);
+  for (const line of criteriaSectionLines) {
+    lines.push(line);
   }
 
   // Separator before git info

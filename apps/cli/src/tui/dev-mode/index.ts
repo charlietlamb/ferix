@@ -473,6 +473,41 @@ export class DevMode {
   }
 
   /**
+   * Mark a criterion as passed
+   */
+  markCriterionPassed(criterionId: string): void {
+    for (const task of this.state.tasks) {
+      if (!task.criteria) {
+        continue;
+      }
+      const criterion = task.criteria.find((c) => c.id === criterionId);
+      if (criterion) {
+        criterion.status = "passed";
+        this.render();
+        return;
+      }
+    }
+  }
+
+  /**
+   * Mark a criterion as failed
+   */
+  markCriterionFailed(criterionId: string, reason: string): void {
+    for (const task of this.state.tasks) {
+      if (!task.criteria) {
+        continue;
+      }
+      const criterion = task.criteria.find((c) => c.id === criterionId);
+      if (criterion) {
+        criterion.status = "failed";
+        criterion.failureReason = reason;
+        this.render();
+        return;
+      }
+    }
+  }
+
+  /**
    * Set git information for display
    */
   setGitInfo(info: Partial<GitInfo>): void {

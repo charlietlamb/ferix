@@ -42,8 +42,14 @@ export type ViewMode = "logs" | "tasks" | "task-detail";
  * - breakdown: Initial task analysis and plan creation
  * - planning: Planning phases for a specific task
  * - working: Executing a task's phases
+ * - reviewing: Verifying success criteria after work completes
  */
-export type ExecutionMode = "idle" | "breakdown" | "planning" | "working";
+export type ExecutionMode =
+  | "idle"
+  | "breakdown"
+  | "planning"
+  | "working"
+  | "reviewing";
 
 /**
  * Git information for display in TUI

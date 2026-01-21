@@ -11,6 +11,7 @@ import type {
   StreamMessage,
 } from "../../types/events.js";
 import {
+  extractCriterionSignals,
   extractPhases,
   extractTasks,
   mightContainFerixTagStart,
@@ -109,6 +110,31 @@ function checkPhaseSignals(
 }
 
 /**
+ * Check for criterion-related signals (from reviewer)
+ */
+function checkCriterionSignals(
+  state: ProcessorState,
+  emit: (e: ClaudeEvent) => void
+): void {
+  const criterionResults = extractCriterionSignals(state.fullOutput);
+
+  for (const result of criterionResults) {
+    if (!state.reportedCriterionIds.has(result.id)) {
+      state.reportedCriterionIds.add(result.id);
+      if (result.passed) {
+        emit({ type: "criterion_passed", id: result.id });
+      } else {
+        emit({
+          type: "criterion_failed",
+          id: result.id,
+          reason: result.reason ?? "Unknown reason",
+        });
+      }
+    }
+  }
+}
+
+/**
  * Check for and emit task-related signals from buffer
  */
 export function checkTaskSignals(
@@ -126,6 +152,9 @@ export function checkTaskSignals(
 
   // Check phase signals
   checkPhaseSignals(state, emit);
+
+  // Check criterion signals (from reviewer)
+  checkCriterionSignals(state, emit);
 
   // Check for task completion signals
   for (const match of state.fullOutput.matchAll(
