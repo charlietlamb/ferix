@@ -197,7 +197,6 @@ async function executeLoopDevMode(
         tui.addOutput(
           `\n${colors.red}[ERROR]${colors.reset} ${result.errorMessage}`
         );
-        await tui.waitForExit();
         tui.cleanup();
         const { type, message } = parseErrorType(result.errorMessage);
         throw new AgentError(type, message);
@@ -208,14 +207,12 @@ async function executeLoopDevMode(
         tui.addOutput(
           `\n${colors.green}[DONE]${colors.reset} All tasks complete after ${i} iteration(s)`
         );
-        await tui.waitForExit();
         break;
       }
 
       if (!result.success) {
         tui.setError();
         tui.addOutput(`\n${colors.red}[ERROR]${colors.reset} Iteration failed`);
-        await tui.waitForExit();
         tui.cleanup();
         throw new ExecutionError("Iteration failed");
       }
@@ -224,7 +221,6 @@ async function executeLoopDevMode(
         tui.addOutput(
           `\n${colors.dim}[INFO]${colors.reset} Completed ${maxIterations} iteration(s)`
         );
-        await tui.waitForExit();
       }
     }
   } finally {

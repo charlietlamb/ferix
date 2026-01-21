@@ -8,14 +8,7 @@ import { colors } from "../../ansi.js";
 /**
  * Build footer content with scroll info
  */
-export function buildFooterContent(
-  isWaitingForExit: boolean,
-  scrollInfo: ScrollInfo
-): string {
-  if (isWaitingForExit) {
-    return ` ${colors.brightWhite}>> Press any key to exit${colors.reset} `;
-  }
-
+export function buildFooterContent(scrollInfo: ScrollInfo): string {
   const { offset, outputHeight, totalLines, userScrolled } = scrollInfo;
   const parts: string[] = [];
 

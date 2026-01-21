@@ -24,7 +24,6 @@ export class DevMode {
   private scrollOffset = 0;
   private resizeHandler: (() => void) | null = null;
   private keyHandler: ((data: Buffer) => void) | null = null;
-  private isWaitingForExit = false;
   /** True if user has manually scrolled up (disables auto-scroll) */
   private userScrolled = false;
 
@@ -201,25 +200,6 @@ export class DevMode {
   }
 
   /**
-   * Wait for user to press a key before exiting
-   */
-  waitForExit(): Promise<void> {
-    this.isWaitingForExit = true;
-    this.render();
-
-    return new Promise((resolve) => {
-      const onKeypress = () => {
-        process.stdin.removeListener("data", onKeypress);
-        disableRawMode();
-        resolve();
-      };
-
-      enableRawMode();
-      process.stdin.once("data", onKeypress);
-    });
-  }
-
-  /**
    * Update iteration
    */
   setIteration(iteration: number): void {
@@ -332,15 +312,11 @@ export class DevMode {
     const { rows } = getTerminalSize();
     const outputHeight = rows - FIXED_ROWS;
 
-    render(
-      this.state,
-      {
-        offset: this.scrollOffset,
-        outputHeight,
-        totalLines: this.state.outputLines.length,
-        userScrolled: this.userScrolled,
-      },
-      this.isWaitingForExit
-    );
+    render(this.state, {
+      offset: this.scrollOffset,
+      outputHeight,
+      totalLines: this.state.outputLines.length,
+      userScrolled: this.userScrolled,
+    });
   }
 }

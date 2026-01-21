@@ -52,11 +52,7 @@ function renderOutputRows(
 /**
  * Render the full dev mode screen
  */
-export function render(
-  state: DevModeState,
-  scrollInfo: ScrollInfo,
-  isWaitingForExit: boolean
-): void {
+export function render(state: DevModeState, scrollInfo: ScrollInfo): void {
   const { rows, cols } = getTerminalSize();
   const innerWidth = cols - 2;
   const outputHeight = rows - FIXED_ROWS;
@@ -88,7 +84,7 @@ export function render(
   );
 
   // Row (rows-1): Footer
-  borderedLine(buildFooterContent(isWaitingForExit, scrollInfo), innerWidth);
+  borderedLine(buildFooterContent(scrollInfo), innerWidth);
 
   // Row (rows): Bottom border (double line, no newline at end)
   process.stdout.write(
