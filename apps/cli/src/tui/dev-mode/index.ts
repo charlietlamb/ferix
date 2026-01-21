@@ -4,7 +4,7 @@
  */
 
 import type { Phase, Task } from "../../types/config.js";
-import type { DevModeState, GitInfo } from "../../types/tui.js";
+import type { DevModeState, ExecutionMode, GitInfo } from "../../types/tui.js";
 import {
   disableRawMode,
   enableRawMode,
@@ -477,6 +477,18 @@ export class DevMode {
    */
   setGitInfo(info: Partial<GitInfo>): void {
     this.state.gitInfo = { ...this.state.gitInfo, ...info };
+    this.render();
+  }
+
+  /**
+   * Set execution mode (breakdown, planning, working)
+   */
+  setExecutionMode(mode: ExecutionMode, taskId?: number): void {
+    this.state.executionMode = mode;
+    this.state.currentTaskId = taskId;
+    if (mode !== "idle") {
+      this.state.status = "running";
+    }
     this.render();
   }
 

@@ -41,6 +41,9 @@ export interface FerixConfig {
 
   /** Verbose output */
   verbose: boolean;
+
+  /** Resume from existing .ferix/PLAN.md */
+  resume?: boolean;
 }
 
 /**

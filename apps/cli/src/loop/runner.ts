@@ -1,3 +1,41 @@
+/**
+ * @fileoverview Main execution loop implementing the planner/worker architecture.
+ *
+ * This module orchestrates the Ferix execution flow:
+ *
+ * ```
+ * User Task → BREAKDOWN → .ferix/PLAN.md created
+ *                               │
+ *                ┌──────────────┘
+ *                ▼
+ *           PLANNER → Updates PLAN.md with phases
+ *                │
+ *                ▼
+ *           WORKER → Executes task, updates PLAN.md
+ *                │
+ *                ▼
+ *           More tasks? ─── Yes ──→ Loop back to PLANNER
+ *                │
+ *                No
+ *                ▼
+ *           Complete
+ * ```
+ *
+ * Key design principle: Each phase (breakdown, planner, worker) gets a
+ * completely fresh LLM context. The `.ferix/PLAN.md` file serves as the
+ * persistent memory between calls, solving the context window exhaustion
+ * problem in long-running tasks.
+ *
+ * Supports two modes:
+ * - **Dev mode**: Full-screen TUI with real-time progress tracking
+ * - **Standard mode**: Simple logging for CI/piped environments
+ *
+ * @see ../prompt/breakdown.ts for the breakdown prompt
+ * @see ../prompt/planner.ts for the planner prompt
+ * @see ../prompt/worker.ts for the worker prompt
+ * @see ../plan/utils.ts for plan file operations
+ */
+
 import { MESSAGES } from "../constants.js";
 import type { ClaudeEvent, Engine } from "../engine/index.js";
 import { getEngine } from "../engine/index.js";
@@ -7,20 +45,30 @@ import {
   getCurrentBranch,
   pushBranch,
 } from "../git/index.js";
-import { composePrompt } from "../prompt/composer.js";
+import { getNextTask, loadPlan, loadPlanIfExists } from "../plan/index.js";
+import { createBreakdownPrompt } from "../prompt/breakdown.js";
+import { createPlannerPrompt } from "../prompt/planner.js";
+import { createWorkerPrompt } from "../prompt/worker.js";
 import { colors } from "../tui/ansi.js";
 import { DevMode } from "../tui/dev-mode.js";
+import type { Phase, Task } from "../types/config.js";
 import {
   AgentError,
   DependencyError,
   ExecutionError,
 } from "../types/errors.js";
+import type { Plan, PlanTask, WorkerResult } from "../types/plan.js";
 import type { ExecuteResult, FerixConfig } from "../types.js";
 import { logger } from "../utils/logger.js";
 import { initProgress } from "./progress.js";
 
 /**
- * Setup git branch if configured
+ * Sets up a new git branch if configured.
+ *
+ * Stores the original branch in config.baseBranch for PR creation later.
+ *
+ * @param config - Ferix configuration (may be mutated to set baseBranch)
+ * @returns The original base branch name, or undefined if no branch configured
  */
 async function setupGitBranch(
   config: FerixConfig
@@ -36,8 +84,10 @@ async function setupGitBranch(
 }
 
 /**
- * Handle post-loop git operations (push and PR)
- * Returns the PR URL if a PR was created
+ * Handles post-completion git operations (push and PR creation).
+ *
+ * @param config - Ferix configuration with branch/push/pr settings
+ * @returns Result indicating if push occurred and optional PR URL
  */
 async function handlePostLoop(
   config: FerixConfig
@@ -58,7 +108,14 @@ async function handlePostLoop(
 }
 
 /**
- * Parse error type from error message
+ * Extracts error type and message from a structured error string.
+ *
+ * Error messages from the LLM may be prefixed with known patterns
+ * (e.g., "Cannot complete task:", "Task rejected:") which are parsed
+ * into structured type/message for better error handling.
+ *
+ * @param errorMessage - Raw error message from LLM
+ * @returns Parsed type and message
  */
 function parseErrorType(errorMessage: string): {
   type: string;
@@ -87,69 +144,28 @@ function parseErrorType(errorMessage: string): {
 }
 
 /**
- * Process a single iteration result (non-TUI mode)
- * Returns true if should continue, false if complete
- * Throws on error
- */
-function processIterationResult(
-  result: ExecuteResult,
-  iteration: number
-): boolean {
-  if (result.hasError && result.errorMessage) {
-    const { type, message } = parseErrorType(result.errorMessage);
-    throw new AgentError(type, message);
-  }
-
-  if (result.complete) {
-    logger.success(`All tasks complete after ${iteration} iteration(s)`);
-    return false;
-  }
-
-  if (!result.success) {
-    throw new ExecutionError("Iteration failed");
-  }
-
-  return true;
-}
-
-/**
- * Execute the main loop in standard mode (no TUI)
- */
-async function executeLoopStandard(
-  engine: Engine,
-  prompt: string,
-  config: FerixConfig
-): Promise<void> {
-  const maxIterations = config.untilComplete
-    ? Number.POSITIVE_INFINITY
-    : config.iterations;
-  const displayMax = config.untilComplete ? "∞" : config.iterations;
-
-  for (let i = 1; i <= maxIterations; i++) {
-    logger.iteration(i, displayMax);
-
-    const result: ExecuteResult = await engine.execute(prompt);
-    const shouldContinue = processIterationResult(result, i);
-
-    if (!shouldContinue) {
-      break;
-    }
-
-    if (i === maxIterations && !config.untilComplete) {
-      logger.info(`Completed ${maxIterations} iteration(s)`);
-    }
-  }
-}
-
-/**
- * Create event handler for TUI updates
+ * Creates an event handler that forwards Claude events to the TUI.
+ *
+ * @param tui - DevMode TUI instance
+ * @returns Event handler function
  */
 function createTuiEventHandler(tui: DevMode): (event: ClaudeEvent) => void {
   return (event: ClaudeEvent) => handleTuiEvent(tui, event);
 }
 
 /**
- * Handle a single TUI event
+ * Dispatches a Claude event to the appropriate TUI method.
+ *
+ * Maps event types to TUI updates:
+ * - text → addOutput
+ * - tool_start/end → setTool
+ * - tasks_defined → setTasks
+ * - phases_defined → setPhases
+ * - phase_start/done/failed → phase state updates
+ * - error → setError
+ *
+ * @param tui - DevMode TUI instance
+ * @param event - Claude event to handle
  */
 function handleTuiEvent(tui: DevMode, event: ClaudeEvent): void {
   switch (event.type) {
@@ -193,7 +209,151 @@ function handleTuiEvent(tui: DevMode, event: ClaudeEvent): void {
 }
 
 /**
- * Handle error result in TUI mode
+ * Executes the breakdown phase with a fresh LLM context.
+ *
+ * The breakdown phase analyzes the user's task, explores the codebase,
+ * and creates the initial `.ferix/PLAN.md` with task breakdown.
+ *
+ * @param engine - LLM engine instance
+ * @param config - Ferix configuration
+ * @param tui - Optional TUI for output display
+ * @param onEvent - Optional event handler for progress tracking
+ * @returns Execution result
+ */
+function executeBreakdown(
+  engine: Engine,
+  config: FerixConfig,
+  tui: DevMode | null,
+  onEvent?: (event: ClaudeEvent) => void
+): Promise<ExecuteResult> {
+  const prompt = createBreakdownPrompt(config.task);
+
+  if (tui) {
+    tui.addOutput(
+      `${colors.cyan}[BREAKDOWN]${colors.reset} Analyzing task and creating plan...\n`
+    );
+  } else {
+    logger.info("Analyzing task and creating plan...");
+  }
+
+  return engine.execute(prompt, {
+    onEvent,
+    writeToStdout: !tui,
+  });
+}
+
+/**
+ * Executes the planner phase for a specific task with a fresh LLM context.
+ *
+ * The planner reads the existing plan, breaks the task into phases,
+ * identifies files to modify, and updates the plan file.
+ *
+ * @param engine - LLM engine instance
+ * @param plan - Current plan (embedded in prompt for context)
+ * @param task - The task to plan
+ * @param tui - Optional TUI for output display
+ * @param onEvent - Optional event handler for progress tracking
+ * @returns Execution result
+ */
+function executePlanner(
+  engine: Engine,
+  plan: Plan,
+  task: PlanTask,
+  tui: DevMode | null,
+  onEvent?: (event: ClaudeEvent) => void
+): Promise<ExecuteResult> {
+  const prompt = createPlannerPrompt(plan, task);
+
+  if (tui) {
+    tui.addOutput(
+      `\n${colors.cyan}[PLANNING]${colors.reset} Task ${task.id}: ${task.title}\n`
+    );
+  } else {
+    logger.info(`Planning task ${task.id}: ${task.title}`);
+  }
+
+  return engine.execute(prompt, {
+    onEvent,
+    writeToStdout: !tui,
+  });
+}
+
+/**
+ * Executes the worker phase for a specific task with a fresh LLM context.
+ *
+ * The worker implements each planned phase, signals progress, runs
+ * verification commands, and updates the plan file with completion notes.
+ *
+ * @param engine - LLM engine instance
+ * @param plan - Current plan (embedded in prompt for context)
+ * @param task - The task to execute (should have phases defined)
+ * @param config - Ferix configuration (for verify commands and branch)
+ * @param tui - Optional TUI for output display
+ * @param onEvent - Optional event handler for progress tracking
+ * @returns Execution result
+ */
+function executeWorker(
+  engine: Engine,
+  plan: Plan,
+  task: PlanTask,
+  config: FerixConfig,
+  tui: DevMode | null,
+  onEvent?: (event: ClaudeEvent) => void
+): Promise<ExecuteResult> {
+  const prompt = createWorkerPrompt(plan, task, config.verify, config.branch);
+
+  if (tui) {
+    tui.addOutput(
+      `\n${colors.cyan}[WORKING]${colors.reset} Task ${task.id}: ${task.title}\n`
+    );
+  } else {
+    logger.info(`Executing task ${task.id}: ${task.title}`);
+  }
+
+  return engine.execute(prompt, {
+    onEvent,
+    writeToStdout: !tui,
+  });
+}
+
+/**
+ * Converts an ExecuteResult to a WorkerResult with success/failure info.
+ *
+ * @param result - Execution result from engine
+ * @returns Normalized result with success flag and optional error
+ */
+function checkResult(result: ExecuteResult): WorkerResult {
+  if (result.hasError && result.errorMessage) {
+    return {
+      success: false,
+      failed: true,
+      error: result.errorMessage,
+    };
+  }
+
+  if (!result.success) {
+    return {
+      success: false,
+      failed: true,
+      error: "Execution failed",
+    };
+  }
+
+  return {
+    success: true,
+    failed: false,
+  };
+}
+
+/**
+ * Handles an error in TUI mode, displaying message and waiting for exit.
+ *
+ * This function never returns - it waits for user to press Ctrl+C,
+ * cleans up the TUI, and throws an AgentError.
+ *
+ * @param tui - DevMode TUI instance
+ * @param errorMessage - Error message to display
+ * @throws AgentError after user exits
  */
 async function handleTuiError(
   tui: DevMode,
@@ -209,17 +369,20 @@ async function handleTuiError(
 }
 
 /**
- * Handle completion in TUI mode (including git operations)
+ * Handles successful completion in TUI mode.
+ *
+ * Displays completion message, handles git push/PR if configured,
+ * and waits for user to exit.
+ *
+ * @param tui - DevMode TUI instance
+ * @param config - Ferix configuration for git operations
  */
 async function handleTuiComplete(
   tui: DevMode,
-  iteration: number,
   config: FerixConfig
 ): Promise<void> {
   tui.setComplete();
-  tui.addOutput(
-    `\n${colors.green}[DONE]${colors.reset} All tasks complete after ${iteration} iteration(s)`
-  );
+  tui.addOutput(`\n${colors.green}[DONE]${colors.reset} All tasks complete!`);
 
   // Handle post-loop git operations and update TUI
   if (config.push && config.branch) {
@@ -236,22 +399,17 @@ async function handleTuiComplete(
 }
 
 /**
- * Execute the main loop in dev mode (full-screen TUI)
+ * Initializes the TUI with current git branch information.
+ *
+ * Silently ignores errors (e.g., not in a git repo).
+ *
+ * @param tui - DevMode TUI instance
+ * @param config - Ferix configuration
  */
-async function executeLoopDevMode(
-  engine: Engine,
-  prompt: string,
+async function initTuiGitInfo(
+  tui: DevMode,
   config: FerixConfig
 ): Promise<void> {
-  const maxIterations = config.untilComplete
-    ? Number.POSITIVE_INFINITY
-    : config.iterations;
-  const displayMax = config.untilComplete ? "~" : String(config.iterations);
-
-  const tui = new DevMode(config.task, displayMax);
-  tui.start();
-
-  // Set initial git info - show current branch even if no new branch configured
   try {
     const currentBranch = await getCurrentBranch();
     tui.setGitInfo({
@@ -260,45 +418,183 @@ async function executeLoopDevMode(
       pushed: false,
     });
   } catch {
-    // Not in a git repo or git not available - that's fine
+    // Not in a git repo or git not available - ignore
   }
+}
+
+/**
+ * Executes the breakdown phase and returns the created plan (TUI mode).
+ *
+ * @param engine - LLM engine instance
+ * @param config - Ferix configuration
+ * @param tui - DevMode TUI instance
+ * @param onEvent - Event handler for TUI updates
+ * @returns The created plan
+ * @throws AgentError if breakdown fails or plan not created
+ */
+async function executeBreakdownPhase(
+  engine: Engine,
+  config: FerixConfig,
+  tui: DevMode,
+  onEvent: (event: ClaudeEvent) => void
+): Promise<Plan> {
+  tui.setIteration(0);
+  tui.setExecutionMode("breakdown");
+  const result = await executeBreakdown(engine, config, tui, onEvent);
+  const check = checkResult(result);
+
+  if (check.failed) {
+    return handleTuiError(tui, check.error ?? "Breakdown failed");
+  }
+
+  const plan = loadPlanIfExists();
+  if (!plan) {
+    return handleTuiError(tui, "Failed to create plan file");
+  }
+
+  return plan;
+}
+
+/**
+ * Executes a single task (planner + worker phases) in TUI mode.
+ *
+ * This is the core of the planner/worker loop:
+ * 1. Run planner to break task into phases
+ * 2. Reload plan to get phases
+ * 3. Run worker to execute phases
+ * 4. Reload and return updated plan
+ *
+ * @param engine - LLM engine instance
+ * @param plan - Current plan
+ * @param task - Task to execute
+ * @param config - Ferix configuration
+ * @param tui - DevMode TUI instance
+ * @param onEvent - Event handler for TUI updates
+ * @returns Updated plan after task completion
+ * @throws AgentError if planner or worker fails
+ */
+async function executeTaskTui(
+  engine: Engine,
+  plan: Plan,
+  task: PlanTask,
+  config: FerixConfig,
+  tui: DevMode,
+  onEvent: (event: ClaudeEvent) => void
+): Promise<Plan> {
+  // Phase A: Plan the task
+  tui.setExecutionMode("planning", task.id);
+  const plannerResult = await executePlanner(engine, plan, task, tui, onEvent);
+  const plannerCheck = checkResult(plannerResult);
+
+  if (plannerCheck.failed) {
+    return handleTuiError(tui, plannerCheck.error ?? "Planning failed");
+  }
+
+  // Reload and get task with phases
+  const updatedPlan = loadPlan();
+  const taskWithPhases = updatedPlan.tasks.find((t) => t.id === task.id);
+
+  if (!taskWithPhases) {
+    return handleTuiError(tui, `Task ${task.id} not found after planning`);
+  }
+
+  // Phase B: Execute the task
+  tui.setExecutionMode("working", task.id);
+  const workerResult = await executeWorker(
+    engine,
+    updatedPlan,
+    taskWithPhases,
+    config,
+    tui,
+    onEvent
+  );
+  const workerCheck = checkResult(workerResult);
+
+  if (workerCheck.failed) {
+    return handleTuiError(tui, workerCheck.error ?? "Worker failed");
+  }
+
+  // Return updated plan
+  return loadPlan();
+}
+
+/**
+ * Converts a Plan's tasks to TUI Task format for display.
+ *
+ * This is used when resuming from an existing plan to populate the TUI
+ * with the task state from the plan file.
+ *
+ * @param plan - The plan to convert
+ * @returns Array of TUI Task objects
+ */
+function planToTuiTasks(plan: Plan): Task[] {
+  return plan.tasks.map((task) => {
+    const phases: Phase[] = (task.phases ?? []).map((p) => ({
+      id: p.id,
+      description: p.description,
+      status: p.completed ? "done" : "pending",
+    }));
+
+    return {
+      id: String(task.id),
+      description: task.title,
+      done: task.status === "done",
+      phases,
+    };
+  });
+}
+
+/**
+ * Executes the main loop in dev mode with full-screen TUI.
+ *
+ * Flow:
+ * 1. Initialize TUI with git info
+ * 2. Check for existing plan (resume support)
+ * 3. Run breakdown if no plan exists
+ * 4. Loop: planner → worker for each task until complete
+ * 5. Handle git push/PR if configured
+ *
+ * @param engine - LLM engine instance
+ * @param config - Ferix configuration
+ */
+async function executeLoopDevMode(
+  engine: Engine,
+  config: FerixConfig
+): Promise<void> {
+  const tui = new DevMode(config.task, "~");
+  tui.start();
+
+  await initTuiGitInfo(tui, config);
 
   const onEvent = createTuiEventHandler(tui);
 
   try {
-    for (let i = 1; i <= maxIterations; i++) {
-      tui.setIteration(i);
+    // Check for existing plan (resume support)
+    let plan = loadPlanIfExists();
 
-      const result: ExecuteResult = await engine.execute(prompt, {
-        onEvent,
-        writeToStdout: false,
-      });
+    // Phase 0: Breakdown (if no plan exists)
+    if (plan) {
+      // Populate TUI with existing plan tasks
+      tui.setTasks(planToTuiTasks(plan));
+      tui.addOutput(
+        `${colors.cyan}[RESUME]${colors.reset} Found existing plan with ${plan.tasks.length} tasks\n`
+      );
+    } else {
+      plan = await executeBreakdownPhase(engine, config, tui, onEvent);
+    }
 
-      if (result.hasError && result.errorMessage) {
-        await handleTuiError(tui, result.errorMessage);
-      }
-
-      if (result.complete) {
-        await handleTuiComplete(tui, i, config);
+    // Main loop: planner → worker for each task
+    let taskCount = 0;
+    while (plan) {
+      const nextTask = getNextTask(plan);
+      if (!nextTask) {
+        await handleTuiComplete(tui, config);
         break;
       }
 
-      if (!result.success) {
-        tui.setError();
-        tui.addOutput(`\n${colors.red}[ERROR]${colors.reset} Iteration failed`);
-        tui.addOutput(`\n${colors.dim}Press Ctrl+C to exit${colors.reset}`);
-        await tui.waitForExit();
-        tui.cleanup();
-        throw new ExecutionError("Iteration failed");
-      }
-
-      if (i === maxIterations && !config.untilComplete) {
-        tui.addOutput(
-          `\n${colors.dim}[INFO]${colors.reset} Completed ${maxIterations} iteration(s)`
-        );
-        tui.addOutput(`\n${colors.dim}Press Ctrl+C to exit${colors.reset}`);
-        await tui.waitForExit();
-      }
+      taskCount++;
+      tui.setIteration(taskCount);
+      plan = await executeTaskTui(engine, plan, nextTask, config, tui, onEvent);
     }
   } finally {
     tui.cleanup();
@@ -306,13 +602,106 @@ async function executeLoopDevMode(
 }
 
 /**
- * Run the Ferix loop with the given configuration
+ * Executes the main loop in standard mode (no TUI).
+ *
+ * Used in CI environments or when stdout is piped. Uses simple
+ * logging instead of the full-screen TUI.
+ *
+ * @param engine - LLM engine instance
+ * @param config - Ferix configuration
+ * @throws AgentError if any phase fails
+ * @throws ExecutionError if plan file operations fail
+ */
+async function executeLoopStandard(
+  engine: Engine,
+  config: FerixConfig
+): Promise<void> {
+  // Check for existing plan (resume support)
+  let plan = loadPlanIfExists();
+
+  // Phase 0: Breakdown (if no plan exists)
+  if (!plan) {
+    logger.info("=== BREAKDOWN PHASE ===");
+    const breakdownResult = await executeBreakdown(engine, config, null);
+    const breakdownCheck = checkResult(breakdownResult);
+
+    if (breakdownCheck.failed) {
+      throw new AgentError("Breakdown", breakdownCheck.error || "Failed");
+    }
+
+    plan = loadPlanIfExists();
+    if (!plan) {
+      throw new ExecutionError("Failed to create plan file");
+    }
+  }
+
+  // Main loop: planner → worker for each task
+  let taskCount = 0;
+  while (plan) {
+    const nextTask = getNextTask(plan);
+    if (!nextTask) {
+      logger.success("All tasks complete!");
+      break;
+    }
+
+    taskCount++;
+    logger.info(`\n=== TASK ${taskCount}: ${nextTask.title} ===`);
+
+    // Phase A: Plan the task
+    logger.info("--- Planning ---");
+    const plannerResult = await executePlanner(engine, plan, nextTask, null);
+    const plannerCheck = checkResult(plannerResult);
+
+    if (plannerCheck.failed) {
+      throw new AgentError("Planning", plannerCheck.error || "Failed");
+    }
+
+    plan = loadPlan();
+
+    // Re-fetch task with phases
+    const taskWithPhases = plan.tasks.find((t) => t.id === nextTask.id);
+    if (!taskWithPhases) {
+      throw new ExecutionError(`Task ${nextTask.id} not found after planning`);
+    }
+
+    // Phase B: Execute the task
+    logger.info("--- Executing ---");
+    const workerResult = await executeWorker(
+      engine,
+      plan,
+      taskWithPhases,
+      config,
+      null
+    );
+    const workerCheck = checkResult(workerResult);
+
+    if (workerCheck.failed) {
+      throw new AgentError("Worker", workerCheck.error || "Failed");
+    }
+
+    plan = loadPlan();
+  }
+
+  // Handle post-loop operations
+  await handlePostLoop(config);
+}
+
+/**
+ * Main entry point for the Ferix execution loop.
+ *
+ * Implements the planner/worker architecture where each phase (breakdown,
+ * planner, worker) gets a fresh LLM context, with `.ferix/PLAN.md` serving
+ * as persistent memory between calls.
+ *
+ * @param config - Ferix configuration including task, git settings, verify commands
+ * @throws DependencyError if Claude CLI is not available
+ * @throws AgentError if any execution phase fails
+ * @throws ExecutionError if plan file operations fail
  */
 export async function runLoop(config: FerixConfig): Promise<void> {
-  const prompt = composePrompt(config);
-
   // Show dry run if requested (before any side effects)
   if (config.dryRun) {
+    const prompt = createBreakdownPrompt(config.task);
     logger.prompt(prompt);
     logger.info("Dry run complete. No changes made.");
     return;
@@ -339,12 +728,9 @@ export async function runLoop(config: FerixConfig): Promise<void> {
   const useDevMode = process.stdout.isTTY && !process.env.CI;
 
   if (useDevMode) {
-    // Dev mode handles post-loop operations internally to update TUI
-    await executeLoopDevMode(engine, prompt, config);
+    await executeLoopDevMode(engine, config);
   } else {
-    await executeLoopStandard(engine, prompt, config);
-    // Handle post-loop operations for standard mode
-    await handlePostLoop(config);
+    await executeLoopStandard(engine, config);
     logger.success("Ferix loop finished");
   }
 }

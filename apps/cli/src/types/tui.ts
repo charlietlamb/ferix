@@ -36,6 +36,16 @@ export type TaskStatus = "analyzing" | "tracking" | "none";
 export type ViewMode = "logs" | "tasks" | "task-detail";
 
 /**
+ * Execution mode - which phase the planner/worker loop is in
+ *
+ * - idle: Not started or waiting
+ * - breakdown: Initial task analysis and plan creation
+ * - planning: Planning phases for a specific task
+ * - working: Executing a task's phases
+ */
+export type ExecutionMode = "idle" | "breakdown" | "planning" | "working";
+
+/**
  * Git information for display in TUI
  */
 export interface GitInfo {
@@ -74,6 +84,10 @@ export interface DevModeState {
   tasksListState: TasksListState;
   /** Git information */
   gitInfo: GitInfo;
+  /** Current execution mode (planner/worker phase) */
+  executionMode: ExecutionMode;
+  /** Current task ID being worked on (for planning/working modes) */
+  currentTaskId?: number;
 }
 
 /**

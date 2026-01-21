@@ -26,6 +26,8 @@ export function createDevModeState(
     viewMode: "logs",
     tasksListState: { selectedIndex: 0, scrollOffset: 0 },
     gitInfo: { pushed: false },
+    executionMode: "idle",
+    currentTaskId: undefined,
   };
 }
 

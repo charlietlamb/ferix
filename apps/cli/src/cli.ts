@@ -248,7 +248,8 @@ export function createProgram(): Command {
     .option("--progress <path>", "Progress file path", DEFAULTS.PROGRESS_FILE)
     .option("--no-progress", "Don't track progress")
     .option("--dry-run", "Show prompt without executing")
-    .option("--verbose", "Detailed output");
+    .option("--verbose", "Detailed output")
+    .option("--resume", "Resume from existing .ferix/PLAN.md");
 
   return program;
 }
@@ -279,5 +280,6 @@ export function parseOptions(
     progress: options.progress === false ? false : (options.progress as string),
     dryRun: Boolean(options.dryRun),
     verbose: Boolean(options.verbose),
+    resume: Boolean(options.resume),
   };
 }

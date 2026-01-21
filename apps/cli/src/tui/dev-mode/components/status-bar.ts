@@ -10,10 +10,12 @@ import { formatElapsed, getTaskProgress, spinnerState } from "../state.js";
 /**
  * Get status text with color and spinner
  */
-export function getStatus(status: DevModeState["status"]): {
+export function getStatus(state: DevModeState): {
   text: string;
   color: string;
 } {
+  const { status, executionMode, currentTaskId } = state;
+
   switch (status) {
     case "idle":
       return { text: "IDLE", color: colors.dim };
@@ -21,7 +23,24 @@ export function getStatus(status: DevModeState["status"]): {
       const spinner =
         SPINNER_FRAMES[spinnerState.index % SPINNER_FRAMES.length];
       spinnerState.index++;
-      return { text: `${spinner} RUN`, color: colors.brightGreen };
+
+      // Show execution mode instead of generic "RUN"
+      let modeText: string;
+      switch (executionMode) {
+        case "breakdown":
+          modeText = "BREAKDOWN";
+          break;
+        case "planning":
+          modeText = currentTaskId ? `PLAN #${currentTaskId}` : "PLANNING";
+          break;
+        case "working":
+          modeText = currentTaskId ? `WORK #${currentTaskId}` : "WORKING";
+          break;
+        default:
+          modeText = "RUN";
+      }
+
+      return { text: `${spinner} ${modeText}`, color: colors.brightGreen };
     }
     case "complete":
       return { text: "DONE", color: colors.brightCyan };
@@ -57,7 +76,7 @@ export function getTaskStatusDisplay(state: DevModeState): string {
  */
 export function buildStatusBarContent(state: DevModeState): string {
   const { iteration, maxIterations, currentTool, startTime } = state;
-  const status = getStatus(state.status);
+  const status = getStatus(state);
 
   const parts = [
     `${colors.brightWhite}FERIX${colors.reset}`,
