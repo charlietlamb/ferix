@@ -2,14 +2,23 @@
  * Text input question handler
  */
 
-import { UI } from "../../../constants.js";
 import type { TextQuestion } from "../../../types/questions.js";
 import type { TextInputState } from "../../../types/tui.js";
 import {
   disableRawMode,
   enableRawMode,
 } from "../../../utils/terminal/index.js";
-import { box, colors, getTerminalSize, screen, stripAnsi } from "../../ansi.js";
+import { colors, getTerminalSize, screen } from "../../ansi.js";
+import {
+  type BoxLayout,
+  calculateBoxLayout,
+  calculateVerticalPadding,
+  drawBottomBorder,
+  drawContentLine,
+  drawSeparator,
+  drawTopBorder,
+  printVerticalPadding,
+} from "../box-primitives.js";
 import {
   handleArrow,
   handleBackspace,
@@ -17,6 +26,87 @@ import {
   handleNewline,
   parseTextKey,
 } from "./keyboard.js";
+
+/**
+ * Calculate total box height for text input
+ */
+function calculateBoxHeight(
+  hasPlaceholder: boolean,
+  inputLineCount: number
+): number {
+  // top + label + separator + separator + footer + bottom = 6
+  const baseHeight = 6;
+  return baseHeight + (hasPlaceholder ? 1 : 0) + inputLineCount;
+}
+
+/**
+ * Render the text input box
+ */
+function renderTextBox(
+  layout: BoxLayout,
+  question: TextQuestion,
+  inputLines: string[],
+  cursorLine: number,
+  cursorCol: number
+): { cursorRow: number; cursorColPos: number } {
+  const hasPlaceholder = !!question.placeholder;
+  const boxHeight = calculateBoxHeight(hasPlaceholder, inputLines.length);
+  const { rows } = getTerminalSize();
+  const topPadding = calculateVerticalPadding(boxHeight, rows);
+
+  // Clear and reset
+  screen.clear();
+  screen.home();
+
+  // Vertical centering
+  printVerticalPadding(topPadding);
+
+  // Top border
+  console.log(drawTopBorder(layout));
+
+  // Label line
+  console.log(drawContentLine(layout, question.label, { bright: true }));
+
+  // Hint line (placeholder)
+  if (hasPlaceholder) {
+    console.log(
+      drawContentLine(layout, question.placeholder ?? "", { dim: true })
+    );
+  }
+
+  // Separator
+  console.log(drawSeparator(layout));
+
+  // Input lines
+  for (const line of inputLines) {
+    console.log(drawContentLine(layout, line));
+  }
+
+  // Footer separator
+  console.log(drawSeparator(layout));
+
+  // Footer
+  console.log(
+    drawContentLine(
+      layout,
+      "Enter submit | Alt+Enter newline | Ctrl+C cancel",
+      {
+        dim: true,
+      }
+    )
+  );
+
+  // Bottom border
+  console.log(drawBottomBorder(layout));
+
+  // Calculate cursor position
+  // Row: topPadding + top(1) + label(1) + [hint(1)] + separator(1) + cursorLine
+  const cursorRow = topPadding + 4 + (hasPlaceholder ? 1 : 0) + cursorLine;
+  // Col: padding + border(1) + leftSpace(1) + cursorCol
+  const cursorColPos = layout.padding + 2 + cursorCol + 1;
+
+  return { cursorRow, cursorColPos };
+}
 
 /**
  * Ask a text question with inline input inside the box
@@ -29,93 +119,21 @@ export function askText(
   onRetry: () => void
 ): void {
   const { cols } = getTerminalSize();
-  const boxWidth = Math.min(UI.BOX_MAX_WIDTH, cols - UI.BOX_MARGIN);
-  const innerWidth = boxWidth - 2;
-  const padding = Math.max(0, Math.floor((cols - boxWidth) / 2));
-  const pad = " ".repeat(padding);
-  const hasPlaceholder = !!question.placeholder;
+  const layout = calculateBoxLayout(cols);
+  const maxWidth = layout.innerWidth - 2;
 
   const inputLines: string[] = [""];
   let cursorLine = 0;
   let cursorCol = 0;
 
-  // Calculate total box height
-  const getBoxHeight = () => {
-    const baseHeight = 6; // top + label + separator + separator + footer + bottom
-    return baseHeight + (hasPlaceholder ? 1 : 0) + inputLines.length;
-  };
-
   const render = () => {
-    // Clear screen and reset cursor
-    screen.clear();
-    screen.home();
-
-    const boxHeight = getBoxHeight();
-    const { rows } = getTerminalSize();
-    const topPadding = Math.max(0, Math.floor((rows - boxHeight) / 2));
-
-    // Vertical centering
-    for (let i = 0; i < topPadding; i++) {
-      console.log();
-    }
-
-    // Top border (double line)
-    console.log(
-      `${pad}${colors.cyan}${box.doubleTopLeft}${box.doubleHorizontal.repeat(innerWidth)}${box.doubleTopRight}${colors.reset}`
+    const { cursorRow, cursorColPos } = renderTextBox(
+      layout,
+      question,
+      inputLines,
+      cursorLine,
+      cursorCol
     );
-
-    // Label line (double vertical borders)
-    const labelText = ` ${question.label} `;
-    const labelPad = Math.max(0, innerWidth - stripAnsi(labelText).length);
-    console.log(
-      `${pad}${colors.cyan}${box.doubleVertical}${colors.reset}${colors.brightWhite}${labelText}${colors.reset}${" ".repeat(labelPad)}${colors.cyan}${box.doubleVertical}${colors.reset}`
-    );
-
-    // Hint line (placeholder)
-    if (hasPlaceholder) {
-      const hintText = ` ${question.placeholder} `;
-      const hintPad = Math.max(0, innerWidth - hintText.length);
-      console.log(
-        `${pad}${colors.cyan}${box.doubleVertical}${colors.reset}${colors.dim}${hintText}${colors.reset}${" ".repeat(hintPad)}${colors.cyan}${box.doubleVertical}${colors.reset}`
-      );
-    }
-
-    // Separator (double tees with single horizontal)
-    console.log(
-      `${pad}${colors.cyan}${box.doubleTeeRight}${box.horizontal.repeat(innerWidth)}${box.doubleTeeLeft}${colors.reset}`
-    );
-
-    // Input lines (double vertical borders)
-    for (const line of inputLines) {
-      const displayLine = ` ${line}`;
-      const linePad = Math.max(0, innerWidth - displayLine.length);
-      console.log(
-        `${pad}${colors.cyan}${box.doubleVertical}${colors.reset}${displayLine}${" ".repeat(linePad)}${colors.cyan}${box.doubleVertical}${colors.reset}`
-      );
-    }
-
-    // Footer separator (double tees with single horizontal)
-    console.log(
-      `${pad}${colors.cyan}${box.doubleTeeRight}${box.horizontal.repeat(innerWidth)}${box.doubleTeeLeft}${colors.reset}`
-    );
-
-    // Footer (double vertical borders)
-    const footerText = " Enter submit | Alt+Enter newline | Ctrl+C cancel ";
-    const footerPad = Math.max(0, innerWidth - stripAnsi(footerText).length);
-    console.log(
-      `${pad}${colors.cyan}${box.doubleVertical}${colors.reset}${colors.dim}${footerText}${colors.reset}${" ".repeat(footerPad)}${colors.cyan}${box.doubleVertical}${colors.reset}`
-    );
-
-    // Bottom border (double line)
-    console.log(
-      `${pad}${colors.cyan}${box.doubleBottomLeft}${box.doubleHorizontal.repeat(innerWidth)}${box.doubleBottomRight}${colors.reset}`
-    );
-
-    // Position cursor inside the input area
-    const cursorRow = topPadding + 4 + (hasPlaceholder ? 1 : 0) + cursorLine;
-    const cursorColPos = padding + 2 + cursorCol + 1;
-
-    // Move cursor to absolute position
     screen.moveTo(cursorRow, cursorColPos);
   };
 
@@ -125,7 +143,6 @@ export function askText(
   enableRawMode();
 
   const state: TextInputState = { inputLines, cursorLine, cursorCol };
-  const maxWidth = innerWidth - 2;
 
   const cleanup = () => {
     disableRawMode();
@@ -157,7 +174,7 @@ export function askText(
       ? `${answer.split("\n")[0]}...`
       : answer || "(empty)";
     console.log(
-      `${colors.green}  ✓${colors.reset} ${colors.dim}${displayAnswer}${colors.reset}`
+      `${colors.green}  [ok]${colors.reset} ${colors.dim}${displayAnswer}${colors.reset}`
     );
     console.log();
     onAnswer(answer);

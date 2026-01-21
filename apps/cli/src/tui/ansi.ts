@@ -17,6 +17,14 @@ export const screen = {
   showCursor: () => process.stdout.write(`${ESC}?25h`),
   alternateBuffer: () => process.stdout.write(`${ESC}?1049h`),
   normalBuffer: () => process.stdout.write(`${ESC}?1049l`),
+  // Mouse tracking - capture mouse wheel events
+  enableMouse: () => process.stdout.write(`${ESC}?1000h${ESC}?1006h`),
+  disableMouse: () => process.stdout.write(`${ESC}?1000l${ESC}?1006l`),
+  // Set scroll region (top and bottom rows, 1-indexed)
+  setScrollRegion: (top: number, bottom: number) =>
+    process.stdout.write(`${ESC}${top};${bottom}r`),
+  // Reset scroll region to full screen
+  resetScrollRegion: () => process.stdout.write(`${ESC}r`),
 };
 
 // Colors

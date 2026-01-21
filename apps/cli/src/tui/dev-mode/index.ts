@@ -5,17 +5,28 @@
 
 import type { Task } from "../../types/config.js";
 import type { DevModeState } from "../../types/tui.js";
+import {
+  disableRawMode,
+  enableRawMode,
+} from "../../utils/terminal/raw-mode.js";
 import { colors, getTerminalSize, screen } from "../ansi.js";
-import { calculateScrollOffset } from "./components/output-area.js";
 import { FIXED_ROWS, TOOL_COLORS } from "./layout.js";
 import { render } from "./renderer.js";
 import { createDevModeState } from "./state.js";
+
+// SGR mouse event regex (for mouse wheel scrolling)
+// Format: ESC [ < Cb ; Cx ; Cy M (press) or m (release)
+// biome-ignore lint/suspicious/noControlCharactersInRegex: ESC character needed for ANSI parsing
+const SGR_MOUSE_REGEX = /\x1b\[<(\d+);(\d+);(\d+)([Mm])/;
 
 export class DevMode {
   private readonly state: DevModeState;
   private scrollOffset = 0;
   private resizeHandler: (() => void) | null = null;
+  private keyHandler: ((data: Buffer) => void) | null = null;
   private isWaitingForExit = false;
+  /** True if user has manually scrolled up (disables auto-scroll) */
+  private userScrolled = false;
 
   constructor(task: string, maxIterations: number | string) {
     this.state = createDevModeState(task, maxIterations);
@@ -27,12 +38,16 @@ export class DevMode {
   start(): void {
     screen.alternateBuffer();
     screen.hideCursor();
+    screen.enableMouse(); // Capture mouse wheel events
     screen.clear();
     screen.home();
 
     // Handle terminal resize
     this.resizeHandler = () => this.render();
     process.stdout.on("resize", this.resizeHandler);
+
+    // Setup keyboard input for scrolling
+    this.setupKeyboardInput();
 
     // Ensure cleanup on unexpected exit
     const cleanupOnExit = () => {
@@ -46,13 +61,136 @@ export class DevMode {
   }
 
   /**
+   * Setup keyboard input handling for scroll
+   */
+  private setupKeyboardInput(): void {
+    enableRawMode();
+
+    this.keyHandler = (data: Buffer) => {
+      const key = data.toString();
+      this.handleKeypress(key);
+    };
+
+    process.stdin.on("data", this.keyHandler);
+  }
+
+  /**
+   * Handle keypress for scrolling and control
+   */
+  private handleKeypress(key: string): void {
+    // Ctrl+C - exit
+    if (key === "\x03") {
+      this.cleanup();
+      process.exit(0);
+    }
+
+    const { rows } = getTerminalSize();
+    const outputHeight = rows - FIXED_ROWS;
+
+    // Check for SGR mouse events (mouse wheel)
+    const mouseMatch = key.match(SGR_MOUSE_REGEX);
+    if (mouseMatch?.[1]) {
+      const button = Number.parseInt(mouseMatch[1], 10);
+      // Button 64 = scroll up, Button 65 = scroll down
+      if (button === 64) {
+        this.scrollUp(3); // Scroll 3 lines at a time for mouse wheel
+      } else if (button === 65) {
+        this.scrollDown(outputHeight, 3);
+      }
+      return;
+    }
+
+    // Up arrow or k
+    if (key === "\x1b[A" || key === "k") {
+      this.scrollUp();
+    }
+    // Down arrow or j
+    else if (key === "\x1b[B" || key === "j") {
+      this.scrollDown(outputHeight);
+    }
+    // Page up
+    else if (key === "\x1b[5~") {
+      this.scrollUp(outputHeight);
+    }
+    // Page down
+    else if (key === "\x1b[6~") {
+      this.scrollDown(outputHeight, outputHeight);
+    }
+    // Home - scroll to top
+    else if (key === "g" || key === "\x1b[H") {
+      this.scrollToTop();
+    }
+    // End - scroll to bottom (G or End key)
+    else if (key === "G" || key === "\x1b[F") {
+      this.scrollToBottom(outputHeight);
+    }
+  }
+
+  /**
+   * Scroll up by n lines
+   */
+  private scrollUp(lines = 1): void {
+    if (this.scrollOffset > 0) {
+      this.scrollOffset = Math.max(0, this.scrollOffset - lines);
+      this.userScrolled = true;
+      this.render();
+    }
+  }
+
+  /**
+   * Scroll down by n lines
+   */
+  private scrollDown(outputHeight: number, lines = 1): void {
+    const maxScroll = Math.max(0, this.state.outputLines.length - outputHeight);
+    if (this.scrollOffset < maxScroll) {
+      this.scrollOffset = Math.min(maxScroll, this.scrollOffset + lines);
+      // If we're at the bottom, re-enable auto-scroll
+      if (this.scrollOffset >= maxScroll) {
+        this.userScrolled = false;
+      }
+      this.render();
+    }
+  }
+
+  /**
+   * Scroll to the top
+   */
+  private scrollToTop(): void {
+    if (this.scrollOffset > 0) {
+      this.scrollOffset = 0;
+      this.userScrolled = true;
+      this.render();
+    }
+  }
+
+  /**
+   * Scroll to the bottom
+   */
+  private scrollToBottom(outputHeight: number): void {
+    const maxScroll = Math.max(0, this.state.outputLines.length - outputHeight);
+    this.scrollOffset = maxScroll;
+    this.userScrolled = false;
+    this.render();
+  }
+
+  /**
    * Cleanup - restore terminal state
    */
   cleanup(): void {
+    // Remove keyboard handler
+    if (this.keyHandler) {
+      process.stdin.removeListener("data", this.keyHandler);
+      this.keyHandler = null;
+    }
+    disableRawMode();
+
     if (this.resizeHandler) {
       process.stdout.off("resize", this.resizeHandler);
       this.resizeHandler = null;
     }
+    // Disable mouse tracking and reset scroll region
+    screen.disableMouse();
+    screen.resetScrollRegion();
     // Clear screen before exiting alternate buffer to avoid artifacts
     screen.clear();
     screen.home();
@@ -72,13 +210,11 @@ export class DevMode {
     return new Promise((resolve) => {
       const onKeypress = () => {
         process.stdin.removeListener("data", onKeypress);
-        process.stdin.setRawMode?.(false);
-        process.stdin.pause();
+        disableRawMode();
         resolve();
       };
 
-      process.stdin.setRawMode?.(true);
-      process.stdin.resume();
+      enableRawMode();
       process.stdin.once("data", onKeypress);
     });
   }
@@ -159,16 +295,18 @@ export class DevMode {
   }
 
   /**
-   * Auto-scroll to keep latest content visible
+   * Auto-scroll to keep latest content visible (unless user has scrolled up)
    */
   private autoScroll(): void {
+    // Don't auto-scroll if user has manually scrolled up
+    if (this.userScrolled) {
+      return;
+    }
+
     const { rows } = getTerminalSize();
     const outputHeight = rows - FIXED_ROWS;
-    this.scrollOffset = calculateScrollOffset(
-      this.state.outputLines,
-      outputHeight,
-      this.scrollOffset
-    );
+    const maxScroll = Math.max(0, this.state.outputLines.length - outputHeight);
+    this.scrollOffset = maxScroll;
   }
 
   /**
@@ -191,6 +329,18 @@ export class DevMode {
    * Render the full screen
    */
   private render(): void {
-    render(this.state, this.scrollOffset, this.isWaitingForExit);
+    const { rows } = getTerminalSize();
+    const outputHeight = rows - FIXED_ROWS;
+
+    render(
+      this.state,
+      {
+        offset: this.scrollOffset,
+        outputHeight,
+        totalLines: this.state.outputLines.length,
+        userScrolled: this.userScrolled,
+      },
+      this.isWaitingForExit
+    );
   }
 }

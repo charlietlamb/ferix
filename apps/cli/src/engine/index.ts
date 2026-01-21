@@ -2,17 +2,11 @@
  * Engine module exports
  */
 
-import type { ExecuteResult } from "../types/config.js";
-import type { ClaudeOptions } from "../types/events.js";
+import type { Engine, EngineName } from "../types/engine.js";
 import { executeWithClaude, isClaudeAvailable } from "./claude.js";
 
-type EngineName = "claude";
-
-export interface Engine {
-  name: EngineName;
-  isAvailable(): Promise<boolean>;
-  execute(prompt: string, options?: ClaudeOptions): Promise<ExecuteResult>;
-}
+// Re-export Engine type for consumers
+export type { Engine, EngineName } from "../types/engine.js";
 
 /**
  * Claude Code engine implementation

@@ -46,3 +46,17 @@ export interface DevModeState {
   /** Extracted tasks from the work */
   tasks: Task[];
 }
+
+/**
+ * Scroll information for the output area
+ */
+export interface ScrollInfo {
+  /** Current scroll offset (line number at top of viewport) */
+  offset: number;
+  /** Number of visible lines in output area */
+  outputHeight: number;
+  /** Total number of output lines */
+  totalLines: number;
+  /** Whether user has manually scrolled (disables auto-scroll) */
+  userScrolled: boolean;
+}

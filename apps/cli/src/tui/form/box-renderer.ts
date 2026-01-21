@@ -1,26 +1,46 @@
 /**
  * Box rendering utilities for TUI forms
+ * Uses box-primitives for consistent rendering
  */
 
-import { UI } from "../../constants.js";
-import { box, colors, getTerminalSize, stripAnsi } from "../ansi.js";
+import { box, colors, getTerminalSize } from "../ansi.js";
+import {
+  calculateBoxLayout,
+  drawBottomBorder,
+  drawContentLine,
+  drawSeparator,
+  drawTopBorder,
+} from "./box-primitives.js";
+
+// Re-export for backwards compatibility
+export { type BoxLayout, calculateBoxLayout } from "./box-primitives.js";
 
 /**
  * Calculate horizontal padding for centering content
+ * @deprecated Use calculateBoxLayout instead
  */
 export function calculatePadding(boxWidth: number, cols: number): number {
   return Math.max(0, Math.floor((cols - boxWidth) / 2));
 }
 
 /**
- * Draw a horizontal decorative line centered on screen
+ * Draw a horizontal decorative line centered on screen (custom width)
  */
 export function drawHorizontalLine(width: number, cols: number): void {
-  const padding = calculatePadding(width, cols);
+  const padding = Math.max(0, Math.floor((cols - width) / 2));
   const pad = " ".repeat(padding);
   console.log(
     `${pad}${colors.cyan}${box.doubleHorizontal.repeat(width)}${colors.reset}`
   );
+}
+
+/**
+ * Draw a horizontal decorative line centered on screen (uses box width)
+ */
+export function drawHorizontalDecorativeLine(cols: number): void {
+  const layout = calculateBoxLayout(cols);
+  // Use the box width (innerWidth + 2 borders)
+  drawHorizontalLine(layout.boxWidth, cols);
 }
 
 /**
@@ -40,63 +60,35 @@ export function renderQuestionBox(
   options?: QuestionBoxOptions
 ): void {
   const { cols } = getTerminalSize();
-  const boxWidth = Math.min(UI.BOX_MAX_WIDTH, cols - UI.BOX_MARGIN);
-  const innerWidth = boxWidth - 2;
-  const padding = calculatePadding(boxWidth, cols);
-  const pad = " ".repeat(padding);
+  const layout = calculateBoxLayout(cols);
 
-  // Top border (double line)
-  console.log(
-    `${pad}${colors.cyan}${box.doubleTopLeft}${box.doubleHorizontal.repeat(innerWidth)}${box.doubleTopRight}${colors.reset}`
-  );
+  // Top border
+  console.log(drawTopBorder(layout));
 
-  // Label line (double vertical borders)
-  const labelText = ` ${label} `;
-  const labelPad = Math.max(0, innerWidth - stripAnsi(labelText).length);
-  console.log(
-    `${pad}${colors.cyan}${box.doubleVertical}${colors.reset}${colors.brightWhite}${labelText}${colors.reset}${" ".repeat(labelPad)}${colors.cyan}${box.doubleVertical}${colors.reset}`
-  );
+  // Label line
+  console.log(drawContentLine(layout, label, { bright: true }));
 
   // Hint line (if provided)
   if (hint) {
-    const hintText = ` ${hint} `;
-    const hintPad = Math.max(0, innerWidth - hintText.length);
-    console.log(
-      `${pad}${colors.cyan}${box.doubleVertical}${colors.reset}${colors.dim}${hintText}${colors.reset}${" ".repeat(hintPad)}${colors.cyan}${box.doubleVertical}${colors.reset}`
-    );
+    console.log(drawContentLine(layout, hint, { dim: true }));
   }
 
-  // Separator (double tees with single horizontal)
-  console.log(
-    `${pad}${colors.cyan}${box.doubleTeeRight}${box.horizontal.repeat(innerWidth)}${box.doubleTeeLeft}${colors.reset}`
-  );
+  // Separator
+  console.log(drawSeparator(layout));
 
-  // Content lines (double vertical borders)
+  // Content lines
   if (options?.content) {
     for (const line of options.content) {
-      const lineText = ` ${line} `;
-      const stripped = stripAnsi(lineText);
-      const linePad = Math.max(0, innerWidth - stripped.length);
-      console.log(
-        `${pad}${colors.cyan}${box.doubleVertical}${colors.reset}${lineText}${" ".repeat(linePad)}${colors.cyan}${box.doubleVertical}${colors.reset}`
-      );
+      console.log(drawContentLine(layout, line));
     }
   }
 
   // Footer (if provided)
   if (options?.footer) {
-    console.log(
-      `${pad}${colors.cyan}${box.doubleTeeRight}${box.horizontal.repeat(innerWidth)}${box.doubleTeeLeft}${colors.reset}`
-    );
-    const footerText = ` ${options.footer} `;
-    const footerPad = Math.max(0, innerWidth - stripAnsi(footerText).length);
-    console.log(
-      `${pad}${colors.cyan}${box.doubleVertical}${colors.reset}${colors.dim}${footerText}${colors.reset}${" ".repeat(footerPad)}${colors.cyan}${box.doubleVertical}${colors.reset}`
-    );
+    console.log(drawSeparator(layout));
+    console.log(drawContentLine(layout, options.footer, { dim: true }));
   }
 
-  // Bottom border (double line)
-  console.log(
-    `${pad}${colors.cyan}${box.doubleBottomLeft}${box.doubleHorizontal.repeat(innerWidth)}${box.doubleBottomRight}${colors.reset}`
-  );
+  // Bottom border
+  console.log(drawBottomBorder(layout));
 }

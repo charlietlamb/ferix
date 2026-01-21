@@ -2,7 +2,7 @@
  * Renderer for dev mode TUI
  */
 
-import type { DevModeState } from "../../types/tui.js";
+import type { DevModeState, ScrollInfo } from "../../types/tui.js";
 import { box, colors, getTerminalSize, screen, stripAnsi } from "../ansi.js";
 import {
   buildFooterContent,
@@ -54,7 +54,7 @@ function renderOutputRows(
  */
 export function render(
   state: DevModeState,
-  scrollOffset: number,
+  scrollInfo: ScrollInfo,
   isWaitingForExit: boolean
 ): void {
   const { rows, cols } = getTerminalSize();
@@ -74,24 +74,21 @@ export function render(
   // Row 3: Task bar
   borderedLine(buildTaskBarContent(state.task, innerWidth), innerWidth);
 
-  // Row 4: Header/content separator (double tees with single horizontal)
+  // Row 4: Header/content separator (double tees connecting to double verticals)
   writeLine(
     `${colors.cyan}${box.doubleTeeRight}${box.horizontal.repeat(innerWidth)}${box.doubleTeeLeft}${colors.reset}`
   );
 
   // Rows 5 to (rows-3): Output area
-  renderOutputRows(state, scrollOffset, outputHeight, innerWidth);
+  renderOutputRows(state, scrollInfo.offset, outputHeight, innerWidth);
 
-  // Row (rows-2): Content/footer separator (double tees with single horizontal)
+  // Row (rows-2): Content/footer separator (double tees connecting to double verticals)
   writeLine(
     `${colors.cyan}${box.doubleTeeRight}${box.horizontal.repeat(innerWidth)}${box.doubleTeeLeft}${colors.reset}`
   );
 
   // Row (rows-1): Footer
-  borderedLine(
-    buildFooterContent(isWaitingForExit, state.outputLines.length),
-    innerWidth
-  );
+  borderedLine(buildFooterContent(isWaitingForExit, scrollInfo), innerWidth);
 
   // Row (rows): Bottom border (double line, no newline at end)
   process.stdout.write(
