@@ -35,6 +35,7 @@ function centerPadding(text: string, cols: number): string {
 export async function showIntro(): Promise<void> {
   screen.clear();
   screen.home();
+  screen.hideCursor();
 
   const { cols, rows } = getTerminalSize();
 
@@ -90,4 +91,5 @@ export async function showIntro(): Promise<void> {
 
   // Wait for keypress
   await waitForAnyKey();
+  screen.showCursor();
 }

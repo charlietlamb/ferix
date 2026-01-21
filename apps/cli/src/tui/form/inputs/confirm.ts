@@ -54,6 +54,7 @@ export function askConfirm(
   const render = () => {
     screen.clear();
     screen.home();
+    screen.hideCursor();
 
     const boxHeight = 7;
     const { rows } = getTerminalSize();
@@ -87,6 +88,7 @@ export function askConfirm(
     if (result.action === "cancel") {
       disableRawMode();
       process.stdin.removeListener("data", onKey);
+      screen.showCursor();
       console.log();
       onCancel();
     } else if (result.action === "toggle") {
@@ -95,6 +97,7 @@ export function askConfirm(
     } else if (result.action === "confirm") {
       disableRawMode();
       process.stdin.removeListener("data", onKey);
+      screen.showCursor();
       console.log(
         `${colors.green}  ✓${colors.reset} ${colors.dim}${value ? "Yes" : "No"}${colors.reset}`
       );

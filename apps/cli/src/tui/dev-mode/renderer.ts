@@ -21,13 +21,13 @@ function writeLine(content: string): void {
 }
 
 /**
- * Render a bordered line with content
+ * Render a bordered line with content (double vertical borders)
  */
 function borderedLine(content: string, innerWidth: number): void {
   const contentLen = stripAnsi(content).length;
   const padding = Math.max(0, innerWidth - contentLen);
   writeLine(
-    `${colors.cyan}${box.vertical}${colors.reset}${content}${" ".repeat(padding)}${colors.cyan}${box.vertical}${colors.reset}`
+    `${colors.cyan}${box.doubleVertical}${colors.reset}${content}${" ".repeat(padding)}${colors.cyan}${box.doubleVertical}${colors.reset}`
   );
 }
 
@@ -63,9 +63,9 @@ export function render(
 
   screen.home();
 
-  // Row 1: Top border
+  // Row 1: Top border (double line)
   writeLine(
-    `${colors.cyan}${box.topLeft}${box.horizontal.repeat(innerWidth)}${box.topRight}${colors.reset}`
+    `${colors.cyan}${box.doubleTopLeft}${box.doubleHorizontal.repeat(innerWidth)}${box.doubleTopRight}${colors.reset}`
   );
 
   // Row 2: Status bar
@@ -74,17 +74,17 @@ export function render(
   // Row 3: Task bar
   borderedLine(buildTaskBarContent(state.task, innerWidth), innerWidth);
 
-  // Row 4: Header/content separator
+  // Row 4: Header/content separator (double tees with single horizontal)
   writeLine(
-    `${colors.cyan}${box.teeRight}${box.horizontal.repeat(innerWidth)}${box.teeLeft}${colors.reset}`
+    `${colors.cyan}${box.doubleTeeRight}${box.horizontal.repeat(innerWidth)}${box.doubleTeeLeft}${colors.reset}`
   );
 
   // Rows 5 to (rows-3): Output area
   renderOutputRows(state, scrollOffset, outputHeight, innerWidth);
 
-  // Row (rows-2): Content/footer separator
+  // Row (rows-2): Content/footer separator (double tees with single horizontal)
   writeLine(
-    `${colors.cyan}${box.teeRight}${box.horizontal.repeat(innerWidth)}${box.teeLeft}${colors.reset}`
+    `${colors.cyan}${box.doubleTeeRight}${box.horizontal.repeat(innerWidth)}${box.doubleTeeLeft}${colors.reset}`
   );
 
   // Row (rows-1): Footer
@@ -93,8 +93,8 @@ export function render(
     innerWidth
   );
 
-  // Row (rows): Bottom border (no newline at end)
+  // Row (rows): Bottom border (double line, no newline at end)
   process.stdout.write(
-    `${colors.cyan}${box.bottomLeft}${box.horizontal.repeat(innerWidth)}${box.bottomRight}${colors.reset}`
+    `${colors.cyan}${box.doubleBottomLeft}${box.doubleHorizontal.repeat(innerWidth)}${box.doubleBottomRight}${colors.reset}`
   );
 }

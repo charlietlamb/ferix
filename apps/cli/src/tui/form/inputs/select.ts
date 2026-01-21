@@ -23,6 +23,7 @@ export function askSelect(
   const render = () => {
     screen.clear();
     screen.home();
+    screen.hideCursor();
 
     const boxHeight = question.options.length + 6;
     const { rows } = getTerminalSize();
@@ -62,6 +63,7 @@ export function askSelect(
     if (key === "\x03") {
       disableRawMode();
       process.stdin.removeListener("data", onKey);
+      screen.showCursor();
       console.log();
       onCancel();
       return;
@@ -81,6 +83,7 @@ export function askSelect(
       // Enter
       disableRawMode();
       process.stdin.removeListener("data", onKey);
+      screen.showCursor();
 
       const selected = question.options[selectedIndex];
       if (selected) {

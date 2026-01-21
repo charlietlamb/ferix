@@ -43,24 +43,22 @@ export const colors = {
   brightWhite: `${ESC}97m`,
 };
 
-// Box drawing characters
+// Box drawing characters (single line for internal separators)
 export const box = {
-  topLeft: "┌",
-  topRight: "┐",
-  bottomLeft: "└",
-  bottomRight: "┘",
   horizontal: "─",
   vertical: "│",
   teeRight: "├",
   teeLeft: "┤",
 
-  // Double line (for headers)
+  // Double line (for outer borders)
   doubleHorizontal: "═",
   doubleVertical: "║",
   doubleTopLeft: "╔",
   doubleTopRight: "╗",
   doubleBottomLeft: "╚",
   doubleBottomRight: "╝",
+  doubleTeeRight: "╠",
+  doubleTeeLeft: "╣",
 };
 
 // Get terminal dimensions
