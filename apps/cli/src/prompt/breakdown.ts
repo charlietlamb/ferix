@@ -64,24 +64,46 @@ Write a 2-3 paragraph summary capturing:
 - Key files and their purposes
 - Patterns to follow when implementing
 
-### Step 3: Break into Subtasks
+### Step 3: Break into High-Level Tasks
 
-Analyze the task and break it into discrete, sequential subtasks.
+Analyze the task and break it into high-level, feature-sized tasks.
+
+**IMPORTANT: Task Granularity**
+
+Tasks should be **features or significant units of work**, NOT implementation steps.
+
+**WRONG (too granular):**
+- Create config module structure
+- Implement config file loading
+- Implement config validation
+- Add config types to types directory
+- Integrate config loading into CLI startup
+
+**CORRECT (feature-level):**
+- Implement config file support (ferix.json)
+
+The implementation details (module structure, loading, validation, types, integration) are **phases within a task**, not separate tasks. The planner phase will break each task into phases later.
 
 **Output your task list in this exact format:**
 <ferix:tasks>
-  <task id="1">Brief description of first subtask</task>
-  <task id="2">Brief description of second subtask</task>
+  <task id="1">Brief description of first feature/task</task>
+  <task id="2">Brief description of second feature/task</task>
 </ferix:tasks>
 
 **Rules:**
 - Output the tasks block FIRST, before creating the plan file
-- Each task should be a single, completable unit of work
+- Each task should be a **feature, major component, or significant deliverable**
+- Tasks are NOT implementation steps - those become phases later
 - Use sequential numeric IDs starting at 1
 - Order tasks by dependencies (prerequisites first)
-- For simple requests, use 1-3 tasks
-- For complex requests (PRDs, multiple features), use more tasks
+- Most requests should have **1-5 tasks** (rarely more)
+- A PRD with 2 features = 2-3 tasks (features + optional verification task)
 - Keep descriptions concise (under 60 characters)
+
+**Examples of good task sizing:**
+- "Add dark mode toggle" (1 task) - NOT 5 tasks for component, state, styles, etc.
+- "Implement user authentication" (1 task) - NOT 8 tasks for middleware, login, logout, tests, etc.
+- PRD with Config + Summary features (2-3 tasks) - NOT 14 implementation steps
 
 ### Step 4: Create the Plan File
 
