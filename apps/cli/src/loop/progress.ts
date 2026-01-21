@@ -1,39 +1,16 @@
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 /**
- * Check if progress file exists
+ * Check if progress file exists (internal helper)
  */
-export async function progressExists(path: string): Promise<boolean> {
+async function progressExists(path: string): Promise<boolean> {
   try {
     await access(path);
     return true;
   } catch {
     return false;
   }
-}
-
-/**
- * Read progress file contents
- */
-export async function readProgress(path: string): Promise<string> {
-  try {
-    return await readFile(path, "utf-8");
-  } catch {
-    return "";
-  }
-}
-
-/**
- * Append to progress file
- */
-export async function appendProgress(
-  path: string,
-  content: string
-): Promise<void> {
-  const existing = await readProgress(path);
-  const separator = existing.length > 0 ? "\n\n---\n\n" : "";
-  await writeFile(path, existing + separator + content, "utf-8");
 }
 
 /**

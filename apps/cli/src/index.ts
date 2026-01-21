@@ -1,5 +1,11 @@
 import { createProgram, parseOptions, runInteractive } from "./cli.js";
 import { runLoop } from "./loop/runner.js";
+import {
+  AgentError,
+  DependencyError,
+  FerixError,
+  UserCancelledError,
+} from "./types/errors.js";
 import { logger } from "./utils/logger.js";
 
 async function main(): Promise<void> {
@@ -13,17 +19,48 @@ async function main(): Promise<void> {
   if (!config) {
     config = await runInteractive();
     if (!config) {
-      process.exit(0);
+      // User cancelled in interactive mode
+      throw new UserCancelledError();
     }
   }
 
   // Run the loop
-  try {
-    await runLoop(config);
-  } catch (error) {
-    logger.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  }
+  await runLoop(config);
 }
 
-main();
+/**
+ * Handle errors and exit with appropriate code
+ */
+function handleError(error: unknown): never {
+  // User cancelled - exit cleanly
+  if (error instanceof UserCancelledError) {
+    process.exit(0);
+  }
+
+  // Agent reported an error
+  if (error instanceof AgentError) {
+    logger.agentError(error.errorType, error.message);
+    process.exit(error.exitCode);
+  }
+
+  // Dependency not available
+  if (error instanceof DependencyError) {
+    logger.error(error.message);
+    if (error.installHint) {
+      logger.dim(error.installHint);
+    }
+    process.exit(error.exitCode);
+  }
+
+  // Other Ferix errors
+  if (error instanceof FerixError) {
+    logger.error(error.message);
+    process.exit(error.exitCode);
+  }
+
+  // Unknown errors
+  logger.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+}
+
+main().catch(handleError);

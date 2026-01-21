@@ -1,6 +1,7 @@
 import { Command } from "commander";
-import { CLI, DEFAULTS } from "./constants.js";
+import { CLI, DEFAULTS, UI } from "./constants.js";
 import { isGitRepo } from "./git/index.js";
+import { truncate } from "./tui/ansi.js";
 import type { Question } from "./tui/retro-form.js";
 import { RetroForm } from "./tui/retro-form.js";
 import type { FerixConfig } from "./types.js";
@@ -19,16 +20,6 @@ function parseCommaSeparated(value: string): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-}
-
-/**
- * Truncate string with ellipsis
- */
-function truncate(str: string, max: number): string {
-  if (str.length <= max) {
-    return str;
-  }
-  return `${str.slice(0, max - 3)}...`;
 }
 
 /**
@@ -211,7 +202,7 @@ export async function runInteractive(): Promise<FerixConfig | null> {
 
   // Show summary before starting
   form.showSummary({
-    Task: truncate(config.task, 40),
+    Task: truncate(config.task, UI.TASK_DISPLAY_MAX_LENGTH),
     Verify: config.verify.length > 0 ? config.verify.join(", ") : "none",
     Iterations: config.untilComplete
       ? "until complete"

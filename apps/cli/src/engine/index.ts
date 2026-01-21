@@ -1,11 +1,12 @@
-import type { ExecuteResult } from "../types.js";
-import {
-  type ClaudeOptions,
-  executeWithClaude,
-  isClaudeAvailable,
-} from "./claude.js";
+/**
+ * Engine module exports
+ */
 
-export type EngineName = "claude";
+import type { ExecuteResult } from "../types/config.js";
+import type { ClaudeOptions } from "../types/events.js";
+import { executeWithClaude, isClaudeAvailable } from "./claude.js";
+
+type EngineName = "claude";
 
 export interface Engine {
   name: EngineName;
@@ -34,23 +35,5 @@ export function getEngine(name: EngineName): Engine {
   }
 }
 
-/**
- * Get all available engines
- */
-export async function getAvailableEngines(): Promise<EngineName[]> {
-  const engines: EngineName[] = [];
-
-  if (await claudeEngine.isAvailable()) {
-    engines.push("claude");
-  }
-
-  return engines;
-}
-
-export {
-  type ClaudeEvent,
-  type ClaudeEventHandler,
-  type ClaudeOptions,
-  executeWithClaude,
-  isClaudeAvailable,
-} from "./claude.js";
+// Re-export types used by consumers
+export type { ClaudeEvent } from "../types/events.js";

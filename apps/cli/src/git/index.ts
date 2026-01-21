@@ -1,3 +1,4 @@
+import { MESSAGES } from "../constants.js";
 import { logger } from "../utils/logger.js";
 import { shell, shellInteractive } from "../utils/shell.js";
 
@@ -15,14 +16,6 @@ export async function getCurrentBranch(): Promise<string> {
 }
 
 /**
- * Check if there are uncommitted changes
- */
-export async function hasUncommittedChanges(): Promise<boolean> {
-  const result = await shell("git", ["status", "--porcelain"]);
-  return result.stdout.trim().length > 0;
-}
-
-/**
  * Create and switch to a new branch
  */
 export async function createBranch(name: string): Promise<void> {
@@ -32,16 +25,6 @@ export async function createBranch(name: string): Promise<void> {
     throw new Error(`Failed to create branch '${name}': ${result.stderr}`);
   }
   logger.success(`Switched to new branch: ${name}`);
-}
-
-/**
- * Switch to an existing branch
- */
-export async function switchBranch(name: string): Promise<void> {
-  const result = await shell("git", ["checkout", name]);
-  if (!result.success) {
-    throw new Error(`Failed to switch to branch '${name}': ${result.stderr}`);
-  }
 }
 
 /**
@@ -66,7 +49,7 @@ export async function createPullRequest(baseBranch: string): Promise<void> {
   const ghCheck = await shell("gh", ["--version"]);
   if (!ghCheck.success) {
     logger.warn("GitHub CLI (gh) not found. Skipping PR creation.");
-    logger.dim("Install with: brew install gh");
+    logger.dim(MESSAGES.GH_INSTALL_HINT);
     return;
   }
 

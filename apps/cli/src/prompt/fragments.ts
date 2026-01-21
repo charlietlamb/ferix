@@ -1,3 +1,4 @@
+import { FRAGMENT_ORDER } from "../constants.js";
 import type { PromptFragment } from "../types.js";
 
 /**
@@ -6,7 +7,7 @@ import type { PromptFragment } from "../types.js";
 export function createTaskFragment(task: string): PromptFragment {
   return {
     id: "task",
-    order: 0,
+    order: FRAGMENT_ORDER.TASK,
     content: `## Task
 
 ${task}`,
@@ -29,7 +30,7 @@ export function createVerifyFragment(
 
   return {
     id: "verify",
-    order: 10,
+    order: FRAGMENT_ORDER.VERIFY,
     content: `## Verification
 
 Before committing, run these commands in order:
@@ -53,11 +54,12 @@ export function createGitFragment(branch?: string): PromptFragment | null {
 
   return {
     id: "git",
-    order: 20,
+    order: FRAGMENT_ORDER.GIT,
     content: `## Git
 
 You are working on branch: \`${branch}\`
-Commit your changes with a clear, descriptive message that summarizes the work done.`,
+Commit your changes with a clear, descriptive message that summarizes the work done.
+Use git log to see previous commit messages and write you commit message in the same style.`,
   };
 }
 
@@ -67,7 +69,7 @@ Commit your changes with a clear, descriptive message that summarizes the work d
 export function createProgressFragment(path: string): PromptFragment {
   return {
     id: "progress",
-    order: 30,
+    order: FRAGMENT_ORDER.PROGRESS,
     content: `## Progress Tracking
 
 After completing work, append a summary to \`${path}\`:
@@ -92,7 +94,7 @@ export function createLoopFragment(
 
   return {
     id: "loop",
-    order: 40,
+    order: FRAGMENT_ORDER.LOOP,
     content: `## Loop Execution
 
 You are running in a loop (${iterationText}).
@@ -118,7 +120,7 @@ This signals the loop to stop.`,
 export function createTaskBreakdownFragment(): PromptFragment {
   return {
     id: "task-breakdown",
-    order: 2,
+    order: FRAGMENT_ORDER.TASK_BREAKDOWN,
     content: `## Task Breakdown
 
 Before starting any work, analyze the task and break it into discrete subtasks.
@@ -150,7 +152,7 @@ Where N is the task ID. This tracks progress through the work.`,
 export function createValidationFragment(): PromptFragment {
   return {
     id: "validation",
-    order: 1,
+    order: FRAGMENT_ORDER.VALIDATION,
     content: `## Task Validation
 
 Before starting any work, evaluate if the task is actionable:
@@ -180,7 +182,7 @@ Then exit immediately without making any changes.
 export function createErrorFragment(): PromptFragment {
   return {
     id: "error",
-    order: 50,
+    order: FRAGMENT_ORDER.ERROR,
     content: `## Error Handling
 
 If at any point during execution you encounter issues:

@@ -1,3 +1,4 @@
+import { MESSAGES } from "../constants.js";
 import type { ClaudeEvent, Engine } from "../engine/index.js";
 import { getEngine } from "../engine/index.js";
 import {
@@ -9,6 +10,11 @@ import {
 import { composePrompt } from "../prompt/composer.js";
 import { colors } from "../tui/ansi.js";
 import { DevMode } from "../tui/dev-mode.js";
+import {
+  AgentError,
+  DependencyError,
+  ExecutionError,
+} from "../types/errors.js";
 import type { ExecuteResult, FerixConfig } from "../types.js";
 import { logger } from "../utils/logger.js";
 import { initProgress } from "./progress.js";
@@ -75,6 +81,8 @@ function parseErrorType(errorMessage: string): {
 
 /**
  * Process a single iteration result (non-TUI mode)
+ * Returns true if should continue, false if complete
+ * Throws on error
  */
 function processIterationResult(
   result: ExecuteResult,
@@ -82,8 +90,7 @@ function processIterationResult(
 ): boolean {
   if (result.hasError && result.errorMessage) {
     const { type, message } = parseErrorType(result.errorMessage);
-    logger.agentError(type, message);
-    process.exit(1);
+    throw new AgentError(type, message);
   }
 
   if (result.complete) {
@@ -92,8 +99,7 @@ function processIterationResult(
   }
 
   if (!result.success) {
-    logger.error("Iteration failed");
-    process.exit(1);
+    throw new ExecutionError("Iteration failed");
   }
 
   return true;
@@ -193,7 +199,8 @@ async function executeLoopDevMode(
         );
         await tui.waitForExit();
         tui.cleanup();
-        process.exit(1);
+        const { type, message } = parseErrorType(result.errorMessage);
+        throw new AgentError(type, message);
       }
 
       if (result.complete) {
@@ -210,7 +217,7 @@ async function executeLoopDevMode(
         tui.addOutput(`\n${colors.red}[ERROR]${colors.reset} Iteration failed`);
         await tui.waitForExit();
         tui.cleanup();
-        process.exit(1);
+        throw new ExecutionError("Iteration failed");
       }
 
       if (i === maxIterations && !config.untilComplete) {
@@ -249,9 +256,10 @@ export async function runLoop(config: FerixConfig): Promise<void> {
   const engine = getEngine("claude");
 
   if (!(await engine.isAvailable())) {
-    logger.error("Claude Code CLI is not installed or not in PATH.");
-    logger.dim("Install with: npm i -g @anthropic-ai/claude-code");
-    process.exit(1);
+    throw new DependencyError(
+      MESSAGES.CLAUDE_NOT_INSTALLED,
+      MESSAGES.CLAUDE_INSTALL_HINT
+    );
   }
 
   // Use dev mode TUI by default, unless in CI or piped

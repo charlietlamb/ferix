@@ -1,7 +1,2 @@
-export {
-  appendProgress,
-  initProgress,
-  progressExists,
-  readProgress,
-} from "./progress.js";
+export { initProgress } from "./progress.js";
 export { runLoop } from "./runner.js";
