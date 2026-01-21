@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import { SIGNALS } from "../constants.js";
-import type { ExecuteResult } from "../types.js";
+import type { ExecuteResult, Task } from "../types.js";
 import { shell } from "../utils/shell.js";
 
 // ANSI color codes for retro dev style
@@ -36,7 +36,42 @@ function stripSignalTags(text: string): string {
       new RegExp(`${SIGNALS.ERROR_START}[^]*?${SIGNALS.ERROR_END}`, "g"),
       ""
     )
-    .replace(new RegExp(SIGNALS.COMPLETE, "g"), "");
+    .replace(new RegExp(SIGNALS.COMPLETE, "g"), "")
+    .replace(
+      new RegExp(`${SIGNALS.TASKS_START}[^]*?${SIGNALS.TASKS_END}`, "g"),
+      ""
+    )
+    .replace(/<ferix:task-done id="\d+"\/>/g, "");
+}
+
+/**
+ * Extract tasks from <ferix:tasks>...</ferix:tasks> block
+ */
+function extractTasks(output: string): Task[] | undefined {
+  const match = output.match(
+    new RegExp(`${SIGNALS.TASKS_START}([^]*?)${SIGNALS.TASKS_END}`)
+  );
+  if (!match?.[1]) {
+    return undefined;
+  }
+
+  const tasks: Task[] = [];
+  const content = match[1];
+  const taskMatches = content.matchAll(/<task id="(\d+)">([^<]+)<\/task>/g);
+
+  for (const taskMatch of taskMatches) {
+    const id = taskMatch[1];
+    const desc = taskMatch[2];
+    if (id && desc) {
+      tasks.push({
+        id,
+        description: desc.trim(),
+        done: false,
+      });
+    }
+  }
+
+  return tasks.length > 0 ? tasks : undefined;
 }
 
 /**
@@ -95,26 +130,15 @@ function getToolDetail(tool: string, input: Record<string, unknown>): string {
 }
 
 /**
- * Check if text buffer might contain the start of an error tag
+ * Check if text buffer might contain the start of a ferix tag
  */
-function mightContainErrorTagStart(buffer: string): boolean {
+function mightContainFerixTagStart(buffer: string): boolean {
   if (!buffer.includes("<")) {
     return false;
   }
-  const partials = [
-    "<f",
-    "<fe",
-    "<fer",
-    "<feri",
-    "<ferix",
-    "<ferix:",
-    "<ferix:e",
-    "<ferix:er",
-    "<ferix:err",
-    "<ferix:erro",
-    "<ferix:error",
-  ];
-  return partials.some((p) => buffer.includes(p));
+  // Partial matches for any ferix tag
+  const partials = ["<f", "<fe", "<fer", "<feri", "<ferix", "<ferix:"];
+  return partials.some((p) => buffer.endsWith(p));
 }
 
 /**
@@ -160,7 +184,9 @@ export type ClaudeEvent =
   | { type: "tool_use"; tool: string; detail: string }
   | { type: "tool_end" }
   | { type: "complete" }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | { type: "tasks_defined"; tasks: Task[] }
+  | { type: "task_done"; id: string };
 
 /**
  * Event handler callback type
@@ -184,6 +210,8 @@ interface ProcessorState {
   fullOutput: string;
   currentToolName: string;
   textBuffer: string;
+  tasksEmitted: boolean;
+  completedTaskIds: Set<string>;
 }
 
 /**
@@ -197,7 +225,7 @@ function handleStreamEvent(
   writeToStdout: boolean
 ): void {
   handleToolStart(event, state, emit, writeToStdout);
-  handleTextDelta(event, state, outputText);
+  handleTextDelta(event, state, emit, outputText);
   handleContentBlockStop(event, state, emit, outputText);
 }
 
@@ -223,11 +251,41 @@ function handleToolStart(
 }
 
 /**
+ * Check for and emit task-related signals from buffer
+ */
+function checkTaskSignals(
+  state: ProcessorState,
+  emit: (e: ClaudeEvent) => void
+): void {
+  // Check for tasks definition
+  if (!state.tasksEmitted) {
+    const tasks = extractTasks(state.fullOutput);
+    if (tasks) {
+      state.tasksEmitted = true;
+      emit({ type: "tasks_defined", tasks });
+    }
+  }
+
+  // Check for task completion signals
+  const taskDoneMatches = state.fullOutput.matchAll(
+    /<ferix:task-done id="(\d+)"\/>/g
+  );
+  for (const match of taskDoneMatches) {
+    const taskId = match[1];
+    if (taskId && !state.completedTaskIds.has(taskId)) {
+      state.completedTaskIds.add(taskId);
+      emit({ type: "task_done", id: taskId });
+    }
+  }
+}
+
+/**
  * Handle text delta events
  */
 function handleTextDelta(
   event: StreamEvent,
   state: ProcessorState,
+  emit: (e: ClaudeEvent) => void,
   outputText: (t: string) => void
 ): void {
   if (
@@ -242,21 +300,32 @@ function handleTextDelta(
   state.fullOutput += text;
   state.textBuffer += text;
 
-  const hasStartTag = state.textBuffer.includes(SIGNALS.ERROR_START);
-  const hasEndTag = state.textBuffer.includes(SIGNALS.ERROR_END);
+  // Check for task signals
+  checkTaskSignals(state, emit);
 
-  if (hasStartTag && hasEndTag) {
+  // Handle buffering for ferix tags
+  const hasErrorStart = state.textBuffer.includes(SIGNALS.ERROR_START);
+  const hasErrorEnd = state.textBuffer.includes(SIGNALS.ERROR_END);
+  const hasTasksStart = state.textBuffer.includes(SIGNALS.TASKS_START);
+  const hasTasksEnd = state.textBuffer.includes(SIGNALS.TASKS_END);
+
+  // If we have a complete error or tasks block, clear buffer
+  if ((hasErrorStart && hasErrorEnd) || (hasTasksStart && hasTasksEnd)) {
     state.textBuffer = "";
-  } else if (hasStartTag && !hasEndTag) {
+  } else if (
+    (hasErrorStart && !hasErrorEnd) ||
+    (hasTasksStart && !hasTasksEnd)
+  ) {
+    // Inside a block, keep buffering but with a limit
     if (state.textBuffer.length > 5000) {
       outputText(stripSignalTags(state.textBuffer));
       state.textBuffer = "";
     }
   } else if (
-    mightContainErrorTagStart(state.textBuffer) &&
+    mightContainFerixTagStart(state.textBuffer) &&
     state.textBuffer.length < 50
   ) {
-    // Keep buffering - might be start of error tag
+    // Keep buffering - might be start of a ferix tag
   } else {
     outputText(stripSignalTags(state.textBuffer));
     state.textBuffer = "";
@@ -364,6 +433,8 @@ export function executeWithClaude(
       fullOutput: "",
       currentToolName: "",
       textBuffer: "",
+      tasksEmitted: false,
+      completedTaskIds: new Set(),
     };
 
     const emit = (event: ClaudeEvent) => {

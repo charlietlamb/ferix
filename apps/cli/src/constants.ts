@@ -7,6 +7,10 @@ export const SIGNALS = {
   COMPLETE: "<ferix:complete>",
   ERROR_START: "<ferix:error>",
   ERROR_END: "</ferix:error>",
+  // Task tracking signals
+  TASKS_START: "<ferix:tasks>",
+  TASKS_END: "</ferix:tasks>",
+  TASK_DONE: "<ferix:task-done",
 } as const;
 
 /** Default values */

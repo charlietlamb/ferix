@@ -3,6 +3,7 @@
  * Retro/dev style with bordered layout, header, and footer
  */
 
+import type { Task } from "../types.js";
 import {
   box,
   colors,
@@ -12,6 +13,9 @@ import {
   truncate,
 } from "./ansi.js";
 
+/** Task tracking status */
+export type TaskStatus = "analyzing" | "tracking" | "none";
+
 export interface DevModeState {
   task: string;
   iteration: number;
@@ -20,6 +24,10 @@ export interface DevModeState {
   currentTool?: string;
   outputLines: string[];
   startTime: number;
+  /** Task tracking state */
+  taskStatus: TaskStatus;
+  /** Extracted tasks from the work */
+  tasks: Task[];
 }
 
 // Layout: rows used by non-output content
@@ -60,6 +68,8 @@ export class DevMode {
       status: "idle",
       outputLines: [],
       startTime: Date.now(),
+      taskStatus: "analyzing",
+      tasks: [],
     };
   }
 
@@ -140,6 +150,34 @@ export class DevMode {
   setTool(tool: string | undefined): void {
     this.state.currentTool = tool;
     this.render();
+  }
+
+  /**
+   * Set the extracted tasks
+   */
+  setTasks(tasks: Task[]): void {
+    this.state.tasks = tasks;
+    this.state.taskStatus = "tracking";
+    this.render();
+  }
+
+  /**
+   * Mark a task as completed
+   */
+  markTaskDone(taskId: string): void {
+    const task = this.state.tasks.find((t) => t.id === taskId);
+    if (task) {
+      task.done = true;
+      this.render();
+    }
+  }
+
+  /**
+   * Get task progress string (e.g., "2/5")
+   */
+  private getTaskProgress(): { completed: number; total: number } {
+    const completed = this.state.tasks.filter((t) => t.done).length;
+    return { completed, total: this.state.tasks.length };
   }
 
   /**
@@ -301,6 +339,26 @@ export class DevMode {
   }
 
   /**
+   * Get task status display
+   */
+  private getTaskStatusDisplay(): string {
+    const { taskStatus } = this.state;
+
+    switch (taskStatus) {
+      case "analyzing":
+        return `${colors.yellow}ANALYZING...${colors.reset}`;
+      case "tracking": {
+        const { completed, total } = this.getTaskProgress();
+        const allDone = completed === total;
+        const progressColor = allDone ? colors.brightGreen : colors.brightWhite;
+        return `${progressColor}TASK ${completed}${colors.dim}/${total}${colors.reset}`;
+      }
+      default:
+        return "";
+    }
+  }
+
+  /**
    * Render status bar
    */
   private renderStatusBar(innerWidth: number): void {
@@ -313,6 +371,12 @@ export class DevMode {
       `${colors.brightWhite}${iteration}${colors.dim}/${maxIterations}${colors.reset}`,
       `${colors.dim}${this.formatElapsed()}${colors.reset}`,
     ];
+
+    // Add task progress
+    const taskDisplay = this.getTaskStatusDisplay();
+    if (taskDisplay) {
+      parts.push(taskDisplay);
+    }
 
     if (currentTool) {
       const toolColor = TOOL_COLORS[currentTool] || colors.white;
@@ -345,7 +409,7 @@ export class DevMode {
     );
 
     for (let i = 0; i < height; i++) {
-      const line = visibleLines[i] !== undefined ? visibleLines[i] : "";
+      const line = visibleLines[i] ?? "";
       const displayLine = ` ${truncate(line, innerWidth - 2)} `;
       this.borderedLine(displayLine, innerWidth);
     }

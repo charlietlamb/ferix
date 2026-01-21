@@ -67,3 +67,15 @@ export interface PromptFragment {
   content: string;
   order: number;
 }
+
+/**
+ * A task extracted from the work to be done
+ */
+export interface Task {
+  /** Unique identifier (numeric string, e.g. "1", "2") */
+  id: string;
+  /** Brief description of the task */
+  description: string;
+  /** Whether the task has been completed */
+  done: boolean;
+}

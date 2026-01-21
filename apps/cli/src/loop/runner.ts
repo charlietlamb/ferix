@@ -163,6 +163,12 @@ async function executeLoopDevMode(
           case "tool_end":
             tui.setTool(undefined);
             break;
+          case "tasks_defined":
+            tui.setTasks(event.tasks);
+            break;
+          case "task_done":
+            tui.markTaskDone(event.id);
+            break;
           case "complete":
             // Will be handled after execute returns
             break;

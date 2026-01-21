@@ -113,6 +113,38 @@ This signals the loop to stop.`,
 }
 
 /**
+ * Create task breakdown fragment - instructs LLM to analyze and output structured tasks
+ */
+export function createTaskBreakdownFragment(): PromptFragment {
+  return {
+    id: "task-breakdown",
+    order: 2,
+    content: `## Task Breakdown
+
+Before starting any work, analyze the task and break it into discrete subtasks.
+
+**Output your task list in this exact format:**
+<ferix:tasks>
+  <task id="1">Brief description of first subtask</task>
+  <task id="2">Brief description of second subtask</task>
+</ferix:tasks>
+
+**Rules:**
+- Output the tasks block FIRST, before any other work
+- Each task should be a single, completable unit of work
+- Use sequential numeric IDs starting at 1
+- For simple requests, use a single task
+- For complex requests (PRDs, multiple features), break into logical chunks
+- Keep descriptions concise (under 60 characters)
+
+**After completing each task, immediately output:**
+<ferix:task-done id="N"/>
+
+Where N is the task ID. This tracks progress through the work.`,
+  };
+}
+
+/**
  * Create task validation fragment - instructs LLM to reject bad/unclear tasks
  */
 export function createValidationFragment(): PromptFragment {
