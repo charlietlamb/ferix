@@ -15,7 +15,6 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@clack/prompts": "catalog:",
     "commander": "catalog:",
     "execa": "catalog:",
     "picocolors": "catalog:"

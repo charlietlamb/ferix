@@ -1,9 +1,9 @@
-import { cancel, confirm, isCancel, select, text } from "@clack/prompts";
 import { Command } from "commander";
 import { CLI, DEFAULTS } from "./constants.js";
 import { isGitRepo } from "./git/index.js";
+import type { Question } from "./tui/retro-form.js";
+import { RetroForm } from "./tui/retro-form.js";
 import type { FerixConfig } from "./types.js";
-import { logger } from "./utils/logger.js";
 
 /** Regex pattern for valid branch names */
 const BRANCH_NAME_PATTERN = /^[\w\-/]+$/;
@@ -45,193 +45,172 @@ function getAfterText(pr: boolean, push: boolean): string {
 }
 
 /**
- * Collect iteration count from user
+ * Build the questions array based on whether we're in a git repo
  */
-async function collectIterations(): Promise<{
-  iterations: number;
-  untilComplete: boolean;
-}> {
-  const selection = await select({
-    message: "How many iterations?",
-    options: [
-      { value: 1, label: "1 (single run)" },
-      { value: 5, label: "5" },
-      { value: 10, label: "10" },
-      { value: -1, label: "Until complete" },
-      { value: 0, label: "Custom" },
-    ],
-  });
-
-  if (isCancel(selection)) {
-    cancel("Cancelled");
-    process.exit(0);
-  }
-
-  if (selection === -1) {
-    return { iterations: DEFAULTS.ITERATIONS, untilComplete: true };
-  }
-
-  if (selection === 0) {
-    const custom = await text({
-      message: "Enter number of iterations:",
-      validate: (value) => {
-        const num = Number.parseInt(value, 10);
-        if (Number.isNaN(num) || num < 1) {
-          return "Enter a positive number";
-        }
-      },
-    });
-
-    if (isCancel(custom)) {
-      cancel("Cancelled");
-      process.exit(0);
-    }
-
-    return {
-      iterations: Number.parseInt(custom as string, 10),
-      untilComplete: false,
-    };
-  }
-
-  return { iterations: selection as number, untilComplete: false };
-}
-
-/**
- * Collect git branch configuration from user
- */
-async function collectGitConfig(
-  inGitRepo: boolean
-): Promise<{ branch?: string; push: boolean; pr: boolean }> {
-  if (!inGitRepo) {
-    return { branch: undefined, push: false, pr: false };
-  }
-
-  const branchStrategy = await select({
-    message: "Git branch strategy?",
-    options: [
-      { value: "current", label: "Stay on current branch" },
-      { value: "new", label: "Create new branch" },
-    ],
-  });
-
-  if (isCancel(branchStrategy)) {
-    cancel("Cancelled");
-    process.exit(0);
-  }
-
-  if (branchStrategy === "current") {
-    return { branch: undefined, push: false, pr: false };
-  }
-
-  const branchName = await text({
-    message: "Branch name:",
-    placeholder: "e.g., feat/eng-345",
-    validate: (value) => {
-      if (!value.trim()) {
-        return "Branch name is required";
-      }
-      if (!BRANCH_NAME_PATTERN.test(value)) {
-        return "Invalid branch name";
-      }
+function buildQuestions(inGitRepo: boolean): Question[] {
+  const questions: Question[] = [
+    {
+      type: "text",
+      id: "task",
+      label: "What should the AI work on?",
+      placeholder: "e.g., Get ticket ENG-345 from Linear and implement it",
+      required: true,
     },
-  });
+    {
+      type: "text",
+      id: "verify",
+      label: "Verification commands",
+      placeholder: "comma-separated, e.g., bun lint, bun test (or leave empty)",
+    },
+    {
+      type: "select",
+      id: "iterations",
+      label: "How many iterations?",
+      options: [
+        { value: 1, label: "1", hint: "single run" },
+        { value: 3, label: "3" },
+        { value: 5, label: "5" },
+        { value: 10, label: "10" },
+        { value: -1, label: "Until complete", hint: "loops until done" },
+      ],
+    },
+  ];
 
-  if (isCancel(branchName)) {
-    cancel("Cancelled");
-    process.exit(0);
+  // Git options only if in a repo
+  if (inGitRepo) {
+    questions.push({
+      type: "select",
+      id: "gitStrategy",
+      label: "Git branch strategy",
+      options: [
+        {
+          value: "current",
+          label: "Current branch",
+          hint: "stay where you are",
+        },
+        { value: "new", label: "New branch", hint: "create a feature branch" },
+      ],
+    });
   }
 
-  const afterCompletion = await select({
-    message: "After completion?",
-    options: [
-      { value: "nothing", label: "Nothing (keep local)" },
-      { value: "push", label: "Push to origin" },
-      { value: "pr", label: "Push and create PR" },
-    ],
+  // Progress tracking
+  questions.push({
+    type: "confirm",
+    id: "progress",
+    label: "Track progress in .ferix/PROGRESS.md?",
+    initial: true,
   });
 
-  if (isCancel(afterCompletion)) {
-    cancel("Cancelled");
-    process.exit(0);
-  }
+  // Final confirmation
+  questions.push({
+    type: "confirm",
+    id: "confirm",
+    label: "Start the Ferix loop?",
+    initial: true,
+  });
 
-  return {
-    branch: branchName as string,
-    push: afterCompletion === "push" || afterCompletion === "pr",
-    pr: afterCompletion === "pr",
-  };
+  return questions;
 }
 
 /**
- * Run interactive prompts to build configuration
+ * Build additional questions for git branch flow
+ */
+function buildBranchQuestions(): Question[] {
+  return [
+    {
+      type: "text",
+      id: "branchName",
+      label: "Branch name",
+      placeholder: "e.g., feat/eng-345 or fix/login-bug",
+      required: true,
+      validate: (value) => {
+        if (!BRANCH_NAME_PATTERN.test(value)) {
+          return "Invalid branch name (use letters, numbers, -, _, /)";
+        }
+        return undefined;
+      },
+    },
+    {
+      type: "select",
+      id: "afterCompletion",
+      label: "After completion",
+      options: [
+        { value: "nothing", label: "Keep local", hint: "don't push" },
+        { value: "push", label: "Push", hint: "push to origin" },
+        {
+          value: "pr",
+          label: "Push + PR",
+          hint: "push and create pull request",
+        },
+      ],
+    },
+  ];
+}
+
+/**
+ * Run interactive prompts to build configuration using retro TUI
  */
 export async function runInteractive(): Promise<FerixConfig | null> {
-  logger.header();
-
   const inGitRepo = await isGitRepo();
+  const form = new RetroForm();
 
-  // Task
-  const task = await text({
-    message: "What should the AI work on?",
-    placeholder: "e.g., Get ticket ENG-345 from Linear and implement it",
-    validate: (value) => {
-      if (!value.trim()) {
-        return "Task is required";
-      }
-    },
-  });
+  // Get main answers
+  const questions = buildQuestions(inGitRepo);
+  const answers = await form.run(questions);
 
-  if (isCancel(task)) {
-    cancel("Cancelled");
+  if (!answers) {
+    form.showCancelled();
     return null;
   }
 
-  // Verification
-  const verify = await text({
-    message: "What commands verify the work? (comma-separated, or 'none')",
-    placeholder: "e.g., bun lint, bun test",
-    initialValue: "",
-  });
-
-  if (isCancel(verify)) {
-    cancel("Cancelled");
+  // Check if user confirmed
+  if (answers.confirm === false) {
+    form.showCancelled();
     return null;
   }
 
-  // Iterations
-  const { iterations, untilComplete } = await collectIterations();
+  // Handle git branch flow
+  let branch: string | undefined;
+  let push = false;
+  let pr = false;
 
-  // Git config
-  const gitConfig = await collectGitConfig(inGitRepo);
+  if (answers.gitStrategy === "new") {
+    const branchQuestions = buildBranchQuestions();
+    const branchAnswers = await form.run(branchQuestions);
 
-  // Progress
-  const progress = await confirm({
-    message: "Track progress in progress.txt?",
-    initialValue: true,
-  });
+    if (!branchAnswers) {
+      form.showCancelled();
+      return null;
+    }
 
-  if (isCancel(progress)) {
-    cancel("Cancelled");
-    return null;
+    branch = branchAnswers.branchName as string;
+    const after = branchAnswers.afterCompletion as string;
+    push = after === "push" || after === "pr";
+    pr = after === "pr";
   }
+
+  // Parse iterations
+  const iterationsValue = answers.iterations as number;
+  const untilComplete = iterationsValue === -1;
+  const iterations = untilComplete ? DEFAULTS.ITERATIONS : iterationsValue;
 
   const config: FerixConfig = {
-    task: task as string,
-    verify: parseCommaSeparated(verify as string),
+    task: answers.task as string,
+    verify: parseCommaSeparated((answers.verify as string) || ""),
     iterations,
     untilComplete,
-    branch: gitConfig.branch,
+    branch,
     baseBranch: undefined,
-    push: gitConfig.push,
-    pr: gitConfig.pr,
+    push,
+    pr,
     commit: true,
-    progress: progress ? DEFAULTS.PROGRESS_FILE : false,
+    progress: answers.progress ? DEFAULTS.PROGRESS_FILE : false,
     dryRun: false,
     verbose: false,
   };
 
-  // Show summary
-  logger.summary({
+  // Show summary before starting
+  form.showSummary({
     Task: truncate(config.task, 40),
     Verify: config.verify.length > 0 ? config.verify.join(", ") : "none",
     Iterations: config.untilComplete
@@ -239,18 +218,10 @@ export async function runInteractive(): Promise<FerixConfig | null> {
       : String(config.iterations),
     Branch: config.branch ?? "current",
     After: getAfterText(config.pr, config.push),
-    Progress: config.progress ? "progress.txt" : "disabled",
+    Progress: config.progress ? ".ferix/PROGRESS.md" : "disabled",
   });
 
-  // Confirm
-  const confirmed = await confirm({
-    message: "Start the loop?",
-  });
-
-  if (isCancel(confirmed) || !confirmed) {
-    cancel("Cancelled");
-    return null;
-  }
+  form.showStarting();
 
   return config;
 }
