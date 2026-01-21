@@ -23,6 +23,9 @@ export function createDevModeState(
     startTime: Date.now(),
     taskStatus: "analyzing",
     tasks: [],
+    viewMode: "logs",
+    tasksListState: { selectedIndex: 0, scrollOffset: 0 },
+    gitInfo: { pushed: false },
   };
 }
 
@@ -42,6 +45,28 @@ export function getTaskProgress(state: DevModeState): {
  */
 export function formatElapsed(startTime: number): string {
   const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Format timestamp as HH:MM (24-hour format)
+ */
+export function formatTime(timestamp: number): string {
+  const date = new Date(timestamp);
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+/**
+ * Format duration between two timestamps as MM:SS
+ * If end is not provided, calculates duration from start to now
+ */
+export function formatDuration(start: number, end?: number): string {
+  const endTime = end ?? Date.now();
+  const elapsed = Math.floor((endTime - start) / 1000);
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;

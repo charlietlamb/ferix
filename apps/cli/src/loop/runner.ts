@@ -37,17 +37,24 @@ async function setupGitBranch(
 
 /**
  * Handle post-loop git operations (push and PR)
+ * Returns the PR URL if a PR was created
  */
-async function handlePostLoop(config: FerixConfig): Promise<void> {
+async function handlePostLoop(
+  config: FerixConfig
+): Promise<{ pushed: boolean; prUrl?: string }> {
   if (!(config.push && config.branch)) {
-    return;
+    return { pushed: false };
   }
 
   await pushBranch(config.branch);
 
+  let prUrl: string | undefined;
   if (config.pr && config.baseBranch) {
-    await createPullRequest(config.baseBranch);
+    const result = await createPullRequest(config.baseBranch);
+    prUrl = result ?? undefined;
   }
+
+  return { pushed: true, prUrl };
 }
 
 /**
@@ -135,6 +142,100 @@ async function executeLoopStandard(
 }
 
 /**
+ * Create event handler for TUI updates
+ */
+function createTuiEventHandler(tui: DevMode): (event: ClaudeEvent) => void {
+  return (event: ClaudeEvent) => handleTuiEvent(tui, event);
+}
+
+/**
+ * Handle a single TUI event
+ */
+function handleTuiEvent(tui: DevMode, event: ClaudeEvent): void {
+  switch (event.type) {
+    case "text":
+      tui.addOutput(event.text);
+      break;
+    case "tool_start":
+      tui.setTool(event.tool);
+      break;
+    case "tool_use":
+      tui.addToolUse(event.tool, event.detail);
+      break;
+    case "tool_end":
+      tui.setTool(undefined);
+      break;
+    case "tasks_defined":
+      tui.setTasks(event.tasks);
+      break;
+    case "task_done":
+      tui.markTaskDone(event.id);
+      break;
+    case "phases_defined":
+      tui.setPhases(event.taskId, event.phases);
+      break;
+    case "phase_start":
+      tui.setPhaseInProgress(event.id);
+      break;
+    case "phase_done":
+      tui.markPhaseDone(event.id);
+      break;
+    case "phase_failed":
+      tui.markPhaseFailed(event.id);
+      break;
+    case "error":
+      tui.setError();
+      break;
+    default:
+      // "complete" event is handled after execute returns
+      break;
+  }
+}
+
+/**
+ * Handle error result in TUI mode
+ */
+async function handleTuiError(
+  tui: DevMode,
+  errorMessage: string
+): Promise<never> {
+  tui.setError();
+  tui.addOutput(`\n${colors.red}[ERROR]${colors.reset} ${errorMessage}`);
+  tui.addOutput(`\n${colors.dim}Press Ctrl+C to exit${colors.reset}`);
+  await tui.waitForExit();
+  tui.cleanup();
+  const { type, message } = parseErrorType(errorMessage);
+  throw new AgentError(type, message);
+}
+
+/**
+ * Handle completion in TUI mode (including git operations)
+ */
+async function handleTuiComplete(
+  tui: DevMode,
+  iteration: number,
+  config: FerixConfig
+): Promise<void> {
+  tui.setComplete();
+  tui.addOutput(
+    `\n${colors.green}[DONE]${colors.reset} All tasks complete after ${iteration} iteration(s)`
+  );
+
+  // Handle post-loop git operations and update TUI
+  if (config.push && config.branch) {
+    tui.addOutput(`\n${colors.dim}Pushing branch...${colors.reset}`);
+    const postResult = await handlePostLoop(config);
+    tui.setGitInfo({ pushed: postResult.pushed, prUrl: postResult.prUrl });
+    if (postResult.prUrl) {
+      tui.addOutput(`\n${colors.green}[PR]${colors.reset} ${postResult.prUrl}`);
+    }
+  }
+
+  tui.addOutput(`\n${colors.dim}Press Ctrl+C to exit${colors.reset}`);
+  await tui.waitForExit();
+}
+
+/**
  * Execute the main loop in dev mode (full-screen TUI)
  */
 async function executeLoopDevMode(
@@ -150,54 +251,23 @@ async function executeLoopDevMode(
   const tui = new DevMode(config.task, displayMax);
   tui.start();
 
+  // Set initial git info - show current branch even if no new branch configured
+  try {
+    const currentBranch = await getCurrentBranch();
+    tui.setGitInfo({
+      branch: config.branch ?? currentBranch,
+      baseBranch: config.baseBranch,
+      pushed: false,
+    });
+  } catch {
+    // Not in a git repo or git not available - that's fine
+  }
+
+  const onEvent = createTuiEventHandler(tui);
+
   try {
     for (let i = 1; i <= maxIterations; i++) {
       tui.setIteration(i);
-
-      // Create event handler for TUI updates
-      const onEvent = (event: ClaudeEvent) => {
-        switch (event.type) {
-          case "text":
-            tui.addOutput(event.text);
-            break;
-          case "tool_start":
-            tui.setTool(event.tool);
-            break;
-          case "tool_use":
-            tui.addToolUse(event.tool, event.detail);
-            break;
-          case "tool_end":
-            tui.setTool(undefined);
-            break;
-          case "tasks_defined":
-            tui.setTasks(event.tasks);
-            break;
-          case "task_done":
-            tui.markTaskDone(event.id);
-            break;
-          case "phases_defined":
-            tui.setPhases(event.taskId, event.phases);
-            break;
-          case "phase_start":
-            tui.setPhaseInProgress(event.id);
-            break;
-          case "phase_done":
-            tui.markPhaseDone(event.id);
-            break;
-          case "phase_failed":
-            tui.markPhaseFailed(event.id);
-            break;
-          case "complete":
-            // Will be handled after execute returns
-            break;
-          case "error":
-            tui.setError();
-            break;
-          default:
-            // Unknown event type - ignore
-            break;
-        }
-      };
 
       const result: ExecuteResult = await engine.execute(prompt, {
         onEvent,
@@ -205,24 +275,11 @@ async function executeLoopDevMode(
       });
 
       if (result.hasError && result.errorMessage) {
-        tui.setError();
-        tui.addOutput(
-          `\n${colors.red}[ERROR]${colors.reset} ${result.errorMessage}`
-        );
-        tui.addOutput(`\n${colors.dim}Press Ctrl+C to exit${colors.reset}`);
-        await tui.waitForExit();
-        tui.cleanup();
-        const { type, message } = parseErrorType(result.errorMessage);
-        throw new AgentError(type, message);
+        await handleTuiError(tui, result.errorMessage);
       }
 
       if (result.complete) {
-        tui.setComplete();
-        tui.addOutput(
-          `\n${colors.green}[DONE]${colors.reset} All tasks complete after ${i} iteration(s)`
-        );
-        tui.addOutput(`\n${colors.dim}Press Ctrl+C to exit${colors.reset}`);
-        await tui.waitForExit();
+        await handleTuiComplete(tui, i, config);
         break;
       }
 
@@ -282,14 +339,12 @@ export async function runLoop(config: FerixConfig): Promise<void> {
   const useDevMode = process.stdout.isTTY && !process.env.CI;
 
   if (useDevMode) {
+    // Dev mode handles post-loop operations internally to update TUI
     await executeLoopDevMode(engine, prompt, config);
   } else {
     await executeLoopStandard(engine, prompt, config);
-  }
-
-  await handlePostLoop(config);
-
-  if (!useDevMode) {
+    // Handle post-loop operations for standard mode
+    await handlePostLoop(config);
     logger.success("Ferix loop finished");
   }
 }

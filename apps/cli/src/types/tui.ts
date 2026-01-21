@@ -31,6 +31,29 @@ export type TextKeyAction =
 export type TaskStatus = "analyzing" | "tracking" | "none";
 
 /**
+ * View modes available in dev mode TUI
+ */
+export type ViewMode = "logs" | "tasks" | "task-detail";
+
+/**
+ * Git information for display in TUI
+ */
+export interface GitInfo {
+  branch?: string;
+  baseBranch?: string;
+  pushed: boolean;
+  prUrl?: string;
+}
+
+/**
+ * Navigation state for tasks list view
+ */
+export interface TasksListState {
+  selectedIndex: number;
+  scrollOffset: number;
+}
+
+/**
  * State for the dev mode full-screen TUI
  */
 export interface DevModeState {
@@ -45,6 +68,12 @@ export interface DevModeState {
   taskStatus: TaskStatus;
   /** Extracted tasks from the work */
   tasks: Task[];
+  /** Current view mode */
+  viewMode: ViewMode;
+  /** Tasks list navigation state */
+  tasksListState: TasksListState;
+  /** Git information */
+  gitInfo: GitInfo;
 }
 
 /**

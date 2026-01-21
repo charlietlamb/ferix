@@ -4,7 +4,7 @@
  */
 
 import type { Phase, Task } from "../../types/config.js";
-import type { DevModeState } from "../../types/tui.js";
+import type { DevModeState, GitInfo } from "../../types/tui.js";
 import {
   disableRawMode,
   enableRawMode,
@@ -138,7 +138,158 @@ export class DevMode {
       process.exit(0);
     }
 
+    // Escape - go back
+    if (key === "\x1b" && this.state.viewMode !== "logs") {
+      this.goBack();
+      return;
+    }
+
+    // Dispatch to view-specific handler
+    if (this.state.viewMode === "logs") {
+      this.handleLogsViewKey(key);
+    } else if (this.state.viewMode === "tasks") {
+      this.handleTasksListKey(key);
+    } else if (this.state.viewMode === "task-detail") {
+      this.handleTaskDetailKey(key);
+    }
+  }
+
+  /**
+   * Handle keys in logs view
+   */
+  private handleLogsViewKey(key: string): void {
+    // 't' - switch to tasks view
+    if (key === "t") {
+      this.showTasksList();
+      return;
+    }
     this.handleScrollKey(key);
+  }
+
+  /**
+   * Handle keys in tasks list view
+   */
+  private handleTasksListKey(key: string): void {
+    // j/↓ - next task
+    if (key === "j" || key === "\x1b[B") {
+      this.selectNextTask();
+      return;
+    }
+    // k/↑ - prev task
+    if (key === "k" || key === "\x1b[A") {
+      this.selectPrevTask();
+      return;
+    }
+    // Enter - show detail
+    if (key === "\r") {
+      this.showTaskDetail();
+      return;
+    }
+    // g - first task
+    if (key === "g") {
+      this.selectFirstTask();
+      return;
+    }
+    // G - last task
+    if (key === "G") {
+      this.selectLastTask();
+      return;
+    }
+    // Mouse wheel scrolling
+    const mouseMatch = key.match(SGR_MOUSE_REGEX);
+    if (mouseMatch?.[1]) {
+      const button = Number.parseInt(mouseMatch[1], 10);
+      if (button === 64) {
+        this.selectPrevTask();
+      } else if (button === 65) {
+        this.selectNextTask();
+      }
+    }
+  }
+
+  /**
+   * Handle keys in task detail view
+   */
+  private handleTaskDetailKey(key: string): void {
+    // Allow scrolling in detail view
+    this.handleScrollKey(key);
+  }
+
+  /**
+   * Switch to tasks list view
+   */
+  private showTasksList(): void {
+    this.state.viewMode = "tasks";
+    this.state.tasksListState.scrollOffset = 0;
+    this.render();
+  }
+
+  /**
+   * Switch to task detail view for selected task
+   */
+  private showTaskDetail(): void {
+    if (this.state.tasks.length > 0) {
+      this.state.viewMode = "task-detail";
+      this.state.tasksListState.scrollOffset = 0;
+      this.render();
+    }
+  }
+
+  /**
+   * Return to previous view
+   */
+  private goBack(): void {
+    if (this.state.viewMode === "task-detail") {
+      this.state.viewMode = "tasks";
+    } else if (this.state.viewMode === "tasks") {
+      this.state.viewMode = "logs";
+    }
+    this.state.tasksListState.scrollOffset = 0;
+    this.render();
+  }
+
+  /**
+   * Select next task (with wrap)
+   */
+  private selectNextTask(): void {
+    if (this.state.tasks.length === 0) {
+      return;
+    }
+    const { selectedIndex } = this.state.tasksListState;
+    this.state.tasksListState.selectedIndex =
+      (selectedIndex + 1) % this.state.tasks.length;
+    this.render();
+  }
+
+  /**
+   * Select previous task (with wrap)
+   */
+  private selectPrevTask(): void {
+    if (this.state.tasks.length === 0) {
+      return;
+    }
+    const { selectedIndex } = this.state.tasksListState;
+    this.state.tasksListState.selectedIndex =
+      selectedIndex === 0 ? this.state.tasks.length - 1 : selectedIndex - 1;
+    this.render();
+  }
+
+  /**
+   * Select first task
+   */
+  private selectFirstTask(): void {
+    this.state.tasksListState.selectedIndex = 0;
+    this.render();
+  }
+
+  /**
+   * Select last task
+   */
+  private selectLastTask(): void {
+    if (this.state.tasks.length > 0) {
+      this.state.tasksListState.selectedIndex = this.state.tasks.length - 1;
+      this.render();
+    }
   }
 
   /**
@@ -267,10 +418,16 @@ export class DevMode {
    * Mark a phase as in progress
    */
   setPhaseInProgress(phaseId: string): void {
+    const now = Date.now();
     for (const task of this.state.tasks) {
       const phase = task.phases.find((p) => p.id === phaseId);
       if (phase) {
         phase.status = "in_progress";
+        phase.startedAt = now;
+        // Also mark task as started if not already
+        if (!task.startedAt) {
+          task.startedAt = now;
+        }
         this.render();
         return;
       }
@@ -281,14 +438,17 @@ export class DevMode {
    * Mark a phase as done
    */
   markPhaseDone(phaseId: string): void {
+    const now = Date.now();
     for (const task of this.state.tasks) {
       const phase = task.phases.find((p) => p.id === phaseId);
       if (phase) {
         phase.status = "done";
+        phase.completedAt = now;
         // Check if all phases are done - auto-complete task
         const allPhasesDone = task.phases.every((p) => p.status === "done");
         if (allPhasesDone && task.phases.length > 0) {
           task.done = true;
+          task.completedAt = now;
         }
         this.render();
         return;
@@ -300,14 +460,24 @@ export class DevMode {
    * Mark a phase as failed
    */
   markPhaseFailed(phaseId: string): void {
+    const now = Date.now();
     for (const task of this.state.tasks) {
       const phase = task.phases.find((p) => p.id === phaseId);
       if (phase) {
         phase.status = "failed";
+        phase.completedAt = now;
         this.render();
         return;
       }
     }
+  }
+
+  /**
+   * Set git information for display
+   */
+  setGitInfo(info: Partial<GitInfo>): void {
+    this.state.gitInfo = { ...this.state.gitInfo, ...info };
+    this.render();
   }
 
   /**
@@ -385,7 +555,7 @@ export class DevMode {
    */
   waitForExit(): Promise<void> {
     return new Promise((resolve) => {
-      // Replace the existing key handler with one that only listens for Ctrl+C
+      // Replace the existing key handler with one that supports full navigation
       if (this.keyHandler) {
         process.stdin.removeListener("data", this.keyHandler);
       }
@@ -399,8 +569,8 @@ export class DevMode {
           return;
         }
 
-        // Still allow scrolling while waiting
-        this.handleScrollKey(key);
+        // Allow full navigation while waiting
+        this.handleKeypress(key);
       };
 
       process.stdin.on("data", this.keyHandler);

@@ -91,3 +91,11 @@ export function truncate(str: string, maxWidth: number): string {
   }
   return `${stripped.substring(0, maxWidth - 3)}...`;
 }
+
+/**
+ * Create clickable terminal hyperlink using OSC 8 escape sequence
+ * Supported by most modern terminals (iTerm2, Windows Terminal, GNOME Terminal, etc.)
+ */
+export function hyperlink(url: string, text: string): string {
+  return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
+}

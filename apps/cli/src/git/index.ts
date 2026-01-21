@@ -41,8 +41,11 @@ export async function pushBranch(branch: string): Promise<void> {
 
 /**
  * Create a pull request using GitHub CLI
+ * Returns the PR URL if successful, null otherwise
  */
-export async function createPullRequest(baseBranch: string): Promise<void> {
+export async function createPullRequest(
+  baseBranch: string
+): Promise<string | null> {
   logger.step(`Creating pull request against ${baseBranch}`);
 
   // Check if gh CLI is available
@@ -50,7 +53,7 @@ export async function createPullRequest(baseBranch: string): Promise<void> {
   if (!ghCheck.success) {
     logger.warn("GitHub CLI (gh) not found. Skipping PR creation.");
     logger.dim(MESSAGES.GH_INSTALL_HINT);
-    return;
+    return null;
   }
 
   // Create PR with --fill to use commit info
@@ -62,11 +65,28 @@ export async function createPullRequest(baseBranch: string): Promise<void> {
     "--fill",
   ]);
 
-  if (result.success) {
-    logger.success("Pull request created!");
-  } else {
+  if (!result.success) {
     logger.warn("Failed to create pull request. You can create it manually.");
+    return null;
   }
+
+  // Try to get the PR URL from gh pr view
+  const prView = await shell("gh", [
+    "pr",
+    "view",
+    "--json",
+    "url",
+    "-q",
+    ".url",
+  ]);
+  if (prView.success && prView.stdout.trim()) {
+    const prUrl = prView.stdout.trim();
+    logger.success(`Pull request created: ${prUrl}`);
+    return prUrl;
+  }
+
+  logger.success("Pull request created!");
+  return null;
 }
 
 /**

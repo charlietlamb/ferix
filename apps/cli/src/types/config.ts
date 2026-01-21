@@ -87,6 +87,10 @@ export interface Phase {
   description: string;
   /** Current status of the phase */
   status: PhaseStatus;
+  /** Unix timestamp when phase started */
+  startedAt?: number;
+  /** Unix timestamp when phase completed */
+  completedAt?: number;
 }
 
 /**
@@ -101,4 +105,8 @@ export interface Task {
   done: boolean;
   /** Phases within this task (empty until phases are defined) */
   phases: Phase[];
+  /** Unix timestamp when task work began */
+  startedAt?: number;
+  /** Unix timestamp when task completed */
+  completedAt?: number;
 }
