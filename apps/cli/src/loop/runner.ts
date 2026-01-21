@@ -45,7 +45,12 @@ import {
   getCurrentBranch,
   pushBranch,
 } from "../git/index.js";
-import { getNextTask, loadPlan, loadPlanIfExists } from "../plan/index.js";
+import {
+  archivePlan,
+  getNextTask,
+  loadPlan,
+  loadPlanIfExists,
+} from "../plan/index.js";
 import { createBreakdownPrompt } from "../prompt/breakdown.js";
 import { createPlannerPrompt } from "../prompt/planner.js";
 import { createWorkerPrompt } from "../prompt/worker.js";
@@ -569,17 +574,35 @@ async function executeLoopDevMode(
   const onEvent = createTuiEventHandler(tui);
 
   try {
-    // Check for existing plan (resume support)
-    let plan = loadPlanIfExists();
+    // Handle existing plan based on resume flag
+    let plan: Plan | null = null;
+    const existingPlan = loadPlanIfExists();
 
-    // Phase 0: Breakdown (if no plan exists)
-    if (plan) {
-      // Populate TUI with existing plan tasks
-      tui.setTasks(planToTuiTasks(plan));
-      tui.addOutput(
-        `${colors.cyan}[RESUME]${colors.reset} Found existing plan with ${plan.tasks.length} tasks\n`
-      );
-    } else {
+    if (config.resume) {
+      // User wants to continue from existing plan
+      if (existingPlan) {
+        plan = existingPlan;
+        tui.setTasks(planToTuiTasks(plan));
+        tui.addOutput(
+          `${colors.cyan}[RESUME]${colors.reset} Continuing from existing plan with ${plan.tasks.length} tasks\n`
+        );
+      } else {
+        tui.addOutput(
+          `${colors.yellow}[WARN]${colors.reset} No existing plan found to continue from. Starting fresh.\n`
+        );
+      }
+    } else if (existingPlan) {
+      // Default: archive old plan and start fresh
+      const result = archivePlan();
+      if (result.success && result.filename) {
+        tui.addOutput(
+          `${colors.dim}[INFO] Archived previous plan to .ferix/archive/${result.filename}${colors.reset}\n`
+        );
+      }
+    }
+
+    // Phase 0: Breakdown (if no plan loaded)
+    if (!plan) {
       plan = await executeBreakdownPhase(engine, config, tui, onEvent);
     }
 
@@ -602,6 +625,38 @@ async function executeLoopDevMode(
 }
 
 /**
+ * Handles existing plan based on resume flag (standard mode).
+ *
+ * @param config - Ferix configuration
+ * @returns Existing plan if resuming, null otherwise
+ */
+function handleExistingPlanStandard(config: FerixConfig): Plan | null {
+  const existingPlan = loadPlanIfExists();
+
+  if (config.resume) {
+    if (existingPlan) {
+      logger.info(
+        `Continuing from existing plan with ${existingPlan.tasks.length} tasks`
+      );
+      return existingPlan;
+    }
+    logger.warn("No existing plan found to continue from. Starting fresh.");
+    return null;
+  }
+
+  if (existingPlan) {
+    const result = archivePlan();
+    if (result.success && result.filename) {
+      logger.info(
+        `Archived previous plan to .ferix/archive/${result.filename}`
+      );
+    }
+  }
+
+  return null;
+}
+
+/**
  * Executes the main loop in standard mode (no TUI).
  *
  * Used in CI environments or when stdout is piped. Uses simple
@@ -616,17 +671,17 @@ async function executeLoopStandard(
   engine: Engine,
   config: FerixConfig
 ): Promise<void> {
-  // Check for existing plan (resume support)
-  let plan = loadPlanIfExists();
+  // Handle existing plan based on resume flag
+  let plan = handleExistingPlanStandard(config);
 
-  // Phase 0: Breakdown (if no plan exists)
+  // Phase 0: Breakdown (if no plan loaded)
   if (!plan) {
     logger.info("=== BREAKDOWN PHASE ===");
     const breakdownResult = await executeBreakdown(engine, config, null);
     const breakdownCheck = checkResult(breakdownResult);
 
     if (breakdownCheck.failed) {
-      throw new AgentError("Breakdown", breakdownCheck.error || "Failed");
+      throw new AgentError("Breakdown", breakdownCheck.error ?? "Failed");
     }
 
     plan = loadPlanIfExists();

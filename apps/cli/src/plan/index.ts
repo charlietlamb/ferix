@@ -8,10 +8,11 @@
 
 // Parser
 export { parsePlanFile } from "./parser.js";
-// Re-export validation error type
-export type { PlanValidationError } from "./utils.js";
+// Re-export types
+export type { ArchiveResult, PlanValidationError } from "./utils.js";
 // Core utilities (actively used)
 export {
+  archivePlan,
   getNextTask,
   getPlanPath,
   isPlanValid,

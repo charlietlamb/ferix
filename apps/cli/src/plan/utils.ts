@@ -23,9 +23,17 @@
  * ```
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import type { Plan, PlanPhase, PlanTask, TaskStatus } from "../types/plan.js";
+import { logger } from "../utils/logger.js";
 import { parsePlanFile } from "./parser.js";
 import { writePlanFile } from "./writer.js";
 
@@ -34,6 +42,114 @@ const PLAN_DIR = ".ferix";
 
 /** Plan file name within the ferix directory */
 const PLAN_FILE = "PLAN.md";
+
+/** Archive directory within .ferix */
+const ARCHIVE_DIR = "archive";
+
+// ============================================================================
+// ARCHIVE FUNCTIONS
+// ============================================================================
+
+/**
+ * Converts text to a filename-safe slug.
+ *
+ * - Lowercase
+ * - Replace spaces/special chars with dashes
+ * - Remove consecutive dashes
+ * - Truncate to maxLength
+ * - Falls back to "task" if result is empty
+ *
+ * @param text - Text to slugify
+ * @param maxLength - Maximum length of the slug (default 30)
+ * @returns Filename-safe slug (never empty)
+ */
+function slugify(text: string, maxLength = 30): string {
+  const slug = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "") // Remove special chars
+    .replace(/\s+/g, "-") // Spaces to dashes
+    .replace(/-+/g, "-") // Collapse multiple dashes
+    .replace(/^-|-$/g, "") // Trim leading/trailing dashes
+    .slice(0, maxLength);
+
+  return slug || "task"; // Fallback if empty
+}
+
+/**
+ * Generates a timestamp string for archive filenames.
+ *
+ * Format: YYYY-MM-DD_HHMMSS
+ *
+ * @returns Formatted timestamp
+ */
+function getArchiveTimestamp(): string {
+  const now = new Date();
+  const date = now.toISOString().split("T")[0]; // YYYY-MM-DD
+  const time = now.toTimeString().slice(0, 8).replace(/:/g, ""); // HHMMSS
+  return `${date}_${time}`;
+}
+
+/**
+ * Result of archiving a plan file.
+ */
+export interface ArchiveResult {
+  /** Whether the archive was successful */
+  success: boolean;
+  /** The archive filename (only if successful) */
+  filename?: string;
+}
+
+/**
+ * Archives the existing plan file to `.ferix/archive/` with a verbose name.
+ *
+ * Naming format: `PLAN_{date}_{time}_{task-slug}.md`
+ * Example: `PLAN_2026-01-21_173045_scan-prd-for-tasks.md`
+ *
+ * @param cwd - Working directory (defaults to process.cwd())
+ * @returns Result indicating success and archive filename
+ */
+export function archivePlan(cwd: string = process.cwd()): ArchiveResult {
+  const planPath = getPlanPath(cwd);
+
+  if (!existsSync(planPath)) {
+    return { success: false };
+  }
+
+  try {
+    // Load plan to get original task for slug
+    const content = readFileSync(planPath, "utf-8");
+    const plan = parsePlanFile(content);
+    const taskSlug = slugify(plan.originalTask);
+
+    // Create archive directory if needed
+    const archiveDir = join(cwd, PLAN_DIR, ARCHIVE_DIR);
+    if (!existsSync(archiveDir)) {
+      mkdirSync(archiveDir, { recursive: true });
+    }
+
+    // Generate archive filename
+    const timestamp = getArchiveTimestamp();
+    const filename = `PLAN_${timestamp}_${taskSlug}.md`;
+    const archivePath = join(archiveDir, filename);
+
+    // Move the plan file to archive
+    renameSync(planPath, archivePath);
+
+    return { success: true, filename };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.warn(`Failed to archive plan: ${message}`);
+
+    // Try to delete the plan file so we can start fresh
+    try {
+      unlinkSync(planPath);
+    } catch {
+      // Ignore deletion errors
+    }
+
+    return { success: false };
+  }
+}
 
 // ============================================================================
 // CORE FUNCTIONS (actively used by the planner/worker loop)
