@@ -1,5 +1,6 @@
 import { AutumnIcon } from "@ferix/ui/components/icons/autumn-icon";
 import { ConvexIcon } from "@ferix/ui/components/icons/convex-icon";
+import { EncoreIcon } from "@ferix/ui/components/icons/encore-icon";
 import {
   SiAngular,
   SiAnthropic,
@@ -182,6 +183,7 @@ export const tags: Tag[] = [
   { id: "astro", label: "Astro", category: "framework", icon: SiAstro },
   { id: "remix", label: "Remix", category: "framework", icon: SiRemix },
   { id: "hono", label: "Hono", category: "framework", icon: SiHono },
+  { id: "encore", label: "Encore", category: "framework", icon: EncoreIcon },
   { id: "express", label: "Express", category: "framework", icon: SiExpress },
   { id: "nestjs", label: "NestJS", category: "framework", icon: SiNestjs },
   { id: "trpc", label: "tRPC", category: "framework", icon: SiTrpc },
