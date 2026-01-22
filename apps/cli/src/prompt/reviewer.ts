@@ -74,7 +74,24 @@ ${retrySection}
 
 ## Instructions
 
+### Step 0: Verify Scope Completeness
+
+Before checking individual criteria, verify the SCOPE of the work:
+
+1. Read the component inventory from the plan
+2. Check if the implementation touched ALL relevant files
+3. If files were skipped that should have been modified, this is a SCOPE FAILURE
+
+**Signal scope issues:**
+\`\`\`
+<ferix:scope-incomplete reason="[file/area] was not addressed"/>
+\`\`\`
+
+A scope failure counts as a criterion failure even if all stated criteria pass.
+
 ### Step 1: Review Each Criterion
+
+**IMPORTANT:** If any criterion is about completeness (e.g., "all files follow pattern"), you MUST verify by checking EVERY file - do not sample.
 
 For each criterion:
 

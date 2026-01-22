@@ -47,22 +47,61 @@ ${task}
 
 ## Instructions
 
-### Step 1: Explore the Codebase
+### Step 1: Create Component Inventory
 
-Before planning, explore the codebase to understand:
-- Project structure and key directories
-- Tech stack and frameworks used
-- Coding patterns and conventions
-- Relevant existing code for this task
+Before planning, create a COMPLETE inventory of components relevant to this task.
 
-Take your time to read files and understand the architecture.
+**Process:**
+1. Identify the domain of the task (e.g., "UI", "API", "auth")
+2. Find ALL directories that touch this domain
+3. List EVERY file in those directories
+4. For each file, note its purpose in 1 line
 
-### Step 2: Create Context Summary
+**Output format:**
+\`\`\`
+## Component Inventory
 
-Write a 2-3 paragraph summary capturing:
-- Tech stack and architecture overview
-- Key files and their purposes
-- Patterns to follow when implementing
+### [Directory 1]
+- file1.ts - [purpose]
+- file2.ts - [purpose]
+
+### [Directory 2]
+- file3.ts - [purpose]
+\`\`\`
+
+**Completeness check:**
+- Did you check for related directories? (e.g., utils/, helpers/, shared/)
+- Did you check for test files?
+- Did you check for type definitions?
+
+Do NOT proceed to planning until the inventory is complete.
+
+### Step 2: Create Structured Context
+
+Document the following in a structured format (NOT prose):
+
+**Tech Stack:**
+- Language: [e.g., TypeScript 5.x]
+- Runtime: [e.g., Bun 1.x]
+- Framework: [e.g., None / React / etc.]
+
+**Directory Structure:**
+\`\`\`
+src/
+├── [dir]/ - [purpose]
+├── [dir]/ - [purpose]
+\`\`\`
+
+**Patterns:**
+- Naming: [e.g., camelCase files, PascalCase types]
+- Exports: [e.g., named exports, barrel files]
+- Error handling: [e.g., custom error classes, Result types]
+
+**Files from Inventory Relevant to This Task:**
+- [file] - will need [modification type]
+- [file] - will need [modification type]
+
+This context will be passed to future phases - be thorough.
 
 ### Step 3: Break into High-Level Tasks
 
@@ -119,6 +158,15 @@ For EACH task, extract **testable success criteria** from the requirements.
 - Cover error handling and edge cases ("shows error on invalid JSON")
 - Cover integration points ("config is merged with CLI args")
 - No minimum or maximum - use as many as needed to fully cover the task
+
+**REQUIRED: Add a completeness criterion for EVERY task:**
+- Include at least one criterion that verifies NOTHING was missed
+- Examples:
+  - "All files in [directory] follow the new pattern"
+  - "No hardcoded values remain in [scope]"
+  - "All [components] are covered by the change"
+
+This prevents passing review with incomplete work.
 
 **Criteria will be verified by a reviewer after implementation.**
 If ANY criterion fails after 5 attempts, the task will be marked as failed and execution will stop.

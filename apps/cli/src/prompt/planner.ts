@@ -58,14 +58,26 @@ Description: ${task.description}
 
 ## Instructions
 
-### Step 1: Analyze the Task
+### Step 1: Verify and Extend Context
 
-Read the plan context and understand:
+**REQUIRED: Verify the component inventory is complete for this task.**
+
+1. Read the Context section from the plan
+2. Check if any files are MISSING from the inventory that this task will touch
+3. If gaps exist, explore and add them NOW
+
+**Output any additions:**
+\`\`\`
+## Context Additions
+
+### [Directory]
+- [file] - [purpose] (missed in breakdown)
+\`\`\`
+
+Then analyze:
 - What this task needs to accomplish
 - How it fits with completed and pending tasks
-- What files are likely involved
-
-If needed, explore relevant files in the codebase to understand the current implementation.
+- Which files from the inventory need modification
 
 ### Step 2: Define Phases
 
