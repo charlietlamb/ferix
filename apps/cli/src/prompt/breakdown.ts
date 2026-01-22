@@ -171,21 +171,29 @@ This prevents passing review with incomplete work.
 **Criteria will be verified by a reviewer after implementation.**
 If ANY criterion fails after 5 attempts, the task will be marked as failed and execution will stop.
 
-**After outputting the tasks, emit success criteria for EACH task in this format:**
+**After outputting the tasks, emit success criteria for EACH task.**
+
+**CRITICAL FORMAT REQUIREMENTS:**
+- You MUST wrap ALL criterion tags inside a ferix:criteria block
+- NEVER output standalone <criterion> tags outside the wrapper
+- Do NOT use angle brackets < > inside criterion descriptions (breaks XML parsing)
+  - WRONG: "returns Result<T, E>"
+  - CORRECT: "returns Result(T, E)" or just "returns Result type"
+
+**Required format - follow EXACTLY:**
 <ferix:criteria task="1">
   <criterion id="1.c1">First criterion description</criterion>
   <criterion id="1.c2">Second criterion description</criterion>
 </ferix:criteria>
 <ferix:criteria task="2">
   <criterion id="2.c1">Criterion for task 2</criterion>
-  <criterion id="2.c2">Another criterion</criterion>
 </ferix:criteria>
 
-**Rules for criteria signals:**
+**Rules:**
 - Emit criteria AFTER the tasks block, BEFORE writing the plan file
 - Use ID format: taskId.cN (e.g., "1.c1", "1.c2", "2.c1")
-- Each task should have at least one criterion
-- Keep criterion descriptions concise but specific
+- Each task MUST have its own <ferix:criteria task="N"> wrapper
+- Keep descriptions concise but specific - no angle brackets
 
 ### Step 4: Create the Plan File
 

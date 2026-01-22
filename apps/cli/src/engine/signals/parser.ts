@@ -25,6 +25,9 @@ const EXTRACT_CRITERIA_REGEX =
 const CRITERION_PASSED_REGEX = /<ferix:criterion-passed id="[\d.c]+"\/>/g;
 const CRITERION_FAILED_REGEX =
   /<ferix:criterion-failed id="[\d.c]+" reason="[^"]*"\/>/g;
+// Standalone criterion definition tags - replace with content (handles angle brackets in descriptions)
+const CRITERION_DEFINITION_REGEX =
+  /<criterion id="[^"]*">([^<]*(?:<(?!\/criterion>)[^<]*)*)<\/criterion>/g;
 
 // Check stage signals (success criteria verification)
 const CHECK_PASSED_REGEX = /<ferix:check-passed\/>/g;
@@ -76,7 +79,8 @@ export function stripSignalTags(text: string): string {
     .replace(CHECK_FAILED_REGEX, "")
     .replace(REVIEW_COMPLETE_REGEX, "")
     .replace(REVIEW_CHANGES_MADE_REGEX, "")
-    .replace(CRITERIA_BLOCK_REGEX, "");
+    .replace(CRITERIA_BLOCK_REGEX, "")
+    .replace(CRITERION_DEFINITION_REGEX, "$1");
 }
 
 /**
