@@ -20,6 +20,24 @@ import { writePlanFile } from "../plan/writer.js";
 import type { Plan, PlanTask } from "../types/plan.js";
 
 /**
+ * Options for creating a worker prompt
+ */
+export interface WorkerPromptOptions {
+  /** Commands to run after phases complete (e.g., lint, build) */
+  verifyCommands: string[];
+  /** Optional git branch name for commit instructions */
+  branch?: string;
+  /** Error context from a previous failed verification attempt */
+  verifyError?: {
+    command: string;
+    exitCode: number;
+    output: string;
+  };
+  /** Current verify attempt number (1-3) */
+  verifyAttempt?: number;
+}
+
+/**
  * Creates the worker prompt for executing a specific task.
  *
  * The prompt instructs the LLM to:
@@ -40,9 +58,70 @@ export function createWorkerPrompt(
   task: PlanTask,
   verifyCommands: string[],
   branch?: string
+): string;
+
+/**
+ * Creates the worker prompt with additional options for verify retry.
+ *
+ * @param plan - The current plan (included in prompt for context)
+ * @param task - The specific task to execute (should have phases defined)
+ * @param options - Worker prompt options including verify error context
+ * @returns Complete prompt string for the worker phase
+ */
+export function createWorkerPrompt(
+  plan: Plan,
+  task: PlanTask,
+  options: WorkerPromptOptions
+): string;
+
+export function createWorkerPrompt(
+  plan: Plan,
+  task: PlanTask,
+  verifyCommandsOrOptions: string[] | WorkerPromptOptions,
+  branch?: string
 ): string {
+  // Handle overloaded signatures
+  let verifyCommands: string[];
+  let gitBranch: string | undefined;
+  let verifyError: WorkerPromptOptions["verifyError"] | undefined;
+  let verifyAttempt: number | undefined;
+
+  if (Array.isArray(verifyCommandsOrOptions)) {
+    verifyCommands = verifyCommandsOrOptions;
+    gitBranch = branch;
+  } else {
+    verifyCommands = verifyCommandsOrOptions.verifyCommands;
+    gitBranch = verifyCommandsOrOptions.branch;
+    verifyError = verifyCommandsOrOptions.verifyError;
+    verifyAttempt = verifyCommandsOrOptions.verifyAttempt;
+  }
+
   const planPath = getPlanPath();
   const planContent = writePlanFile(plan);
+
+  // Build verify error section (for retry attempts)
+  let verifyErrorSection = "";
+  if (verifyError && verifyAttempt) {
+    verifyErrorSection = `
+
+## IMPORTANT: Previous Verification Failed (Attempt ${verifyAttempt}/3)
+
+The previous attempt failed during verification. You MUST fix this issue before proceeding.
+
+**Failed Command:** \`${verifyError.command}\`
+**Exit Code:** ${verifyError.exitCode}
+
+**Output:**
+\`\`\`
+${verifyError.output}
+\`\`\`
+
+**Instructions:**
+1. Analyze the error output above
+2. Fix the issue in the relevant files
+3. The verification commands will be run automatically after you complete your changes
+4. Do NOT run the verification commands yourself - just fix the code`;
+  }
 
   // Build verification section
   let verifySection = "";
@@ -65,12 +144,12 @@ ${commandList}
 
   // Build git section
   let gitSection = "";
-  if (branch) {
+  if (gitBranch) {
     gitSection = `
 
 ## Git
 
-You are working on branch: \`${branch}\`
+You are working on branch: \`${gitBranch}\`
 After completing and verifying the task, commit your changes with a clear message.
 Use \`git log\` to see previous commit messages and match the style.`;
   }
@@ -108,7 +187,7 @@ Description: ${task.description}
 ### Phases to Complete
 
 ${phasesDisplay}
-${verifySection}${gitSection}
+${verifyErrorSection}${verifySection}${gitSection}
 
 ## Instructions
 

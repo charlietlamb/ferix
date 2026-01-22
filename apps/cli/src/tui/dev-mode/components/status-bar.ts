@@ -39,6 +39,11 @@ export function getStatus(state: DevModeState): {
         case "reviewing":
           modeText = currentTaskId ? `REVIEW #${currentTaskId}` : "REVIEWING";
           break;
+        case "verifying":
+          modeText = state.verifyAttempt
+            ? `VERIFY (${state.verifyAttempt}/3)`
+            : "VERIFY";
+          break;
         default:
           modeText = "RUN";
       }
@@ -97,6 +102,15 @@ export function buildStatusBarContent(state: DevModeState): string {
   if (currentTool) {
     const toolColor = TOOL_COLORS[currentTool] || colors.white;
     parts.push(`${toolColor}${currentTool}${colors.reset}`);
+  }
+
+  // Show current verify command when in verifying mode
+  if (state.executionMode === "verifying" && state.currentVerifyCommand) {
+    const cmdDisplay =
+      state.currentVerifyCommand.length > 30
+        ? `${state.currentVerifyCommand.slice(0, 27)}...`
+        : state.currentVerifyCommand;
+    parts.push(`${colors.yellow}${cmdDisplay}${colors.reset}`);
   }
 
   return ` ${parts.join(`${colors.dim} | ${colors.reset}`)} `;

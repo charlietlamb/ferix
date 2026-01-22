@@ -521,9 +521,32 @@ export class DevMode {
   setExecutionMode(mode: ExecutionMode, taskId?: number): void {
     this.state.executionMode = mode;
     this.state.currentTaskId = taskId;
+    // Clear verify state when not in verify mode
+    if (mode !== "verifying") {
+      this.state.currentVerifyCommand = undefined;
+      this.state.verifyAttempt = undefined;
+    }
     if (mode !== "idle") {
       this.state.status = "running";
     }
+    this.render();
+  }
+
+  /**
+   * Set verify mode with attempt number
+   */
+  setVerifyMode(attempt: number): void {
+    this.state.executionMode = "verifying";
+    this.state.verifyAttempt = attempt;
+    this.state.status = "running";
+    this.render();
+  }
+
+  /**
+   * Set the current verify command being run
+   */
+  setVerifyCommand(command: string | undefined): void {
+    this.state.currentVerifyCommand = command;
     this.render();
   }
 

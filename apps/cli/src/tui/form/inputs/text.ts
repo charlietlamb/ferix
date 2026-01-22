@@ -122,9 +122,13 @@ export function askText(
   const layout = calculateBoxLayout(cols);
   const maxWidth = layout.innerWidth - 2;
 
-  const inputLines: string[] = [""];
-  let cursorLine = 0;
-  let cursorCol = 0;
+  // Initialize with initial value if provided, split by newlines
+  const inputLines: string[] = question.initial
+    ? question.initial.split("\n")
+    : [""];
+  // Position cursor at end of last line
+  let cursorLine = inputLines.length - 1;
+  let cursorCol = inputLines[cursorLine]?.length ?? 0;
 
   const render = () => {
     const { cursorRow, cursorColPos } = renderTextBox(

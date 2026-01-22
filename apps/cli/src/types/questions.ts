@@ -13,6 +13,8 @@ export interface TextQuestion {
   placeholder?: string;
   required?: boolean;
   validate?: (value: string) => string | undefined;
+  /** Initial value to pre-fill the input */
+  initial?: string;
 }
 
 /** Option for select questions */
@@ -28,6 +30,8 @@ export interface SelectQuestion {
   id: string;
   label: string;
   options: SelectOption[];
+  /** Initial value to pre-select (matches against option values) */
+  initial?: string | number;
 }
 
 /** Yes/No confirmation question */

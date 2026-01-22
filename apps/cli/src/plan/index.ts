@@ -9,15 +9,23 @@
 // Parser
 export { parsePlanFile } from "./parser.js";
 // Re-export types
-export type { ArchiveResult, PlanValidationError } from "./utils.js";
+export type {
+  ArchiveResult,
+  PlanValidationError,
+  VerifyErrorInfo,
+} from "./utils.js";
 // Core utilities (actively used)
 export {
   archivePlan,
+  clearVerifyState,
   getNextTask,
   getPlanPath,
   isPlanValid,
   loadPlan,
   loadPlanIfExists,
+  recordVerifyFailure,
+  setVerifyError,
+  updateVerifyAttempts,
   validatePlan,
 } from "./utils.js";
 

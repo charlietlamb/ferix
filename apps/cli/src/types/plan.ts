@@ -92,6 +92,24 @@ export interface PlanTask {
   completionNotes?: string;
   /** Error message (added by worker on failure) */
   errorMessage?: string;
+  /** Number of verify retry attempts (max 3) */
+  verifyAttempts?: number;
+  /** Error context from failed verification (command, exit code, output) */
+  verifyError?: VerifyError;
+}
+
+/**
+ * Error context from a failed verification command
+ *
+ * This information is passed to the worker on retry to help fix the issue.
+ */
+export interface VerifyError {
+  /** The command that failed */
+  command: string;
+  /** Exit code from the command */
+  exitCode: number;
+  /** Output from the command (stdout + stderr, truncated if needed) */
+  output: string;
 }
 
 /**

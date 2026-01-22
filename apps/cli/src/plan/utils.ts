@@ -594,3 +594,107 @@ export function getProgress(plan: Plan): number {
   }
   return countCompleted(plan) / total;
 }
+
+// ============================================================================
+// VERIFY STATE UTILITIES
+// ============================================================================
+
+/**
+ * Error context from a failed verification command.
+ * Re-exported from types for convenience.
+ */
+export interface VerifyErrorInfo {
+  /** The command that failed */
+  command: string;
+  /** Exit code from the command */
+  exitCode: number;
+  /** Output from the command (stdout + stderr, truncated if needed) */
+  output: string;
+}
+
+/**
+ * Updates a task's verify attempts count (immutable).
+ *
+ * @param plan - The plan to update
+ * @param taskId - ID of the task to update
+ * @param attempts - New verify attempts count
+ * @returns New Plan object with updated task
+ */
+export function updateVerifyAttempts(
+  plan: Plan,
+  taskId: number,
+  attempts: number
+): Plan {
+  const tasks = plan.tasks.map((task) =>
+    task.id === taskId ? { ...task, verifyAttempts: attempts } : task
+  );
+  return { ...plan, tasks };
+}
+
+/**
+ * Sets the verify error context for a task (immutable).
+ *
+ * Used when a verification command fails to provide context for retry.
+ *
+ * @param plan - The plan to update
+ * @param taskId - ID of the task to update
+ * @param error - Error context (command, exit code, output) or undefined to clear
+ * @returns New Plan object with updated task
+ */
+export function setVerifyError(
+  plan: Plan,
+  taskId: number,
+  error: VerifyErrorInfo | undefined
+): Plan {
+  const tasks = plan.tasks.map((task) =>
+    task.id === taskId ? { ...task, verifyError: error } : task
+  );
+  return { ...plan, tasks };
+}
+
+/**
+ * Clears verify state from a task (immutable).
+ *
+ * Resets verifyAttempts and verifyError to undefined.
+ * Useful when starting a fresh attempt or when task completes.
+ *
+ * @param plan - The plan to update
+ * @param taskId - ID of the task to update
+ * @returns New Plan object with cleared verify state
+ */
+export function clearVerifyState(plan: Plan, taskId: number): Plan {
+  const tasks = plan.tasks.map((task) =>
+    task.id === taskId
+      ? { ...task, verifyAttempts: undefined, verifyError: undefined }
+      : task
+  );
+  return { ...plan, tasks };
+}
+
+/**
+ * Increments verify attempts and sets error context (immutable).
+ *
+ * Convenience function that combines updateVerifyAttempts and setVerifyError.
+ *
+ * @param plan - The plan to update
+ * @param taskId - ID of the task to update
+ * @param error - Error context from the failed verification
+ * @returns New Plan object with updated task
+ */
+export function recordVerifyFailure(
+  plan: Plan,
+  taskId: number,
+  error: VerifyErrorInfo
+): Plan {
+  const tasks = plan.tasks.map((task) => {
+    if (task.id !== taskId) {
+      return task;
+    }
+    return {
+      ...task,
+      verifyAttempts: (task.verifyAttempts ?? 0) + 1,
+      verifyError: error,
+    };
+  });
+  return { ...plan, tasks };
+}

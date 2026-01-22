@@ -43,13 +43,15 @@ export type ViewMode = "logs" | "tasks" | "task-detail";
  * - planning: Planning phases for a specific task
  * - working: Executing a task's phases
  * - reviewing: Verifying success criteria after work completes
+ * - verifying: Running verification commands after task completion
  */
 export type ExecutionMode =
   | "idle"
   | "breakdown"
   | "planning"
   | "working"
-  | "reviewing";
+  | "reviewing"
+  | "verifying";
 
 /**
  * Git information for display in TUI
@@ -94,6 +96,10 @@ export interface DevModeState {
   executionMode: ExecutionMode;
   /** Current task ID being worked on (for planning/working modes) */
   currentTaskId?: number;
+  /** Current verify command being run (for verifying mode) */
+  currentVerifyCommand?: string;
+  /** Current verify attempt number (1-3) */
+  verifyAttempt?: number;
 }
 
 /**

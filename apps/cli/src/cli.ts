@@ -1,10 +1,21 @@
 import { Command } from "commander";
+import type { ExplicitCliFlags } from "./config/schema.js";
 import { CLI, DEFAULTS, UI } from "./constants.js";
 import { isGitRepo } from "./git/index.js";
 import { truncate } from "./tui/ansi.js";
 import type { Question } from "./tui/retro-form.js";
 import { RetroForm } from "./tui/retro-form.js";
 import type { FerixConfig } from "./types.js";
+
+/**
+ * Result of parsing CLI options, including explicit flag tracking
+ */
+export interface ParsedCliOptions {
+  /** The parsed config (null if no task provided) */
+  config: FerixConfig | null;
+  /** Which config-file-overridable flags were explicitly set */
+  explicit: ExplicitCliFlags;
+}
 
 /** Regex pattern for valid branch names */
 const BRANCH_NAME_PATTERN = /^[\w\-/]+$/;
@@ -36,9 +47,23 @@ function getAfterText(pr: boolean, push: boolean): string {
 }
 
 /**
- * Build the questions array based on whether we're in a git repo
+ * Defaults for interactive questions when config is not loaded
  */
-function buildQuestions(inGitRepo: boolean): Question[] {
+interface QuestionDefaults {
+  verify?: string;
+  iterations?: number;
+  progress?: boolean;
+}
+
+/**
+ * Build the questions array based on whether we're in a git repo
+ * @param inGitRepo Whether the current directory is a git repository
+ * @param defaults Optional defaults from ferix.json config file
+ */
+function buildQuestions(
+  inGitRepo: boolean,
+  defaults: QuestionDefaults = {}
+): Question[] {
   const questions: Question[] = [
     {
       type: "text",
@@ -52,6 +77,7 @@ function buildQuestions(inGitRepo: boolean): Question[] {
       id: "verify",
       label: "Verification commands",
       placeholder: "comma-separated, e.g., bun lint, bun test (or leave empty)",
+      initial: defaults.verify,
     },
     {
       type: "select",
@@ -64,6 +90,7 @@ function buildQuestions(inGitRepo: boolean): Question[] {
         { value: 10, label: "10" },
         { value: -1, label: "Until complete", hint: "loops until done" },
       ],
+      initial: defaults.iterations,
     },
   ];
 
@@ -84,12 +111,12 @@ function buildQuestions(inGitRepo: boolean): Question[] {
     });
   }
 
-  // Progress tracking
+  // Progress tracking - default to config value or true
   questions.push({
     type: "confirm",
     id: "progress",
     label: "Track progress in .ferix/PROGRESS.md?",
-    initial: true,
+    initial: defaults.progress ?? true,
   });
 
   // Final confirmation
@@ -145,8 +172,47 @@ export async function runInteractive(): Promise<FerixConfig | null> {
   const inGitRepo = await isGitRepo();
   const form = new RetroForm();
 
+  // Load config file for defaults
+  let configDefaults: QuestionDefaults = {};
+  let configProgressPath: string | undefined;
+  try {
+    const { loadConfig } = await import("./config/loader.js");
+    const { config } = await loadConfig();
+
+    // Convert config to question defaults
+    configDefaults = {
+      // Convert verify array to comma-separated string for text input
+      verify: config.verify?.join(", "),
+      // Pass iterations directly
+      iterations: config.iterations,
+      // Convert progress string/false to boolean for confirm question
+      progress: config.progress !== false,
+    };
+    // Preserve custom progress path for later use
+    if (typeof config.progress === "string") {
+      configProgressPath = config.progress;
+    }
+  } catch (error) {
+    // Show warning for config errors but continue - user can override values
+    const { ConfigParseError, ConfigValidationError } = await import(
+      "./config/errors.js"
+    );
+    if (error instanceof ConfigParseError) {
+      console.error(`\x1b[33m[WARN]\x1b[0m ${error.message}`);
+      console.error(
+        "\x1b[2mUsing default values. Fix ferix.json to use config defaults.\x1b[0m\n"
+      );
+    } else if (error instanceof ConfigValidationError) {
+      console.error(`\x1b[33m[WARN]\x1b[0m ${error.message}`);
+      console.error(
+        "\x1b[2mUsing default values. Fix ferix.json to use config defaults.\x1b[0m\n"
+      );
+    }
+    // Silently ignore other errors (e.g., permission issues)
+  }
+
   // Get main answers
-  const questions = buildQuestions(inGitRepo);
+  const questions = buildQuestions(inGitRepo, configDefaults);
   const answers = await form.run(questions);
 
   if (!answers) {
@@ -185,6 +251,11 @@ export async function runInteractive(): Promise<FerixConfig | null> {
   const untilComplete = iterationsValue === -1;
   const iterations = untilComplete ? DEFAULTS.ITERATIONS : iterationsValue;
 
+  // Use custom progress path from config if available, otherwise use default
+  const progressPath = answers.progress
+    ? (configProgressPath ?? DEFAULTS.PROGRESS_FILE)
+    : false;
+
   const config: FerixConfig = {
     task: answers.task as string,
     verify: parseCommaSeparated((answers.verify as string) || ""),
@@ -195,7 +266,7 @@ export async function runInteractive(): Promise<FerixConfig | null> {
     push,
     pr,
     commit: true,
-    progress: answers.progress ? DEFAULTS.PROGRESS_FILE : false,
+    progress: progressPath,
     dryRun: false,
     verbose: false,
   };
@@ -209,7 +280,7 @@ export async function runInteractive(): Promise<FerixConfig | null> {
       : String(config.iterations),
     Branch: config.branch ?? "current",
     After: getAfterText(config.pr, config.push),
-    Progress: config.progress ? ".ferix/PROGRESS.md" : "disabled",
+    Progress: config.progress ? String(config.progress) : "disabled",
   });
 
   form.showStarting();
@@ -255,19 +326,39 @@ export function createProgram(): Command {
 }
 
 /**
- * Parse CLI options into FerixConfig
+ * Detect which options were explicitly set via CLI (not defaults)
+ */
+function getExplicitFlags(program: Command): ExplicitCliFlags {
+  const verifySource = program.getOptionValueSource("verify");
+  const iterationsSource = program.getOptionValueSource("iterations");
+  const progressSource = program.getOptionValueSource("progress");
+
+  return {
+    // Explicitly set if source is 'cli' (from command line)
+    // --no-verify sets verify to false, which is also explicit
+    verify: verifySource === "cli",
+    iterations: iterationsSource === "cli",
+    progress: progressSource === "cli",
+  };
+}
+
+/**
+ * Parse CLI options into FerixConfig with explicit flag tracking
  */
 export function parseOptions(
+  program: Command,
   options: Record<string, unknown>
-): FerixConfig | null {
+): ParsedCliOptions {
+  const explicit = getExplicitFlags(program);
+
   if (!options.task) {
-    return null;
+    return { config: null, explicit };
   }
 
   const pr = Boolean(options.pr);
   const push = Boolean(options.push) || pr;
 
-  return {
+  const config: FerixConfig = {
     task: options.task as string,
     verify: options.verify === false ? [] : (options.verify as string[]),
     iterations: Number.parseInt(options.iterations as string, 10),
@@ -282,4 +373,6 @@ export function parseOptions(
     verbose: Boolean(options.verbose),
     resume: Boolean(options.continue),
   };
+
+  return { config, explicit };
 }

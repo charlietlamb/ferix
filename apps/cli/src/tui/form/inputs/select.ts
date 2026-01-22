@@ -18,7 +18,16 @@ export function askSelect(
   onAnswer: (value: string | number) => void,
   onCancel: () => void
 ): void {
+  // Find index of initial value if provided, default to 0
   let selectedIndex = 0;
+  if (question.initial !== undefined) {
+    const initialIndex = question.options.findIndex(
+      (opt) => opt.value === question.initial
+    );
+    if (initialIndex !== -1) {
+      selectedIndex = initialIndex;
+    }
+  }
 
   const render = () => {
     screen.clear();
