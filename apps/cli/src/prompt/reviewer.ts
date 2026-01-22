@@ -1,18 +1,24 @@
 /**
- * @fileoverview Reviewer prompt for verifying task success criteria.
+ * @fileoverview Check prompt for verifying task success criteria.
  *
- * This phase runs after the worker completes a task where a fresh LLM context:
+ * This is Stage 1 of the post-worker flow (Check → Verify → Review).
+ *
+ * The Check phase runs after the worker completes a task where a fresh LLM context:
  * 1. Reads the plan with the completed task
  * 2. Verifies each success criterion
  * 3. Signals pass/fail for each criterion
  * 4. Returns a verdict on whether the task is truly complete
  *
- * The reviewer acts as an independent verification step. If criteria fail,
+ * The checker acts as an independent verification step. If criteria fail,
  * the task will be retried (up to 5 attempts). This ensures tasks actually
  * meet their requirements rather than just "completing" without verification.
  *
+ * Note: This was renamed from "reviewer" to "check" to make room for the new
+ * "review" stage which handles code quality improvements.
+ *
  * @see breakdown.ts for extracting success criteria
  * @see worker.ts for task implementation
+ * @see review.ts for the code quality review stage
  */
 
 import { getPlanPath } from "../plan/index.js";
@@ -20,20 +26,20 @@ import { writePlanFile } from "../plan/writer.js";
 import type { Plan, PlanTask, SuccessCriterion } from "../types/plan.js";
 
 /**
- * Creates the reviewer prompt for verifying a completed task's success criteria.
+ * Creates the check prompt for verifying a completed task's success criteria.
  *
  * The prompt instructs the LLM to:
- * - Review each success criterion independently
+ * - Check each success criterion independently
  * - Verify the criterion is satisfied by examining code/files/behavior
  * - Signal pass/fail for each criterion with reasons
  * - Update the plan file with criterion statuses
  *
  * @param plan - The current plan (included in prompt for context)
- * @param task - The task to review (should be in done/in_progress state)
+ * @param task - The task to check (should be in done/in_progress state)
  * @param attemptNumber - Current attempt number (1-5)
- * @returns Complete prompt string for the reviewer phase
+ * @returns Complete prompt string for the check phase
  */
-export function createReviewerPrompt(
+export function createCheckPrompt(
   plan: Plan,
   task: PlanTask,
   attemptNumber: number
@@ -47,10 +53,10 @@ export function createReviewerPrompt(
   // Build previous failures section if this is a retry
   const retrySection = buildRetrySection(task.criteria ?? [], attemptNumber);
 
-  return `## Your Role: Task Reviewer
+  return `## Your Role: Success Criteria Checker
 
 You are verifying that a completed task meets its success criteria. Your job is to:
-1. Review each criterion independently
+1. Check each criterion independently
 2. Verify it is satisfied by examining the codebase
 3. Signal pass/fail for each criterion
 4. Provide a final verdict
@@ -134,14 +140,14 @@ After reviewing ALL criteria:
 - The task status remains "done"
 - Signal completion:
   \`\`\`
-  <ferix:review-passed/>
+  <ferix:check-passed/>
   \`\`\`
 
 **If ANY criterion fails:**
 - Change task status back to "in_progress"
 - Signal failure:
   \`\`\`
-  <ferix:review-failed/>
+  <ferix:check-failed/>
   \`\`\`
 - The worker will retry the task with your feedback
 
@@ -155,11 +161,16 @@ After reviewing ALL criteria:
 
 ## What NOT to Do
 
-- Do NOT implement fixes yourself - just review and report
+- Do NOT implement fixes yourself - just check and report
 - Do NOT skip criteria or assume they pass
 - Do NOT be lenient - requirements must be fully met
 - Do NOT modify code - only update the plan file`;
 }
+
+/**
+ * @deprecated Use createCheckPrompt instead - kept for backwards compatibility
+ */
+export const createReviewerPrompt = createCheckPrompt;
 
 /**
  * Builds a displayable list of criteria with their current status.

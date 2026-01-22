@@ -42,16 +42,18 @@ export type ViewMode = "logs" | "tasks" | "task-detail";
  * - breakdown: Initial task analysis and plan creation
  * - planning: Planning phases for a specific task
  * - working: Executing a task's phases
- * - reviewing: Verifying success criteria after work completes
+ * - checking: Verifying success criteria after work completes
  * - verifying: Running verification commands after task completion
+ * - reviewing: Code quality improvement pass
  */
 export type ExecutionMode =
   | "idle"
   | "breakdown"
   | "planning"
   | "working"
-  | "reviewing"
-  | "verifying";
+  | "checking"
+  | "verifying"
+  | "reviewing";
 
 /**
  * Git information for display in TUI
@@ -100,6 +102,10 @@ export interface DevModeState {
   currentVerifyCommand?: string;
   /** Current verify attempt number (1-3) */
   verifyAttempt?: number;
+  /** Current check attempt number (1-5) */
+  checkAttempt?: number;
+  /** Current review attempt number (1-3) */
+  reviewAttempt?: number;
 }
 
 /**

@@ -41,6 +41,30 @@ function getPhaseProgress(task: Task): string {
 }
 
 /**
+ * Build stage indicators for a task (check/verify/review status)
+ */
+function buildStageIndicators(stages: Task["stages"]): string {
+  const check = stages?.check?.status ?? "pending";
+  const verify = stages?.verify?.status ?? "pending";
+  const review = stages?.review?.status ?? "pending";
+
+  return [check, verify, review]
+    .map((status) => {
+      switch (status) {
+        case "passed":
+          return `${colors.green}✓${colors.reset}`;
+        case "failed":
+          return `${colors.red}✗${colors.reset}`;
+        case "in_progress":
+          return `${colors.yellow}●${colors.reset}`;
+        default:
+          return `${colors.dim}○${colors.reset}`;
+      }
+    })
+    .join("");
+}
+
+/**
  * Build a single task line for the list
  */
 function buildTaskLine(
@@ -68,7 +92,10 @@ function buildTaskLine(
   // Phase progress
   const progress = `${colors.dim}${getPhaseProgress(task)}${colors.reset}`;
 
-  return `  ${selector} ${id} ${icon} ${description}  ${duration}  ${progress}`;
+  // Stage indicators (check/verify/review)
+  const stageIndicators = buildStageIndicators(task.stages);
+
+  return `  ${selector} ${id} ${icon} ${description}  ${duration}  ${progress}  ${stageIndicators}`;
 }
 
 /**
@@ -140,9 +167,9 @@ export function buildTasksListContent(
     lines.push("");
   } else {
     // Calculate max description width
-    // Format: "  ▸ [1] ✓ description  00:00  0/0"
-    // Reserve: 2 (indent) + 2 (selector) + 5 (id) + 2 (icon) + 2 (gap) + 7 (duration) + 2 (gap) + 5 (progress) = ~27
-    const maxDescWidth = innerWidth - 30;
+    // Format: "  ▸ [1] ✓ description  00:00  0/0  ✓✓✓"
+    // Reserve: 2 (indent) + 2 (selector) + 5 (id) + 2 (icon) + 2 (gap) + 7 (duration) + 2 (gap) + 5 (progress) + 2 (gap) + 3 (stages) = ~32
+    const maxDescWidth = innerWidth - 35;
 
     // Task lines
     for (let i = 0; i < tasks.length; i++) {

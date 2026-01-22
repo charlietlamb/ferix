@@ -173,6 +173,88 @@ function buildGitInfoLines(gitInfo: GitInfo): string[] {
   return lines;
 }
 
+/** Stage status icons */
+const STAGE_ICONS = {
+  pending: `${colors.dim}○${colors.reset}`,
+  in_progress: `${colors.yellow}●${colors.reset}`,
+  passed: `${colors.green}✓${colors.reset}`,
+  failed: `${colors.red}✗${colors.reset}`,
+};
+
+/** Stage names in order */
+const STAGE_ORDER = ["check", "verify", "review"] as const;
+
+/**
+ * Calculate stage duration string
+ */
+function getStageDuration(stage: Task["stages"][keyof Task["stages"]]): string {
+  if (!stage) {
+    return "--";
+  }
+  if (stage.startedAt && stage.completedAt) {
+    return formatDuration(stage.startedAt, stage.completedAt);
+  }
+  if (stage.startedAt) {
+    return formatDuration(stage.startedAt);
+  }
+  return "--";
+}
+
+/**
+ * Build a single stage line
+ */
+function buildStageLine(
+  stageName: (typeof STAGE_ORDER)[number],
+  stage: Task["stages"][keyof Task["stages"]],
+  prefix: string,
+  reviewChanges?: boolean
+): string {
+  if (!stage || stage.status === "pending") {
+    return `   ${colors.dim}${prefix}${colors.reset} ${STAGE_ICONS.pending} ${stageName.toUpperCase().padEnd(7)} ${colors.dim}--${colors.reset}`;
+  }
+
+  const icon = STAGE_ICONS[stage.status];
+  const attemptText = stage.attempts ? `attempt ${stage.attempts}` : "--";
+  const duration = getStageDuration(stage);
+
+  const showChanges = stageName === "review" && stage.status === "passed";
+  const extra = showChanges
+    ? `  ${colors.dim}(changes: ${reviewChanges ? "yes" : "no"})${colors.reset}`
+    : "";
+
+  return `   ${colors.dim}${prefix}${colors.reset} ${icon} ${stageName.toUpperCase().padEnd(7)} ${attemptText}  ${colors.cyan}${duration}${colors.reset}${extra}`;
+}
+
+/**
+ * Build stages section lines for a task
+ */
+function buildStagesSection(task: Task, innerWidth: number): string[] {
+  const lines: string[] = [];
+
+  lines.push(
+    `  ${colors.cyan}${box.doubleHorizontal.repeat(innerWidth - 4)}${colors.reset}`
+  );
+  lines.push(
+    `   ${colors.brightMagenta}${symbols.diamond}${colors.reset} ${colors.brightWhite}STAGES${colors.reset} ${colors.brightMagenta}${symbols.diamond}${colors.reset}`
+  );
+
+  const stages = task.stages ?? {};
+
+  for (let i = 0; i < STAGE_ORDER.length; i++) {
+    const stageName = STAGE_ORDER[i];
+    if (!stageName) {
+      continue;
+    }
+    const stage = stages[stageName];
+    const isLast = i === STAGE_ORDER.length - 1;
+    const prefix = isLast ? "└─" : "├─";
+
+    lines.push(buildStageLine(stageName, stage, prefix, task.reviewChanges));
+  }
+
+  return lines;
+}
+
 /**
  * Build criteria section lines for a task
  */
@@ -184,7 +266,7 @@ function buildCriteriaSection(task: Task, innerWidth: number): string[] {
   );
 
   const attemptsDisplay = task.attempts
-    ? ` ${colors.dim}(attempt ${task.attempts}/5)${colors.reset}`
+    ? ` ${colors.dim}(attempt ${task.attempts})${colors.reset}`
     : "";
   lines.push(
     `   ${colors.brightMagenta}${symbols.diamond}${colors.reset} ${colors.brightWhite}SUCCESS CRITERIA${colors.reset} ${colors.brightMagenta}${symbols.diamond}${colors.reset}${attemptsDisplay}`
@@ -282,6 +364,12 @@ export function buildTaskDetailContent(
   // Criteria section (if task has criteria)
   const criteriaSectionLines = buildCriteriaSection(task, innerWidth);
   for (const line of criteriaSectionLines) {
+    lines.push(line);
+  }
+
+  // Stages section (check, verify, review)
+  const stagesSectionLines = buildStagesSection(task, innerWidth);
+  for (const line of stagesSectionLines) {
     lines.push(line);
   }
 

@@ -40,10 +40,6 @@ import { MESSAGES } from "../constants.js";
 import type { ClaudeEvent, Engine } from "../engine/index.js";
 import { getEngine } from "../engine/index.js";
 import {
-  extractReviewFailed,
-  extractReviewPassed,
-} from "../engine/signals/index.js";
-import {
   createBranch,
   createPullRequest,
   getCurrentBranch,
@@ -57,11 +53,10 @@ import {
 } from "../plan/index.js";
 import { createBreakdownPrompt } from "../prompt/breakdown.js";
 import { createPlannerPrompt } from "../prompt/planner.js";
-import { createReviewerPrompt } from "../prompt/reviewer.js";
 import { createWorkerPrompt } from "../prompt/worker.js";
 import { colors } from "../tui/ansi.js";
 import { DevMode } from "../tui/dev-mode.js";
-import type { Criterion, Phase, Task } from "../types/config.js";
+import type { Criterion, Phase, StageStatus, Task } from "../types/config.js";
 import {
   AgentError,
   DependencyError,
@@ -73,8 +68,14 @@ import { logger } from "../utils/logger.js";
 import { initProgress } from "./progress.js";
 import { runVerifyCommands } from "./verify.js";
 
+/** Maximum number of check attempts before marking task as failed */
+const MAX_CHECK_ATTEMPTS = 5;
+
 /** Maximum number of verify retry attempts before failing */
 const MAX_VERIFY_ATTEMPTS = 3;
+
+/** Maximum number of review attempts before giving up on code quality pass */
+const MAX_REVIEW_ATTEMPTS = 3;
 
 /**
  * Sets up a new git branch if configured.
@@ -368,50 +369,52 @@ function executeWorker(
   });
 }
 
-/** Maximum number of review attempts before marking task as failed */
-const MAX_REVIEW_ATTEMPTS = 5;
-
 /**
- * Result of a review phase
+ * Result of a check phase (success criteria verification)
  */
-interface ReviewResult {
+interface CheckResult {
   /** Whether all criteria passed */
   passed: boolean;
-  /** The raw output from the reviewer */
+  /** The raw output from the checker */
   output: string;
 }
 
 /**
- * Executes the reviewer phase for a completed task with a fresh LLM context.
+ * Executes the check phase for a completed task with a fresh LLM context.
  *
- * The reviewer verifies each success criterion and signals pass/fail for each.
+ * The checker verifies each success criterion and signals pass/fail for each.
  * If any criterion fails, the task should be retried.
  *
  * @param engine - LLM engine instance
  * @param plan - Current plan (embedded in prompt for context)
- * @param task - The task to review (should be in done/in_progress state)
+ * @param task - The task to check (should be in done/in_progress state)
  * @param attemptNumber - Current attempt number (1-5)
  * @param tui - Optional TUI for output display
  * @param onEvent - Optional event handler for progress tracking
- * @returns Review result indicating pass/fail and raw output
+ * @returns Check result indicating pass/fail and raw output
  */
-async function executeReviewer(
+async function executeCheck(
   engine: Engine,
   plan: Plan,
   task: PlanTask,
   attemptNumber: number,
   tui: DevMode | null,
   onEvent?: (event: ClaudeEvent) => void
-): Promise<ReviewResult> {
-  const prompt = createReviewerPrompt(plan, task, attemptNumber);
+): Promise<CheckResult> {
+  const { createCheckPrompt } = await import("../prompt/reviewer.js");
+  const { extractCheckPassed, extractCheckFailed } = await import(
+    "../engine/signals/index.js"
+  );
+
+  const prompt = createCheckPrompt(plan, task, attemptNumber);
 
   if (tui) {
     tui.addOutput(
-      `\n${colors.cyan}[REVIEWING]${colors.reset} Task ${task.id}: ${task.title} (attempt ${attemptNumber}/${MAX_REVIEW_ATTEMPTS})\n`
+      `\n${colors.cyan}[CHECKING]${colors.reset} Task ${task.id}: ${task.title} (attempt ${attemptNumber})\n`
     );
   } else {
     logger.info(
-      `Reviewing task ${task.id}: ${task.title} (attempt ${attemptNumber}/${MAX_REVIEW_ATTEMPTS})`
+      `Checking task ${task.id}: ${task.title} (attempt ${attemptNumber})`
     );
   }
 
@@ -421,8 +424,8 @@ async function executeReviewer(
   });
 
   // Determine pass/fail from the output signals
-  const passed = extractReviewPassed(result.output);
-  const failed = extractReviewFailed(result.output);
+  const passed = extractCheckPassed(result.output);
+  const failed = extractCheckFailed(result.output);
 
   // If neither signal found, default to checking if there were errors
   if (!(passed || failed)) {
@@ -435,6 +438,86 @@ async function executeReviewer(
 
   return {
     passed: passed && !failed,
+    output: result.output,
+  };
+}
+
+/**
+ * Result of a review phase (code quality improvement)
+ */
+interface ReviewResult {
+  /** Whether the review is complete */
+  complete: boolean;
+  /** Whether the reviewer made any code changes */
+  changesMade: boolean;
+  /** The raw output from the reviewer */
+  output: string;
+}
+
+/**
+ * Executes the review phase for a task with a fresh LLM context.
+ *
+ * The reviewer checks code quality and CAN make improvements:
+ * - Conciseness: Remove unnecessary code, simplify logic
+ * - Documentation: Add/improve comments
+ * - Scalability: Identify potential issues
+ *
+ * If changes are made, Verify must be re-run.
+ *
+ * @param engine - LLM engine instance
+ * @param plan - Current plan (embedded in prompt for context)
+ * @param task - The task to review
+ * @param attemptNumber - Current attempt number (1-3)
+ * @param tui - Optional TUI for output display
+ * @param onEvent - Optional event handler for progress tracking
+ * @returns Review result indicating completion, changes, and raw output
+ */
+async function executeReview(
+  engine: Engine,
+  plan: Plan,
+  task: PlanTask,
+  attemptNumber: number,
+  tui: DevMode | null,
+  onEvent?: (event: ClaudeEvent) => void
+): Promise<ReviewResult> {
+  const { createReviewPrompt } = await import("../prompt/review.js");
+  const { extractReviewComplete, extractReviewChangesMade } = await import(
+    "../engine/signals/index.js"
+  );
+
+  const prompt = createReviewPrompt(plan, task, attemptNumber);
+
+  if (tui) {
+    tui.addOutput(
+      `\n${colors.cyan}[REVIEWING]${colors.reset} Task ${task.id}: ${task.title} (attempt ${attemptNumber})\n`
+    );
+  } else {
+    logger.info(
+      `Reviewing task ${task.id}: ${task.title} (attempt ${attemptNumber})`
+    );
+  }
+
+  const result = await engine.execute(prompt, {
+    onEvent,
+    writeToStdout: !tui,
+  });
+
+  // Determine completion and changes from output signals
+  const complete = extractReviewComplete(result.output);
+  const changesMade = extractReviewChangesMade(result.output);
+
+  // If no completion signal, assume complete if no errors
+  if (!complete) {
+    return {
+      complete: result.success && !result.hasError,
+      changesMade,
+      output: result.output,
+    };
+  }
+
+  return {
+    complete: true,
+    changesMade,
     output: result.output,
   };
 }
@@ -658,259 +741,422 @@ async function runVerifyPhase(
 }
 
 /**
- * Result of executing the verify retry loop
+ * Result of the post-worker stages (Check → Verify → Review)
  */
-interface VerifyLoopResult {
-  /** Updated plan after all iterations */
+interface PostWorkerStagesResult {
+  /** Updated plan after all stages */
   plan: Plan;
-  /** Updated task after all iterations */
+  /** Updated task after all stages */
   task: PlanTask;
+  /** Whether all stages passed */
+  success: boolean;
   /** Fatal error if max attempts reached */
   fatalError?: string;
+  /** Whether worker needs to retry (check failed) */
+  retryWorker: boolean;
 }
 
 /**
- * Executes the worker + verify retry loop in TUI mode.
- *
- * @returns Result with updated plan/task or fatal error
+ * Helper to create a StageStatus object
  */
-async function executeVerifyLoopTui(
-  engine: Engine,
-  currentPlan: Plan,
-  taskWithPhases: PlanTask,
-  config: FerixConfig,
-  tui: DevMode,
-  onEvent: (event: ClaudeEvent) => void,
-  hasVerify: boolean
-): Promise<VerifyLoopResult> {
-  let plan = currentPlan;
-  let task = taskWithPhases;
-  let verifyAttempt = 1;
-  let verifyError: WorkerOptions["verifyError"] | undefined;
+function createStageStatus(
+  status: "pending" | "in_progress" | "passed" | "failed",
+  attempts?: number,
+  startedAt?: number,
+  completedAt?: number
+): StageStatus {
+  return { status, attempts, startedAt, completedAt };
+}
 
-  while (verifyAttempt <= MAX_VERIFY_ATTEMPTS) {
-    const iterResult = await executeWorkerVerifyIterationTui(
-      engine,
-      plan,
-      task,
-      config,
-      tui,
-      onEvent,
-      verifyAttempt,
-      verifyError,
-      hasVerify
+/**
+ * Format failed criteria list for error message
+ */
+function formatFailedCriteria(task: PlanTask): string {
+  const failedCriteria =
+    task.criteria?.filter((c) => c.status === "failed") ?? [];
+  return failedCriteria
+    .map((c) => `  - ${c.description}: ${c.failureReason ?? "Unknown"}`)
+    .join("\n");
+}
+
+/**
+ * Context for TUI stage execution
+ */
+interface TuiStageContext {
+  engine: Engine;
+  config: FerixConfig;
+  tui: DevMode;
+  onEvent: (event: ClaudeEvent) => void;
+  checkAttempt: number;
+  hasVerify: boolean;
+}
+
+/**
+ * Execute CHECK stage in TUI mode
+ */
+async function executeCheckStageTui(
+  plan: Plan,
+  task: PlanTask,
+  ctx: TuiStageContext
+): Promise<PostWorkerStagesResult | null> {
+  const checkStart = Date.now();
+  const hasCriteria = taskHasCriteria(task);
+
+  ctx.tui.setExecutionMode("checking", task.id);
+  ctx.tui.setCheckMode(ctx.checkAttempt, task.id);
+  ctx.tui.setStageStatus(
+    String(task.id),
+    "check",
+    createStageStatus("in_progress", ctx.checkAttempt, checkStart)
+  );
+
+  if (!hasCriteria) {
+    ctx.tui.addOutput(
+      `\n${colors.green}[CHECK PASSED]${colors.reset} No criteria to verify for task ${task.id}\n`
     );
-
-    plan = iterResult.plan;
-    task = iterResult.task;
-
-    if (iterResult.fatalError) {
-      return { plan, task, fatalError: iterResult.fatalError };
-    }
-
-    if (!iterResult.continueLoop) {
-      break;
-    }
-
-    verifyAttempt++;
-    verifyError = iterResult.verifyError;
+    ctx.tui.setStageStatus(
+      String(task.id),
+      "check",
+      createStageStatus("passed", ctx.checkAttempt, checkStart, Date.now())
+    );
+    return null; // Continue to next stage
   }
 
-  return { plan, task };
+  const checkResult = await executeCheck(
+    ctx.engine,
+    plan,
+    task,
+    ctx.checkAttempt,
+    ctx.tui,
+    ctx.onEvent
+  );
+
+  // Reload plan after check
+  const updatedPlan = loadPlan();
+  const updatedTask = updatedPlan.tasks.find((t) => t.id === task.id) ?? task;
+
+  if (checkResult.passed) {
+    ctx.tui.addOutput(
+      `\n${colors.green}[CHECK PASSED]${colors.reset} All criteria verified for task ${task.id}\n`
+    );
+    ctx.tui.setStageStatus(
+      String(task.id),
+      "check",
+      createStageStatus("passed", ctx.checkAttempt, checkStart, Date.now())
+    );
+    return null; // Continue to next stage (plan/task updated in caller)
+  }
+
+  ctx.tui.addOutput(
+    `\n${colors.red}[CHECK FAILED]${colors.reset} Criteria not met for task ${task.id}\n`
+  );
+  ctx.tui.setStageStatus(
+    String(task.id),
+    "check",
+    createStageStatus("failed", ctx.checkAttempt, checkStart, Date.now())
+  );
+
+  if (ctx.checkAttempt >= MAX_CHECK_ATTEMPTS) {
+    return {
+      plan: updatedPlan,
+      task: updatedTask,
+      success: false,
+      fatalError: `Task ${task.id} failed after ${MAX_CHECK_ATTEMPTS} check attempts.\n\nFailed criteria:\n${formatFailedCriteria(updatedTask)}`,
+      retryWorker: false,
+    };
+  }
+
+  ctx.tui.addOutput(
+    `\n${colors.yellow}[CHECK RETRY]${colors.reset} Retrying worker for task ${task.id} (check attempt ${ctx.checkAttempt + 1})\n`
+  );
+  return {
+    plan: updatedPlan,
+    task: updatedTask,
+    success: false,
+    retryWorker: true,
+  };
 }
 
 /**
- * Result of a worker + verify iteration
+ * Execute VERIFY stage in TUI mode
  */
-interface WorkerVerifyIterationResult {
-  /** Whether to continue the verify loop */
-  continueLoop: boolean;
-  /** Updated plan after worker execution */
-  plan: Plan;
-  /** Updated task after worker execution */
-  task: PlanTask;
-  /** Error to display if max attempts reached */
-  fatalError?: string;
-  /** Error context for next retry */
-  verifyError?: WorkerOptions["verifyError"];
+async function executeVerifyStageTui(
+  plan: Plan,
+  task: PlanTask,
+  ctx: TuiStageContext,
+  attemptNum: number
+): Promise<PostWorkerStagesResult | null> {
+  const verifyStart = Date.now();
+  ctx.tui.setStageStatus(
+    String(task.id),
+    "verify",
+    createStageStatus("in_progress", attemptNum, verifyStart)
+  );
+
+  if (!ctx.hasVerify) {
+    ctx.tui.addOutput(
+      `\n${colors.green}[VERIFY PASSED]${colors.reset} No verify commands configured\n`
+    );
+    ctx.tui.setStageStatus(
+      String(task.id),
+      "verify",
+      createStageStatus("passed", attemptNum, verifyStart, Date.now())
+    );
+    return null; // Continue to next stage
+  }
+
+  const verifyResult = await runVerifyPhase(ctx.config, ctx.tui, 1);
+
+  if (verifyResult.success) {
+    ctx.tui.setStageStatus(
+      String(task.id),
+      "verify",
+      createStageStatus("passed", attemptNum, verifyStart, Date.now())
+    );
+    return null; // Continue to next stage
+  }
+
+  ctx.tui.setStageStatus(
+    String(task.id),
+    "verify",
+    createStageStatus("failed", attemptNum, verifyStart, Date.now())
+  );
+
+  if (ctx.checkAttempt >= MAX_CHECK_ATTEMPTS) {
+    const errorMsg = verifyResult.error
+      ? `\n\nFailed command: ${verifyResult.error.command}\nExit code: ${verifyResult.error.exitCode}\n\nOutput:\n${verifyResult.error.output}`
+      : "";
+    return {
+      plan,
+      task,
+      success: false,
+      fatalError: `Task ${task.id} failed verification.${errorMsg}`,
+      retryWorker: false,
+    };
+  }
+
+  ctx.tui.addOutput(
+    `\n${colors.yellow}[VERIFY FAILED]${colors.reset} Retrying worker for task ${task.id}\n`
+  );
+  return { plan, task, success: false, retryWorker: true };
 }
 
 /**
- * Executes a single worker + verify iteration in TUI mode.
- *
- * @returns Result indicating whether to continue the loop
+ * Execute REVIEW stage loop in TUI mode
  */
-async function executeWorkerVerifyIterationTui(
+async function executeReviewStageTui(
+  initialPlan: Plan,
+  initialTask: PlanTask,
+  ctx: TuiStageContext
+): Promise<PostWorkerStagesResult> {
+  let plan = initialPlan;
+  let task = initialTask;
+  let reviewAttempt = 1;
+
+  while (reviewAttempt <= MAX_REVIEW_ATTEMPTS) {
+    const reviewStart = Date.now();
+    ctx.tui.setExecutionMode("reviewing", task.id);
+    ctx.tui.setReviewMode(reviewAttempt, task.id);
+    ctx.tui.setStageStatus(
+      String(task.id),
+      "review",
+      createStageStatus("in_progress", reviewAttempt, reviewStart)
+    );
+
+    const reviewResult = await executeReview(
+      ctx.engine,
+      plan,
+      task,
+      reviewAttempt,
+      ctx.tui,
+      ctx.onEvent
+    );
+
+    plan = loadPlan();
+    task = plan.tasks.find((t) => t.id === task.id) ?? task;
+
+    if (!reviewResult.complete) {
+      ctx.tui.setStageStatus(
+        String(task.id),
+        "review",
+        createStageStatus("failed", reviewAttempt, reviewStart, Date.now())
+      );
+      reviewAttempt++;
+      if (reviewAttempt > MAX_REVIEW_ATTEMPTS) {
+        return {
+          plan,
+          task,
+          success: false,
+          fatalError: `Task ${task.id} review failed after ${MAX_REVIEW_ATTEMPTS} attempts`,
+          retryWorker: false,
+        };
+      }
+      ctx.tui.addOutput(
+        `\n${colors.yellow}[REVIEW RETRY]${colors.reset} Retrying review for task ${task.id} (attempt ${reviewAttempt})\n`
+      );
+      continue;
+    }
+
+    ctx.tui.setReviewChanges(String(task.id), reviewResult.changesMade);
+
+    // Re-run verify if changes were made
+    if (reviewResult.changesMade && ctx.hasVerify) {
+      const reVerifyResult = await handleReviewVerifyTui(
+        task,
+        ctx,
+        reviewAttempt,
+        reviewStart
+      );
+      if (reVerifyResult.retry) {
+        reviewAttempt++;
+        if (reviewAttempt > MAX_REVIEW_ATTEMPTS) {
+          return {
+            plan,
+            task,
+            success: false,
+            fatalError:
+              reVerifyResult.fatalError ??
+              `Task ${task.id} verify failed after review`,
+            retryWorker: false,
+          };
+        }
+        ctx.tui.addOutput(
+          `\n${colors.yellow}[VERIFY FAILED]${colors.reset} Review changes broke verify. Retrying review (attempt ${reviewAttempt})\n`
+        );
+        continue;
+      }
+    }
+
+    ctx.tui.addOutput(
+      `\n${colors.green}[REVIEW PASSED]${colors.reset} Code quality review complete for task ${task.id}${reviewResult.changesMade ? " (changes made)" : ""}\n`
+    );
+    ctx.tui.setStageStatus(
+      String(task.id),
+      "review",
+      createStageStatus("passed", reviewAttempt, reviewStart, Date.now())
+    );
+    return { plan, task, success: true, retryWorker: false };
+  }
+
+  return {
+    plan,
+    task,
+    success: false,
+    fatalError: `Task ${task.id} review failed after ${MAX_REVIEW_ATTEMPTS} attempts`,
+    retryWorker: false,
+  };
+}
+
+/**
+ * Handle verify after review changes in TUI mode
+ */
+async function handleReviewVerifyTui(
+  task: PlanTask,
+  ctx: TuiStageContext,
+  reviewAttempt: number,
+  reviewStart: number
+): Promise<{ retry: boolean; fatalError?: string }> {
+  ctx.tui.addOutput(
+    `\n${colors.cyan}[REVIEW CHANGES]${colors.reset} Re-running verify after code changes...\n`
+  );
+
+  const reVerifyStart = Date.now();
+  ctx.tui.setStageStatus(
+    String(task.id),
+    "verify",
+    createStageStatus("in_progress", 2, reVerifyStart)
+  );
+
+  const reVerifyResult = await runVerifyPhase(ctx.config, ctx.tui, 1);
+
+  if (reVerifyResult.success) {
+    ctx.tui.setStageStatus(
+      String(task.id),
+      "verify",
+      createStageStatus("passed", 2, reVerifyStart, Date.now())
+    );
+    return { retry: false };
+  }
+
+  ctx.tui.setStageStatus(
+    String(task.id),
+    "verify",
+    createStageStatus("failed", 2, reVerifyStart, Date.now())
+  );
+  ctx.tui.setStageStatus(
+    String(task.id),
+    "review",
+    createStageStatus("failed", reviewAttempt, reviewStart, Date.now())
+  );
+
+  if (reviewAttempt >= MAX_REVIEW_ATTEMPTS) {
+    const errorMsg = reVerifyResult.error
+      ? `\n\nFailed command: ${reVerifyResult.error.command}\nExit code: ${reVerifyResult.error.exitCode}`
+      : "";
+    return {
+      retry: true,
+      fatalError: `Task ${task.id} verify failed after review changes.${errorMsg}`,
+    };
+  }
+
+  return { retry: true };
+}
+
+/**
+ * Executes the three post-worker stages in TUI mode: Check → Verify → Review
+ */
+async function executePostWorkerStagesTui(
   engine: Engine,
   currentPlan: Plan,
   taskWithPhases: PlanTask,
   config: FerixConfig,
   tui: DevMode,
   onEvent: (event: ClaudeEvent) => void,
-  verifyAttempt: number,
-  verifyError: WorkerOptions["verifyError"] | undefined,
-  hasVerify: boolean
-): Promise<WorkerVerifyIterationResult> {
-  // Execute the task
-  tui.setExecutionMode("working", taskWithPhases.id);
-  const workerOptions: WorkerOptions | undefined = verifyError
-    ? { verifyError, verifyAttempt }
-    : undefined;
+  checkAttempt: number
+): Promise<PostWorkerStagesResult> {
+  let plan = currentPlan;
+  let task = taskWithPhases;
 
-  const workerResult = await executeWorker(
+  const ctx: TuiStageContext = {
     engine,
-    currentPlan,
-    taskWithPhases,
     config,
     tui,
     onEvent,
-    workerOptions
-  );
-  const workerCheck = checkResult(workerResult);
-
-  if (workerCheck.failed) {
-    return {
-      continueLoop: false,
-      plan: currentPlan,
-      task: taskWithPhases,
-      fatalError: workerCheck.error ?? "Worker failed",
-    };
-  }
-
-  // Reload plan after worker
-  const updatedPlan = loadPlan();
-  const updatedTask =
-    updatedPlan.tasks.find((t) => t.id === taskWithPhases.id) ?? taskWithPhases;
-
-  // Run verify commands if configured
-  if (!hasVerify) {
-    return { continueLoop: false, plan: updatedPlan, task: updatedTask };
-  }
-
-  const verifyResult = await runVerifyPhase(config, tui, verifyAttempt);
-
-  if (verifyResult.success) {
-    return { continueLoop: false, plan: updatedPlan, task: updatedTask };
-  }
-
-  // Verify failed - check if we can retry
-  const nextAttempt = verifyAttempt + 1;
-  if (nextAttempt > MAX_VERIFY_ATTEMPTS) {
-    const errorMsg = verifyResult.error
-      ? `\n\nFailed command: ${verifyResult.error.command}\nExit code: ${verifyResult.error.exitCode}\n\nOutput:\n${verifyResult.error.output}`
-      : "";
-    return {
-      continueLoop: false,
-      plan: updatedPlan,
-      task: updatedTask,
-      fatalError: `Task ${taskWithPhases.id} failed after ${MAX_VERIFY_ATTEMPTS} verification attempts.${errorMsg}`,
-    };
-  }
-
-  // Continue with retry
-  tui.addOutput(
-    `\n${colors.yellow}[VERIFY RETRY]${colors.reset} Retrying task ${taskWithPhases.id} (verify attempt ${nextAttempt}/${MAX_VERIFY_ATTEMPTS})\n`
-  );
-
-  return {
-    continueLoop: true,
-    plan: updatedPlan,
-    task: updatedTask,
-    verifyError: verifyResult.error,
+    checkAttempt,
+    hasVerify: config.verify.length > 0,
   };
+
+  // STAGE 1: CHECK
+  const checkResult = await executeCheckStageTui(plan, task, ctx);
+  if (checkResult) {
+    return checkResult;
+  }
+
+  // Reload after check
+  plan = loadPlan();
+  task = plan.tasks.find((t) => t.id === task.id) ?? task;
+
+  // STAGE 2: VERIFY
+  const verifyResult = await executeVerifyStageTui(plan, task, ctx, 1);
+  if (verifyResult) {
+    return verifyResult;
+  }
+
+  // STAGE 3: REVIEW
+  return executeReviewStageTui(plan, task, ctx);
 }
 
 /**
- * Executes a single worker + verify iteration in standard mode.
+ * Executes a single task (planner + worker + three-stage post-worker) in TUI mode.
  *
- * @returns Result indicating whether to continue the loop
- */
-async function executeWorkerVerifyIterationStandard(
-  engine: Engine,
-  currentPlan: Plan,
-  currentTask: PlanTask,
-  taskId: number,
-  config: FerixConfig,
-  verifyAttempt: number,
-  verifyError: WorkerOptions["verifyError"] | undefined,
-  hasVerify: boolean,
-  reviewAttemptNumber: number
-): Promise<WorkerVerifyIterationResult> {
-  const isVerifyRetry = verifyAttempt > 1;
-  logger.info(
-    `--- Executing (attempt ${reviewAttemptNumber}/${MAX_REVIEW_ATTEMPTS}${isVerifyRetry ? `, verify retry ${verifyAttempt}/${MAX_VERIFY_ATTEMPTS}` : ""}) ---`
-  );
-
-  const workerOptions: WorkerOptions | undefined = verifyError
-    ? { verifyError, verifyAttempt }
-    : undefined;
-
-  const workerResult = await executeWorker(
-    engine,
-    currentPlan,
-    currentTask,
-    config,
-    null,
-    undefined,
-    workerOptions
-  );
-  const workerCheck = checkResult(workerResult);
-
-  if (workerCheck.failed) {
-    throw new AgentError("Worker", workerCheck.error || "Failed");
-  }
-
-  const updatedPlan = loadPlan();
-  const updatedTask =
-    updatedPlan.tasks.find((t) => t.id === taskId) ?? currentTask;
-
-  // Run verify commands if configured
-  if (!hasVerify) {
-    return { continueLoop: false, plan: updatedPlan, task: updatedTask };
-  }
-
-  const verifyResult = await runVerifyPhaseStandard(config, verifyAttempt);
-
-  if (verifyResult.success) {
-    return { continueLoop: false, plan: updatedPlan, task: updatedTask };
-  }
-
-  // Verify failed - check if we can retry
-  const nextAttempt = verifyAttempt + 1;
-  if (nextAttempt > MAX_VERIFY_ATTEMPTS) {
-    const errorMsg = verifyResult.error
-      ? `\n\nFailed command: ${verifyResult.error.command}\nExit code: ${verifyResult.error.exitCode}\n\nOutput:\n${verifyResult.error.output}`
-      : "";
-    throw new AgentError(
-      "Verify",
-      `Task ${taskId} failed after ${MAX_VERIFY_ATTEMPTS} verification attempts.${errorMsg}`
-    );
-  }
-
-  // Continue with retry
-  logger.warn(
-    `Verify failed. Retrying task ${taskId} (verify attempt ${nextAttempt}/${MAX_VERIFY_ATTEMPTS})`
-  );
-
-  return {
-    continueLoop: true,
-    plan: updatedPlan,
-    task: updatedTask,
-    verifyError: verifyResult.error,
-  };
-}
-
-/**
- * Executes a single task (planner + worker + verify + reviewer phases) in TUI mode.
- *
- * This is the core of the planner/worker/verify/reviewer loop:
+ * This is the core of the planner/worker/check/verify/review loop:
  * 1. Run planner to break task into phases
  * 2. Reload plan to get phases
- * 3. Run worker to execute phases (with verify error context on retry)
- * 4. Run verify commands if configured
- * 5. If verify fails, retry worker (up to MAX_VERIFY_ATTEMPTS)
- * 6. Run reviewer to verify success criteria (if task has criteria)
- * 7. If review fails, retry worker (up to MAX_REVIEW_ATTEMPTS)
+ * 3. Run worker to execute phases
+ * 4. Run three post-worker stages: Check → Verify → Review
+ * 5. If Check fails, retry worker (up to MAX_CHECK_ATTEMPTS)
+ * 6. If Verify fails, retry worker
+ * 7. If Review makes changes and breaks Verify, retry Review
  * 8. Reload and return updated plan
  *
  * @param engine - LLM engine instance
@@ -920,7 +1166,7 @@ async function executeWorkerVerifyIterationStandard(
  * @param tui - DevMode TUI instance
  * @param onEvent - Event handler for TUI updates
  * @returns Updated plan after task completion
- * @throws AgentError if planner, worker, or reviewer fails after max attempts
+ * @throws AgentError if any phase fails after max attempts
  */
 async function executeTaskTui(
   engine: Engine,
@@ -947,79 +1193,67 @@ async function executeTaskTui(
     return handleTuiError(tui, `Task ${task.id} not found after planning`);
   }
 
-  // Phase B + Verify + C: Execute task, verify, and review with retry loops
-  const hasCriteria = taskHasCriteria(taskWithPhases);
-  const hasVerify = config.verify.length > 0;
-  let reviewAttemptNumber = (taskWithPhases.attempts ?? 0) + 1;
+  // Phase B: Worker + Post-worker stages with check retry loop
+  let checkAttempt = (taskWithPhases.attempts ?? 0) + 1;
 
-  while (reviewAttemptNumber <= MAX_REVIEW_ATTEMPTS) {
-    // Phase B + Verify: Execute the task with verify retry loop
-    const verifyLoopResult = await executeVerifyLoopTui(
+  while (checkAttempt <= MAX_CHECK_ATTEMPTS) {
+    // Execute the worker
+    tui.setExecutionMode("working", task.id);
+
+    const workerResult = await executeWorker(
+      engine,
+      currentPlan,
+      taskWithPhases,
+      config,
+      tui,
+      onEvent
+    );
+    const workerCheck = checkResult(workerResult);
+
+    if (workerCheck.failed) {
+      return handleTuiError(tui, workerCheck.error ?? "Worker failed");
+    }
+
+    // Reload plan after worker
+    currentPlan = loadPlan();
+    taskWithPhases =
+      currentPlan.tasks.find((t) => t.id === task.id) ?? taskWithPhases;
+
+    // Execute three post-worker stages: Check → Verify → Review
+    const stagesResult = await executePostWorkerStagesTui(
       engine,
       currentPlan,
       taskWithPhases,
       config,
       tui,
       onEvent,
-      hasVerify
+      checkAttempt
     );
 
-    currentPlan = verifyLoopResult.plan;
-    taskWithPhases = verifyLoopResult.task;
+    currentPlan = stagesResult.plan;
+    taskWithPhases = stagesResult.task;
 
-    if (verifyLoopResult.fatalError) {
-      return handleTuiError(tui, verifyLoopResult.fatalError);
+    if (stagesResult.fatalError) {
+      return handleTuiError(tui, stagesResult.fatalError);
     }
 
-    // Phase C: Review if task has criteria
-    if (!hasCriteria) {
+    if (stagesResult.success) {
       return currentPlan;
     }
 
-    tui.setExecutionMode("reviewing", task.id);
-    const reviewResult = await executeReviewer(
-      engine,
-      currentPlan,
-      taskWithPhases,
-      reviewAttemptNumber,
-      tui,
-      onEvent
-    );
-
-    // Reload plan after review (reviewer updates criteria statuses)
-    currentPlan = loadPlan();
-    taskWithPhases =
-      currentPlan.tasks.find((t) => t.id === task.id) ?? taskWithPhases;
-
-    if (reviewResult.passed) {
-      tui.addOutput(
-        `\n${colors.green}[REVIEW PASSED]${colors.reset} All criteria verified for task ${task.id}\n`
-      );
-      return currentPlan;
+    if (stagesResult.retryWorker) {
+      checkAttempt++;
+      continue;
     }
 
-    // Review failed - check if we can retry
-    reviewAttemptNumber++;
-
-    if (reviewAttemptNumber > MAX_REVIEW_ATTEMPTS) {
-      const failedCriteria =
-        taskWithPhases.criteria?.filter((c) => c.status === "failed") ?? [];
-      const failedList = failedCriteria
-        .map((c) => `  - ${c.description}: ${c.failureReason ?? "Unknown"}`)
-        .join("\n");
-
-      return handleTuiError(
-        tui,
-        `Task ${task.id} failed after ${MAX_REVIEW_ATTEMPTS} attempts.\n\nFailed criteria:\n${failedList}`
-      );
-    }
-
-    tui.addOutput(
-      `\n${colors.yellow}[REVIEW FAILED]${colors.reset} Retrying task ${task.id} (attempt ${reviewAttemptNumber}/${MAX_REVIEW_ATTEMPTS})\n`
-    );
+    // Something went wrong but not a retry scenario
+    return handleTuiError(tui, `Task ${task.id} failed unexpectedly`);
   }
 
-  return currentPlan;
+  return handleTuiError(
+    tui,
+    `Task ${task.id} failed after ${MAX_CHECK_ATTEMPTS} check attempts`
+  );
 }
 
 /**
@@ -1226,14 +1460,269 @@ async function runVerifyPhaseStandard(
 }
 
 /**
- * Executes worker + verify + review loop for a task in standard mode.
+ * Context for standard stage execution
+ */
+interface StandardStageContext {
+  engine: Engine;
+  config: FerixConfig;
+  checkAttempt: number;
+  hasVerify: boolean;
+}
+
+/**
+ * Execute CHECK stage in standard mode
+ */
+async function executeCheckStageStandard(
+  plan: Plan,
+  task: PlanTask,
+  ctx: StandardStageContext
+): Promise<PostWorkerStagesResult | null> {
+  logger.info(`--- Checking (attempt ${ctx.checkAttempt}) ---`);
+  const hasCriteria = taskHasCriteria(task);
+
+  if (!hasCriteria) {
+    logger.success("No criteria to verify - check passed");
+    return null; // Continue to next stage
+  }
+
+  const checkResult = await executeCheck(
+    ctx.engine,
+    plan,
+    task,
+    ctx.checkAttempt,
+    null
+  );
+
+  const updatedPlan = loadPlan();
+  const updatedTask = updatedPlan.tasks.find((t) => t.id === task.id) ?? task;
+
+  if (checkResult.passed) {
+    logger.success(`All criteria verified for task ${task.id}`);
+    return null;
+  }
+
+  logger.error(`Check failed for task ${task.id}`);
+
+  if (ctx.checkAttempt >= MAX_CHECK_ATTEMPTS) {
+    return {
+      plan: updatedPlan,
+      task: updatedTask,
+      success: false,
+      fatalError: `Task ${task.id} failed after ${MAX_CHECK_ATTEMPTS} check attempts.\n\nFailed criteria:\n${formatFailedCriteria(updatedTask)}`,
+      retryWorker: false,
+    };
+  }
+
+  logger.warn(
+    `Retrying worker for task ${task.id} (check attempt ${ctx.checkAttempt + 1})`
+  );
+  return {
+    plan: updatedPlan,
+    task: updatedTask,
+    success: false,
+    retryWorker: true,
+  };
+}
+
+/**
+ * Execute VERIFY stage in standard mode
+ */
+async function executeVerifyStageStandard(
+  plan: Plan,
+  task: PlanTask,
+  ctx: StandardStageContext
+): Promise<PostWorkerStagesResult | null> {
+  if (!ctx.hasVerify) {
+    logger.success("No verify commands configured - verify passed");
+    return null;
+  }
+
+  const verifyResult = await runVerifyPhaseStandard(ctx.config, 1);
+
+  if (verifyResult.success) {
+    return null;
+  }
+
+  if (ctx.checkAttempt >= MAX_CHECK_ATTEMPTS) {
+    const errorMsg = verifyResult.error
+      ? `\n\nFailed command: ${verifyResult.error.command}\nExit code: ${verifyResult.error.exitCode}\n\nOutput:\n${verifyResult.error.output}`
+      : "";
+    return {
+      plan,
+      task,
+      success: false,
+      fatalError: `Task ${task.id} failed verification.${errorMsg}`,
+      retryWorker: false,
+    };
+  }
+
+  logger.warn(`Retrying worker for task ${task.id} after verify failure`);
+  return { plan, task, success: false, retryWorker: true };
+}
+
+/**
+ * Handle verify after review changes in standard mode
+ * Returns true if verify failed and review should retry
+ */
+async function handleReviewVerifyStandard(
+  config: FerixConfig,
+  taskId: number,
+  reviewAttempt: number
+): Promise<{ retry: boolean; fatalError?: string }> {
+  logger.info("Review made changes - re-running verify...");
+  const reVerifyResult = await runVerifyPhaseStandard(config, 1);
+
+  if (reVerifyResult.success) {
+    return { retry: false };
+  }
+
+  if (reviewAttempt >= MAX_REVIEW_ATTEMPTS) {
+    const errorMsg = reVerifyResult.error
+      ? `\n\nFailed command: ${reVerifyResult.error.command}\nExit code: ${reVerifyResult.error.exitCode}`
+      : "";
+    return {
+      retry: true,
+      fatalError: `Task ${taskId} verify failed after review changes.${errorMsg}`,
+    };
+  }
+
+  return { retry: true };
+}
+
+/**
+ * Execute REVIEW stage loop in standard mode
+ */
+async function executeReviewStageStandard(
+  initialPlan: Plan,
+  initialTask: PlanTask,
+  ctx: StandardStageContext
+): Promise<PostWorkerStagesResult> {
+  let plan = initialPlan;
+  let task = initialTask;
+  let reviewAttempt = 1;
+
+  while (reviewAttempt <= MAX_REVIEW_ATTEMPTS) {
+    logger.info(`--- Reviewing (attempt ${reviewAttempt}) ---`);
+
+    const reviewResult = await executeReview(
+      ctx.engine,
+      plan,
+      task,
+      reviewAttempt,
+      null
+    );
+
+    plan = loadPlan();
+    task = plan.tasks.find((t) => t.id === task.id) ?? task;
+
+    if (!reviewResult.complete) {
+      reviewAttempt++;
+      if (reviewAttempt > MAX_REVIEW_ATTEMPTS) {
+        return {
+          plan,
+          task,
+          success: false,
+          fatalError: `Task ${task.id} review failed after ${MAX_REVIEW_ATTEMPTS} attempts`,
+          retryWorker: false,
+        };
+      }
+      logger.warn(
+        `Retrying review for task ${task.id} (attempt ${reviewAttempt})`
+      );
+      continue;
+    }
+
+    // Re-run verify if changes were made
+    if (reviewResult.changesMade && ctx.hasVerify) {
+      const reVerifyResult = await handleReviewVerifyStandard(
+        ctx.config,
+        task.id,
+        reviewAttempt
+      );
+      if (reVerifyResult.retry) {
+        reviewAttempt++;
+        if (reviewAttempt > MAX_REVIEW_ATTEMPTS) {
+          return {
+            plan,
+            task,
+            success: false,
+            fatalError:
+              reVerifyResult.fatalError ??
+              `Task ${task.id} verify failed after review`,
+            retryWorker: false,
+          };
+        }
+        logger.warn(
+          `Review changes broke verify. Retrying review (attempt ${reviewAttempt})`
+        );
+        continue;
+      }
+    }
+
+    logger.success(
+      `Code quality review complete for task ${task.id}${reviewResult.changesMade ? " (changes made)" : ""}`
+    );
+    return { plan, task, success: true, retryWorker: false };
+  }
+
+  return {
+    plan,
+    task,
+    success: false,
+    fatalError: `Task ${task.id} review failed after ${MAX_REVIEW_ATTEMPTS} attempts`,
+    retryWorker: false,
+  };
+}
+
+/**
+ * Executes three post-worker stages in standard mode: Check → Verify → Review
+ */
+async function executePostWorkerStagesStandard(
+  engine: Engine,
+  currentPlan: Plan,
+  currentTask: PlanTask,
+  config: FerixConfig,
+  checkAttempt: number
+): Promise<PostWorkerStagesResult> {
+  let plan = currentPlan;
+  let task = currentTask;
+
+  const ctx: StandardStageContext = {
+    engine,
+    config,
+    checkAttempt,
+    hasVerify: config.verify.length > 0,
+  };
+
+  // STAGE 1: CHECK
+  const checkResult = await executeCheckStageStandard(plan, task, ctx);
+  if (checkResult) {
+    return checkResult;
+  }
+
+  // Reload after check
+  plan = loadPlan();
+  task = plan.tasks.find((t) => t.id === task.id) ?? task;
+
+  // STAGE 2: VERIFY
+  const verifyResult = await executeVerifyStageStandard(plan, task, ctx);
+  if (verifyResult) {
+    return verifyResult;
+  }
+
+  // STAGE 3: REVIEW
+  return executeReviewStageStandard(plan, task, ctx);
+}
+
+/**
+ * Executes worker + three-stage post-worker flow for a task in standard mode.
  *
  * @param engine - LLM engine instance
  * @param plan - Current plan
  * @param task - Task to execute (with phases)
  * @param config - Ferix configuration
  * @returns Updated plan after task completion
- * @throws AgentError if worker, verify, or reviewer fails after max attempts
+ * @throws AgentError if any phase fails after max attempts
  */
 async function executeTaskStandard(
   engine: Engine,
@@ -1243,86 +1732,63 @@ async function executeTaskStandard(
 ): Promise<Plan> {
   let currentPlan = plan;
   let currentTask = task;
+  let checkAttempt = (currentTask.attempts ?? 0) + 1;
 
-  const hasCriteria = taskHasCriteria(currentTask);
-  const hasVerify = config.verify.length > 0;
-  let reviewAttemptNumber = (currentTask.attempts ?? 0) + 1;
+  while (checkAttempt <= MAX_CHECK_ATTEMPTS) {
+    // Execute the worker
+    logger.info(`--- Executing (check attempt ${checkAttempt}) ---`);
 
-  while (reviewAttemptNumber <= MAX_REVIEW_ATTEMPTS) {
-    // Phase B + Verify: Execute the task with verify retry loop
-    let verifyAttempt = 1;
-    let verifyError: WorkerOptions["verifyError"] | undefined;
-
-    while (verifyAttempt <= MAX_VERIFY_ATTEMPTS) {
-      const iterResult = await executeWorkerVerifyIterationStandard(
-        engine,
-        currentPlan,
-        currentTask,
-        task.id,
-        config,
-        verifyAttempt,
-        verifyError,
-        hasVerify,
-        reviewAttemptNumber
-      );
-
-      currentPlan = iterResult.plan;
-      currentTask = iterResult.task;
-
-      if (!iterResult.continueLoop) {
-        break;
-      }
-
-      verifyAttempt++;
-      verifyError = iterResult.verifyError;
-    }
-
-    // Phase C: Review if task has criteria
-    if (!hasCriteria) {
-      return currentPlan;
-    }
-
-    logger.info(
-      `--- Reviewing (attempt ${reviewAttemptNumber}/${MAX_REVIEW_ATTEMPTS}) ---`
-    );
-    const reviewResult = await executeReviewer(
+    const workerResult = await executeWorker(
       engine,
       currentPlan,
       currentTask,
-      reviewAttemptNumber,
+      config,
       null
     );
+    const workerCheck = checkResult(workerResult);
 
+    if (workerCheck.failed) {
+      throw new AgentError("Worker", workerCheck.error || "Failed");
+    }
+
+    // Reload plan after worker
     currentPlan = loadPlan();
     currentTask =
       currentPlan.tasks.find((t) => t.id === task.id) ?? currentTask;
 
-    if (reviewResult.passed) {
-      logger.success(`All criteria verified for task ${task.id}`);
+    // Execute three post-worker stages: Check → Verify → Review
+    const stagesResult = await executePostWorkerStagesStandard(
+      engine,
+      currentPlan,
+      currentTask,
+      config,
+      checkAttempt
+    );
+
+    currentPlan = stagesResult.plan;
+    currentTask = stagesResult.task;
+
+    if (stagesResult.fatalError) {
+      throw new AgentError("PostWorker", stagesResult.fatalError);
+    }
+
+    if (stagesResult.success) {
       return currentPlan;
     }
 
-    reviewAttemptNumber++;
-
-    if (reviewAttemptNumber > MAX_REVIEW_ATTEMPTS) {
-      const failedCriteria =
-        currentTask.criteria?.filter((c) => c.status === "failed") ?? [];
-      const failedList = failedCriteria
-        .map((c) => `  - ${c.description}: ${c.failureReason ?? "Unknown"}`)
-        .join("\n");
-
-      throw new AgentError(
-        "Review",
-        `Task ${task.id} failed after ${MAX_REVIEW_ATTEMPTS} attempts.\n\nFailed criteria:\n${failedList}`
-      );
+    if (stagesResult.retryWorker) {
+      checkAttempt++;
+      continue;
     }
 
-    logger.warn(
-      `Review failed. Retrying task ${task.id} (attempt ${reviewAttemptNumber}/${MAX_REVIEW_ATTEMPTS})`
-    );
+    // Something went wrong but not a retry scenario
+    throw new AgentError("PostWorker", `Task ${task.id} failed unexpectedly`);
   }
 
-  return currentPlan;
+  throw new AgentError(
+    "Check",
+    `Task ${task.id} failed after ${MAX_CHECK_ATTEMPTS} check attempts`
+  );
 }
 
 /**

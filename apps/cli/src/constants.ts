@@ -17,9 +17,15 @@ export const SIGNALS = {
   PHASE_START: "<ferix:phase-start",
   PHASE_DONE: "<ferix:phase-done",
   PHASE_FAILED: "<ferix:phase-failed",
-  // Criterion tracking signals (for reviewer)
+  // Criterion tracking signals (for check stage)
   CRITERION_PASSED: "<ferix:criterion-passed",
   CRITERION_FAILED: "<ferix:criterion-failed",
+  // Check stage signals (success criteria verification)
+  CHECK_PASSED: "<ferix:check-passed/>",
+  CHECK_FAILED: "<ferix:check-failed/>",
+  // Review stage signals (code quality improvement)
+  REVIEW_COMPLETE: "<ferix:review-complete/>",
+  REVIEW_CHANGES_MADE: "<ferix:review-changes-made/>",
 } as const;
 
 /** Default values */

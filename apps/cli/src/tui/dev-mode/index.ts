@@ -527,7 +527,7 @@ export class DevMode {
   }
 
   /**
-   * Set execution mode (breakdown, planning, working)
+   * Set execution mode (breakdown, planning, working, checking, verifying, reviewing)
    */
   setExecutionMode(mode: ExecutionMode, taskId?: number): void {
     this.state.executionMode = mode;
@@ -537,9 +537,28 @@ export class DevMode {
       this.state.currentVerifyCommand = undefined;
       this.state.verifyAttempt = undefined;
     }
+    // Clear check state when not in check mode
+    if (mode !== "checking") {
+      this.state.checkAttempt = undefined;
+    }
+    // Clear review state when not in review mode
+    if (mode !== "reviewing") {
+      this.state.reviewAttempt = undefined;
+    }
     if (mode !== "idle") {
       this.state.status = "running";
     }
+    this.render();
+  }
+
+  /**
+   * Set check mode with attempt number
+   */
+  setCheckMode(attempt: number, taskId?: number): void {
+    this.state.executionMode = "checking";
+    this.state.checkAttempt = attempt;
+    this.state.currentTaskId = taskId;
+    this.state.status = "running";
     this.render();
   }
 
@@ -554,11 +573,51 @@ export class DevMode {
   }
 
   /**
+   * Set review mode with attempt number
+   */
+  setReviewMode(attempt: number, taskId?: number): void {
+    this.state.executionMode = "reviewing";
+    this.state.reviewAttempt = attempt;
+    this.state.currentTaskId = taskId;
+    this.state.status = "running";
+    this.render();
+  }
+
+  /**
    * Set the current verify command being run
    */
   setVerifyCommand(command: string | undefined): void {
     this.state.currentVerifyCommand = command;
     this.render();
+  }
+
+  /**
+   * Update stage status for a task
+   */
+  setStageStatus(
+    taskId: string,
+    stageName: "check" | "verify" | "review",
+    status: StageStatus
+  ): void {
+    const task = this.state.tasks.find((t) => t.id === taskId);
+    if (task) {
+      if (!task.stages) {
+        task.stages = {};
+      }
+      task.stages[stageName] = status;
+      this.render();
+    }
+  }
+
+  /**
+   * Mark whether the review stage made code changes
+   */
+  setReviewChanges(taskId: string, madeChanges: boolean): void {
+    const task = this.state.tasks.find((t) => t.id === taskId);
+    if (task) {
+      task.reviewChanges = madeChanges;
+      this.render();
+    }
   }
 
   /**

@@ -25,6 +25,16 @@ const EXTRACT_CRITERIA_REGEX =
 const CRITERION_PASSED_REGEX = /<ferix:criterion-passed id="[\d.c]+"\/>/g;
 const CRITERION_FAILED_REGEX =
   /<ferix:criterion-failed id="[\d.c]+" reason="[^"]*"\/>/g;
+
+// Check stage signals (success criteria verification)
+const CHECK_PASSED_REGEX = /<ferix:check-passed\/>/g;
+const CHECK_FAILED_REGEX = /<ferix:check-failed\/>/g;
+
+// Review stage signals (code quality improvement)
+const REVIEW_COMPLETE_REGEX = /<ferix:review-complete\/>/g;
+const REVIEW_CHANGES_MADE_REGEX = /<ferix:review-changes-made\/>/g;
+
+// Legacy review signals (for backwards compatibility during migration)
 const REVIEW_PASSED_REGEX = /<ferix:review-passed\/>/g;
 const REVIEW_FAILED_REGEX = /<ferix:review-failed\/>/g;
 
@@ -62,6 +72,10 @@ export function stripSignalTags(text: string): string {
     .replace(CRITERION_FAILED_REGEX, "")
     .replace(REVIEW_PASSED_REGEX, "")
     .replace(REVIEW_FAILED_REGEX, "")
+    .replace(CHECK_PASSED_REGEX, "")
+    .replace(CHECK_FAILED_REGEX, "")
+    .replace(REVIEW_COMPLETE_REGEX, "")
+    .replace(REVIEW_CHANGES_MADE_REGEX, "")
     .replace(CRITERIA_BLOCK_REGEX, "");
 }
 
@@ -177,17 +191,55 @@ export function extractCriterionSignals(output: string): CriterionResult[] {
 }
 
 /**
+ * Check if the check stage passed (all criteria met).
+ */
+export function extractCheckPassed(output: string): boolean {
+  return output.includes("<ferix:check-passed/>");
+}
+
+/**
+ * Check if the check stage failed (one or more criteria not met).
+ */
+export function extractCheckFailed(output: string): boolean {
+  return output.includes("<ferix:check-failed/>");
+}
+
+/**
+ * Check if the review stage completed.
+ */
+export function extractReviewComplete(output: string): boolean {
+  return output.includes("<ferix:review-complete/>");
+}
+
+/**
+ * Check if the review stage made changes to the code.
+ */
+export function extractReviewChangesMade(output: string): boolean {
+  return output.includes("<ferix:review-changes-made/>");
+}
+
+/**
  * Check if the review passed (all criteria met).
+ * @deprecated Use extractCheckPassed instead - kept for backwards compatibility
  */
 export function extractReviewPassed(output: string): boolean {
-  return output.includes("<ferix:review-passed/>");
+  // Support both old and new signals during migration
+  return (
+    output.includes("<ferix:review-passed/>") ||
+    output.includes("<ferix:check-passed/>")
+  );
 }
 
 /**
  * Check if the review failed (one or more criteria not met).
+ * @deprecated Use extractCheckFailed instead - kept for backwards compatibility
  */
 export function extractReviewFailed(output: string): boolean {
-  return output.includes("<ferix:review-failed/>");
+  // Support both old and new signals during migration
+  return (
+    output.includes("<ferix:review-failed/>") ||
+    output.includes("<ferix:check-failed/>")
+  );
 }
 
 /**

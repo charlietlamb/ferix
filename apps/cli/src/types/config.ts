@@ -116,6 +116,37 @@ export interface Criterion {
 }
 
 /**
+ * Status of a post-worker stage (check, verify, review)
+ */
+export type StageStatusValue = "pending" | "in_progress" | "passed" | "failed";
+
+/**
+ * Status tracking for a single stage (check, verify, or review)
+ */
+export interface StageStatus {
+  /** Current status of the stage */
+  status: StageStatusValue;
+  /** Number of attempts for this stage */
+  attempts?: number;
+  /** Unix timestamp when stage started */
+  startedAt?: number;
+  /** Unix timestamp when stage completed */
+  completedAt?: number;
+}
+
+/**
+ * Status of all three post-worker stages
+ */
+export interface TaskStages {
+  /** Check stage - verifies success criteria */
+  check?: StageStatus;
+  /** Verify stage - runs verification commands */
+  verify?: StageStatus;
+  /** Review stage - code quality improvements */
+  review?: StageStatus;
+}
+
+/**
  * A task extracted from the work to be done
  */
 export interface Task {
@@ -135,4 +166,8 @@ export interface Task {
   startedAt?: number;
   /** Unix timestamp when task completed */
   completedAt?: number;
+  /** Status of the three post-worker stages */
+  stages?: TaskStages;
+  /** Whether the review stage made code changes */
+  reviewChanges?: boolean;
 }

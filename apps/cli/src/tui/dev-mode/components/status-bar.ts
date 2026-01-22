@@ -40,8 +40,8 @@ export function getStatus(state: DevModeState): {
           modeText = currentTaskId ? `WORK #${currentTaskId}` : "WORKING";
           modeColor = colors.brightGreen;
           break;
-        case "reviewing":
-          modeText = currentTaskId ? `REVIEW #${currentTaskId}` : "REVIEWING";
+        case "checking":
+          modeText = currentTaskId ? `CHECK #${currentTaskId}` : "CHECKING";
           modeColor = colors.brightYellow;
           break;
         case "verifying":
@@ -49,6 +49,10 @@ export function getStatus(state: DevModeState): {
             ? `VERIFY (${state.verifyAttempt}/3)`
             : "VERIFY";
           modeColor = colors.yellow;
+          break;
+        case "reviewing":
+          modeText = currentTaskId ? `REVIEW #${currentTaskId}` : "REVIEWING";
+          modeColor = colors.brightMagenta;
           break;
         default:
           modeText = "RUN";
