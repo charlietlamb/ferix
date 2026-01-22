@@ -2,9 +2,9 @@
  * Intro screen with ASCII art logo
  */
 
+import { CLI } from "../../constants.js";
 import { waitForAnyKey } from "../../utils/terminal/index.js";
-import { colors, getTerminalSize, screen } from "../ansi.js";
-import { drawHorizontalLine } from "./box-renderer.js";
+import { box, colors, getTerminalSize, screen, symbols } from "../ansi.js";
 
 /** ASCII art FERIX logo */
 const FERIX_LOGO = [
@@ -18,8 +18,8 @@ const FERIX_LOGO = [
   "░░░░░       ░░░░░░░░░░ ░░░░░   ░░░░░ ░░░░░ ░░░░░ ░░░░░ ",
 ];
 
-/** Logo color */
-const LOGO_COLOR = colors.white;
+/** Logo color - neon magenta */
+const LOGO_COLOR = colors.brightMagenta;
 
 /**
  * Calculate centered padding for a string
@@ -27,6 +27,16 @@ const LOGO_COLOR = colors.white;
 function centerPadding(text: string, cols: number): string {
   const padding = Math.max(0, Math.floor((cols - text.length) / 2));
   return " ".repeat(padding);
+}
+
+/**
+ * Draw decorative line with magenta diamonds
+ */
+function drawDecorativeLine(width: number, cols: number): void {
+  const innerWidth = width - 2;
+  const line = `${symbols.diamond}${box.horizontal.repeat(innerWidth)}${symbols.diamond}`;
+  const padding = Math.max(0, Math.floor((cols - width) / 2));
+  console.log(`${" ".repeat(padding)}${colors.magenta}${line}${colors.reset}`);
 }
 
 /**
@@ -40,8 +50,8 @@ export async function showIntro(): Promise<void> {
   const { cols, rows } = getTerminalSize();
 
   // Calculate total content height for vertical centering
-  // Logo (8 lines) + spacing (1) + subtitle (1) + spacing (1) + description (3) + spacing (1) + line (1) + spacing (1) + prompt (1)
-  const contentHeight = 18;
+  // Logo (8) + spacing (1) + version (1) + spacing (1) + subtitle (1) + spacing (1) + description (3) + spacing (1) + line (1) + spacing (1) + prompt (1)
+  const contentHeight = 20;
   const topPadding = Math.max(0, Math.floor((rows - contentHeight) / 2));
 
   // Top padding for vertical centering
@@ -49,11 +59,18 @@ export async function showIntro(): Promise<void> {
     console.log();
   }
 
-  // FERIX logo in white
+  // FERIX logo in neon magenta
   for (const line of FERIX_LOGO) {
     const pad = centerPadding(line, cols);
     console.log(`${pad}${LOGO_COLOR}${line}${colors.reset}`);
   }
+
+  console.log();
+
+  // Version display with cyan flanking
+  const version = `${box.doubleHorizontal.repeat(6)} v${CLI.VERSION} ${box.doubleHorizontal.repeat(6)}`;
+  const versionPad = centerPadding(version, cols);
+  console.log(`${versionPad}${colors.cyan}${version}${colors.reset}`);
 
   console.log();
 
@@ -78,9 +95,9 @@ export async function showIntro(): Promise<void> {
 
   console.log();
 
-  // Decorative line
+  // Decorative line with magenta diamonds
   const lineWidth = Math.min(56, cols - 4);
-  drawHorizontalLine(lineWidth, cols);
+  drawDecorativeLine(lineWidth, cols);
 
   console.log();
 

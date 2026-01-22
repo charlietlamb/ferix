@@ -2,7 +2,7 @@
  * Output area component for dev mode TUI
  */
 
-import { colors, stripAnsi, truncate } from "../../ansi.js";
+import { box, colors, stripAnsi, symbols, truncate } from "../../ansi.js";
 
 /**
  * Get visible output lines for display
@@ -16,64 +16,82 @@ export function getVisibleLines(
 }
 
 /**
+ * Create diamond-bordered banner for completion messages
+ */
+function createDiamondBanner(
+  text: string,
+  width: number,
+  borderColor: string,
+  textColor: string
+): string {
+  // Pattern: ◆━━━...━━━◆ TEXT ◆━━━...━━━◆
+  const paddedText = ` ${text} `;
+  const totalBorderWidth = width - paddedText.length - 4; // 4 for diamonds at ends
+  const sideWidth = Math.max(0, Math.floor(totalBorderWidth / 2));
+  const leftBorder = "━".repeat(sideWidth);
+  const rightBorder = "━".repeat(totalBorderWidth - sideWidth);
+
+  return `${colors.brightMagenta}${symbols.diamond}${borderColor}${leftBorder}${colors.brightMagenta}${symbols.diamond}${textColor}${paddedText}${colors.brightMagenta}${symbols.diamond}${borderColor}${rightBorder}${colors.brightMagenta}${symbols.diamond}${colors.reset}`;
+}
+
+/**
  * Style ferix tags in a line for beautiful display
  */
 function styleFerixTags(line: string, width: number): string {
-  // Style <ferix:tasks> - full width top border with TASKS label
+  // Style <ferix:tasks> - ┌─◆ TASKS ◆ (cyan border, magenta diamonds, brightWhite text)
   if (line.includes("<ferix:tasks>")) {
-    const label = " TASKS ";
-    const remainingWidth = width - 3 - label.length; // 3 for "┌─" and spacing
-    const border = "─".repeat(Math.max(0, remainingWidth));
+    const label = "TASKS";
+    const remainingWidth = width - 7 - label.length; // 7 for "┌─◆ " + " ◆"
+    const border = box.horizontal.repeat(Math.max(0, remainingWidth));
     return line.replace(
       /<ferix:tasks>/g,
-      `${colors.cyan}┌─${colors.brightCyan}${label}${colors.cyan}${border}${colors.reset}`
+      `${colors.cyan}┌${box.horizontal}${colors.brightMagenta}${symbols.diamond}${colors.reset} ${colors.brightWhite}${label}${colors.reset} ${colors.brightMagenta}${symbols.diamond}${colors.cyan}${border}${colors.reset}`
     );
   }
 
   // Style </ferix:tasks> - full width bottom border
   if (line.includes("</ferix:tasks>")) {
-    const border = "─".repeat(Math.max(0, width - 2));
+    const border = box.horizontal.repeat(Math.max(0, width - 2));
     return line.replace(
       /<\/ferix:tasks>/g,
       `${colors.cyan}└${border}┘${colors.reset}`
     );
   }
 
-  // Style <task id="N">...</task> with left border
+  // Style <task id="N">...</task> with left border - brightMagenta for task IDs
   let styled = line.replace(
     /<task id="(\d+)">([^<]+)<\/task>/g,
-    `${colors.cyan}│${colors.reset} ${colors.yellow}[$1]${colors.reset} $2`
+    `${colors.cyan}${box.vertical}${colors.reset} ${colors.brightMagenta}[$1]${colors.reset} $2`
   );
 
   // Style <ferix:task-done id="N"/>
   styled = styled.replace(
     /<ferix:task-done id="(\d+)"\/>/g,
-    `${colors.green}✓${colors.reset} ${colors.dim}Task $1 complete${colors.reset}`
+    `${colors.green}${symbols.checkmark}${colors.reset} ${colors.dim}Task $1 complete${colors.reset}`
   );
 
-  // Style <ferix:complete> - full width
+  // Style <ferix:complete> - diamond-bordered full width
   if (styled.includes("<ferix:complete>")) {
-    const label = " ALL TASKS COMPLETE ";
-    const sideWidth = Math.max(0, Math.floor((width - label.length) / 2));
-    const leftBorder = "━".repeat(sideWidth);
-    const rightBorder = "━".repeat(width - sideWidth - label.length);
-    styled = styled.replace(
-      /<ferix:complete>/g,
-      `${colors.brightGreen}${leftBorder}${label}${rightBorder}${colors.reset}`
+    const banner = createDiamondBanner(
+      `${colors.green}${symbols.checkmark}${colors.brightGreen} ALL TASKS COMPLETE`,
+      width,
+      colors.brightGreen,
+      colors.brightGreen
     );
+    styled = styled.replace(/<ferix:complete>/g, banner);
   }
 
-  // Style <ferix:error>...</ferix:error>
+  // Style <ferix:error>...</ferix:error> - ◆ ERROR │ message
   styled = styled.replace(
     /<ferix:error>([^<]*)<\/ferix:error>/g,
-    `${colors.brightRed}ERROR:${colors.reset} ${colors.red}$1${colors.reset}`
+    `${colors.brightMagenta}${symbols.diamond}${colors.reset} ${colors.brightRed}ERROR${colors.reset} ${colors.dim}${box.vertical}${colors.reset} ${colors.red}$1${colors.reset}`
   );
 
   // Style <ferix:phases task="N"> - phases header
   if (styled.includes("<ferix:phases")) {
     styled = styled.replace(
       /<ferix:phases task="(\d+)">/g,
-      `${colors.cyan}│${colors.reset}   ${colors.dim}Phases for task $1:${colors.reset}`
+      `${colors.cyan}${box.vertical}${colors.reset}   ${colors.dim}Phases for task $1:${colors.reset}`
     );
   }
 
@@ -84,7 +102,7 @@ function styleFerixTags(line: string, width: number): string {
   if (styled.includes("<ferix:criteria")) {
     styled = styled.replace(
       /<ferix:criteria task="(\d+)">/g,
-      `${colors.cyan}│${colors.reset}   ${colors.dim}Success criteria for task $1:${colors.reset}`
+      `${colors.cyan}${box.vertical}${colors.reset}   ${colors.dim}Success criteria for task $1:${colors.reset}`
     );
   }
 
@@ -94,56 +112,66 @@ function styleFerixTags(line: string, width: number): string {
   // Style <criterion id="N.cM">...</criterion> with tree structure
   styled = styled.replace(
     /<criterion id="([^"]+)">([^<]+)<\/criterion>/g,
-    `${colors.cyan}│${colors.reset}   ${colors.dim}├─${colors.reset} ${colors.dim}○${colors.reset} ${colors.dim}[$1]${colors.reset} $2`
+    `${colors.cyan}${box.vertical}${colors.reset}   ${colors.dim}${box.teeRight}${box.horizontal}${colors.reset} ${colors.dim}${symbols.bulletEmpty}${colors.reset} ${colors.dim}[$1]${colors.reset} $2`
   );
 
   // Style <phase id="N.M">...</phase> with tree structure
   styled = styled.replace(
     /<phase id="([^"]+)">([^<]+)<\/phase>/g,
-    `${colors.cyan}│${colors.reset}   ${colors.dim}├─${colors.reset} ${colors.dim}○${colors.reset} ${colors.dim}[$1]${colors.reset} $2`
+    `${colors.cyan}${box.vertical}${colors.reset}   ${colors.dim}${box.teeRight}${box.horizontal}${colors.reset} ${colors.dim}${symbols.bulletEmpty}${colors.reset} ${colors.dim}[$1]${colors.reset} $2`
   );
 
   // Style <ferix:phase-start id="N.M"/>
   styled = styled.replace(
     /<ferix:phase-start id="([^"]+)"\/>/g,
-    `${colors.cyan}│${colors.reset}   ${colors.yellow}●${colors.reset} ${colors.dim}Phase $1 started${colors.reset}`
+    `${colors.cyan}${box.vertical}${colors.reset}   ${colors.yellow}${symbols.bulletFilled}${colors.reset} ${colors.dim}Phase $1 started${colors.reset}`
   );
 
   // Style <ferix:phase-done id="N.M"/>
   styled = styled.replace(
     /<ferix:phase-done id="([^"]+)"\/>/g,
-    `${colors.cyan}│${colors.reset}   ${colors.green}✓${colors.reset} ${colors.dim}Phase $1 complete${colors.reset}`
+    `${colors.cyan}${box.vertical}${colors.reset}   ${colors.green}${symbols.checkmark}${colors.reset} ${colors.dim}Phase $1 complete${colors.reset}`
   );
 
   // Style <ferix:phase-failed id="N.M">reason</ferix:phase-failed>
   styled = styled.replace(
     /<ferix:phase-failed id="([^"]+)">([^<]*)<\/ferix:phase-failed>/g,
-    `${colors.cyan}│${colors.reset}   ${colors.red}✗${colors.reset} ${colors.dim}Phase $1 failed:${colors.reset} ${colors.red}$2${colors.reset}`
+    `${colors.cyan}${box.vertical}${colors.reset}   ${colors.red}${symbols.cross}${colors.reset} ${colors.dim}Phase $1 failed:${colors.reset} ${colors.red}$2${colors.reset}`
   );
 
   // Style <ferix:criterion-passed id="N.cM"/>
   styled = styled.replace(
     /<ferix:criterion-passed id="([^"]+)"\/>/g,
-    `${colors.green}✓${colors.reset} ${colors.dim}Criterion $1 passed${colors.reset}`
+    `${colors.green}${symbols.checkmark}${colors.reset} ${colors.dim}Criterion $1 passed${colors.reset}`
   );
 
   // Style <ferix:criterion-failed id="N.cM" reason="..."/>
   styled = styled.replace(
     /<ferix:criterion-failed id="([^"]+)" reason="([^"]*)"\/>/g,
-    `${colors.red}✗${colors.reset} ${colors.dim}Criterion $1 failed:${colors.reset} ${colors.red}$2${colors.reset}`
+    `${colors.red}${symbols.cross}${colors.reset} ${colors.dim}Criterion $1 failed:${colors.reset} ${colors.red}$2${colors.reset}`
   );
 
-  // Style <ferix:review-passed/>
-  styled = styled.replace(
-    /<ferix:review-passed\/>/g,
-    `${colors.brightGreen}━━━ REVIEW PASSED ━━━${colors.reset}`
-  );
+  // Style <ferix:review-passed/> - diamond-bordered full width
+  if (styled.includes("<ferix:review-passed/>")) {
+    const banner = createDiamondBanner(
+      `${colors.green}${symbols.checkmark}${colors.brightGreen} REVIEW PASSED`,
+      width,
+      colors.brightGreen,
+      colors.brightGreen
+    );
+    styled = styled.replace(/<ferix:review-passed\/>/g, banner);
+  }
 
-  // Style <ferix:review-failed/>
-  styled = styled.replace(
-    /<ferix:review-failed\/>/g,
-    `${colors.brightRed}━━━ REVIEW FAILED ━━━${colors.reset}`
-  );
+  // Style <ferix:review-failed/> - diamond-bordered full width
+  if (styled.includes("<ferix:review-failed/>")) {
+    const banner = createDiamondBanner(
+      `${colors.red}${symbols.cross}${colors.brightRed} REVIEW FAILED`,
+      width,
+      colors.brightRed,
+      colors.brightRed
+    );
+    styled = styled.replace(/<ferix:review-failed\/>/g, banner);
+  }
 
   return styled;
 }

@@ -3,7 +3,16 @@
  */
 
 import type { ScrollInfo, ViewMode } from "../../../types/tui.js";
-import { colors } from "../../ansi.js";
+import { colors, symbols } from "../../ansi.js";
+
+/**
+ * Format a hint with diamond bullet prefix
+ * @param key - The key binding (styled brightWhite)
+ * @param description - The description (styled dim)
+ */
+function formatHint(key: string, description: string): string {
+  return `${colors.brightMagenta}${symbols.diamond}${colors.reset} ${colors.brightWhite}${key}${colors.reset} ${colors.dim}${description}${colors.reset}`;
+}
 
 /**
  * Build scroll position indicator parts
@@ -22,7 +31,9 @@ function buildScrollParts(
     if (userScrolled) {
       parts.push(`${colors.yellow}${scrollPos}${colors.reset}`);
       if (showBottomHint) {
-        parts.push(`${colors.dim}G${colors.reset} bottom`);
+        parts.push(
+          `${colors.brightWhite}G${colors.reset} ${colors.dim}bottom${colors.reset}`
+        );
       }
     } else {
       parts.push(`${colors.dim}${scrollPos}${colors.reset}`);
@@ -40,10 +51,10 @@ function buildScrollParts(
 function buildLogsFooter(scrollInfo: ScrollInfo): string {
   const parts: string[] = [];
 
-  parts.push(`${colors.dim}j/k${colors.reset} scroll`);
+  parts.push(formatHint("j/k", "scroll"));
   parts.push(...buildScrollParts(scrollInfo, true));
-  parts.push(`${colors.dim}t${colors.reset} tasks`);
-  parts.push(`${colors.dim}^C${colors.reset} quit`);
+  parts.push(formatHint("t", "tasks"));
+  parts.push(formatHint("^C", "quit"));
 
   return ` ${parts.join("  ")} `;
 }
@@ -54,10 +65,10 @@ function buildLogsFooter(scrollInfo: ScrollInfo): string {
 function buildTasksListFooter(): string {
   const parts: string[] = [];
 
-  parts.push(`${colors.dim}j/k${colors.reset} navigate`);
-  parts.push(`${colors.dim}Enter${colors.reset} details`);
-  parts.push(`${colors.dim}Esc${colors.reset} back`);
-  parts.push(`${colors.dim}^C${colors.reset} quit`);
+  parts.push(formatHint("j/k", "navigate"));
+  parts.push(formatHint("Enter", "details"));
+  parts.push(formatHint("Esc", "back"));
+  parts.push(formatHint("^C", "quit"));
 
   return ` ${parts.join("  ")} `;
 }
@@ -68,10 +79,10 @@ function buildTasksListFooter(): string {
 function buildTaskDetailFooter(scrollInfo: ScrollInfo): string {
   const parts: string[] = [];
 
-  parts.push(`${colors.dim}j/k${colors.reset} scroll`);
+  parts.push(formatHint("j/k", "scroll"));
   parts.push(...buildScrollParts(scrollInfo, false));
-  parts.push(`${colors.dim}Esc${colors.reset} back`);
-  parts.push(`${colors.dim}^C${colors.reset} quit`);
+  parts.push(formatHint("Esc", "back"));
+  parts.push(formatHint("^C", "quit"));
 
   return ` ${parts.join("  ")} `;
 }

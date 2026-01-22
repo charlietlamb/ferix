@@ -47,8 +47,19 @@ export const colors = {
   brightGreen: `${ESC}92m`,
   brightYellow: `${ESC}93m`,
   brightBlue: `${ESC}94m`,
+  brightMagenta: `${ESC}95m`,
   brightCyan: `${ESC}96m`,
   brightWhite: `${ESC}97m`,
+};
+
+// Decorative symbols
+export const symbols = {
+  diamond: "◆",
+  arrowRight: "▸",
+  bulletEmpty: "○",
+  bulletFilled: "●",
+  checkmark: "✓",
+  cross: "✗",
 };
 
 // Box drawing characters (single line for internal separators)
@@ -67,6 +78,9 @@ export const box = {
   doubleBottomRight: "╝",
   doubleTeeRight: "╠",
   doubleTeeLeft: "╣",
+
+  // Heavy line (for banners)
+  heavyHorizontal: "━",
 };
 
 // Get terminal dimensions

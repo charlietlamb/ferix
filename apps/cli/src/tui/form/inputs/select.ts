@@ -7,8 +7,14 @@ import {
   disableRawMode,
   enableRawMode,
 } from "../../../utils/terminal/index.js";
-import { colors, getTerminalSize, screen } from "../../ansi.js";
+import { colors, getTerminalSize, screen, symbols } from "../../ansi.js";
 import { renderQuestionBox } from "../box-renderer.js";
+
+/** Build footer text with diamond bullets */
+function buildFooter(): string {
+  const d = `${colors.magenta}${symbols.diamond}${colors.reset}`;
+  return `${d} ${colors.dim}↑/↓ navigate${colors.reset}  ${d} ${colors.dim}Enter select${colors.reset}  ${d} ${colors.dim}Ctrl+C cancel${colors.reset}`;
+}
 
 /**
  * Ask a select question
@@ -45,7 +51,7 @@ export function askSelect(
     const content = question.options.map((opt, i) => {
       const selected = i === selectedIndex;
       const prefix = selected
-        ? `${colors.cyan}▸${colors.reset}`
+        ? `${colors.brightMagenta}${symbols.arrowRight}${colors.reset}`
         : `${colors.dim} ${colors.reset}`;
       const label = selected
         ? `${colors.brightWhite}${opt.label}${colors.reset}`
@@ -57,7 +63,7 @@ export function askSelect(
 
     renderQuestionBox(question.label, undefined, {
       content,
-      footer: "↑/↓ navigate | Enter select | Ctrl+C cancel",
+      footer: buildFooter(),
     });
   };
 
@@ -97,7 +103,7 @@ export function askSelect(
       const selected = question.options[selectedIndex];
       if (selected) {
         console.log(
-          `${colors.green}  ✓${colors.reset} ${colors.dim}${selected.label}${colors.reset}`
+          `${colors.green}  ${symbols.checkmark}${colors.reset} ${colors.dim}${selected.label}${colors.reset}`
         );
         console.log();
         onAnswer(selected.value);

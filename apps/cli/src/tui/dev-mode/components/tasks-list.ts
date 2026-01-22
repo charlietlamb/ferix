@@ -5,7 +5,7 @@
 
 import type { Task } from "../../../types/config.js";
 import type { DevModeState, GitInfo } from "../../../types/tui.js";
-import { colors, hyperlink } from "../../ansi.js";
+import { box, colors, hyperlink, symbols } from "../../ansi.js";
 import { STATUS_ICONS } from "../layout.js";
 import { formatDuration } from "../state.js";
 
@@ -48,9 +48,11 @@ function buildTaskLine(
   isSelected: boolean,
   maxDescWidth: number
 ): string {
-  const selector = isSelected ? `${colors.brightCyan}>${colors.reset}` : " ";
+  const selector = isSelected
+    ? `${colors.brightMagenta}${symbols.arrowRight}${colors.reset}`
+    : " ";
   const icon = getTaskStatusIcon(task);
-  const id = `${colors.yellow}[${task.id}]${colors.reset}`;
+  const id = `${colors.brightMagenta}[${task.id}]${colors.reset}`;
 
   // Truncate description if needed
   let description = task.description;
@@ -58,9 +60,9 @@ function buildTaskLine(
     description = `${description.substring(0, maxDescWidth - 3)}...`;
   }
 
-  // Duration (if started)
+  // Duration (if started) - cyan color
   const duration = task.startedAt
-    ? formatDuration(task.startedAt, task.completedAt)
+    ? `${colors.cyan}${formatDuration(task.startedAt, task.completedAt)}${colors.reset}`
     : `${colors.dim}--${colors.reset}`;
 
   // Phase progress
@@ -79,23 +81,29 @@ function buildGitInfoLines(gitInfo: GitInfo): string[] {
     return lines;
   }
 
-  // Branch info line
+  // Branch info line with styled components
+  const gitLabel = `${colors.brightMagenta}${symbols.diamond}${colors.reset} ${colors.dim}GIT${colors.reset} ${colors.dim}${box.vertical}${colors.reset}`;
+  const branchName = `${colors.brightWhite}${gitInfo.branch}${colors.reset}`;
+  const arrow = `${colors.dim}→${colors.reset}`;
+  const baseBranch = gitInfo.baseBranch
+    ? `${colors.dim}${gitInfo.baseBranch}${colors.reset}`
+    : "";
+
   const branchDisplay = gitInfo.baseBranch
-    ? `${gitInfo.branch} → ${gitInfo.baseBranch}`
-    : gitInfo.branch;
+    ? `${branchName} ${arrow} ${baseBranch}`
+    : branchName;
 
   const pushStatus = gitInfo.pushed
-    ? `${colors.green}Pushed ✓${colors.reset}`
+    ? `${colors.green}${symbols.checkmark}${colors.reset}`
     : `${colors.dim}Not pushed${colors.reset}`;
 
-  lines.push(
-    `   ${colors.dim}GIT:${colors.reset} ${branchDisplay}  ${pushStatus}`
-  );
+  lines.push(`   ${gitLabel} ${branchDisplay}  ${pushStatus}`);
 
   // PR URL line (if available)
   if (gitInfo.prUrl) {
-    const prLink = hyperlink(gitInfo.prUrl, gitInfo.prUrl);
-    lines.push(`   ${colors.dim}PR:${colors.reset} ${prLink}`);
+    const prLabel = `${colors.brightMagenta}${symbols.diamond}${colors.reset} ${colors.dim}PR${colors.reset} ${colors.dim}${box.vertical}${colors.reset}`;
+    const prLink = `${colors.cyan}${hyperlink(gitInfo.prUrl, gitInfo.prUrl)}${colors.reset}`;
+    lines.push(`   ${prLabel} ${prLink}`);
   }
 
   return lines;
@@ -113,10 +121,14 @@ export function buildTasksListContent(
   const lines: string[] = [];
   const { tasks, tasksListState, gitInfo } = state;
 
-  // Header
+  // Header with diamond styling
   lines.push("");
-  lines.push(`   ${colors.brightWhite}TASKS${colors.reset}`);
-  lines.push(`  ${colors.dim}${"─".repeat(innerWidth - 4)}${colors.reset}`);
+  lines.push(
+    `   ${colors.brightMagenta}${symbols.diamond}${colors.reset} ${colors.brightWhite}TASKS${colors.reset} ${colors.brightMagenta}${symbols.diamond}${colors.reset}`
+  );
+  lines.push(
+    `  ${colors.cyan}${box.doubleHorizontal.repeat(innerWidth - 4)}${colors.reset}`
+  );
   lines.push("");
 
   // Empty state
@@ -128,7 +140,7 @@ export function buildTasksListContent(
     lines.push("");
   } else {
     // Calculate max description width
-    // Format: "  > [1] ✓ description  00:00  0/0"
+    // Format: "  ▸ [1] ✓ description  00:00  0/0"
     // Reserve: 2 (indent) + 2 (selector) + 5 (id) + 2 (icon) + 2 (gap) + 7 (duration) + 2 (gap) + 5 (progress) = ~27
     const maxDescWidth = innerWidth - 30;
 
@@ -148,9 +160,11 @@ export function buildTasksListContent(
     }
   }
 
-  // Separator before git info
+  // Separator before git info (cyan double line)
   lines.push("");
-  lines.push(`  ${colors.dim}${"─".repeat(innerWidth - 4)}${colors.reset}`);
+  lines.push(
+    `  ${colors.cyan}${box.doubleHorizontal.repeat(innerWidth - 4)}${colors.reset}`
+  );
 
   // Git info
   const gitLines = buildGitInfoLines(gitInfo);
@@ -159,7 +173,9 @@ export function buildTasksListContent(
       lines.push(line);
     }
   } else {
-    lines.push(`   ${colors.dim}GIT: (not a git repository)${colors.reset}`);
+    lines.push(
+      `   ${colors.brightMagenta}${symbols.diamond}${colors.reset} ${colors.dim}GIT${colors.reset} ${colors.dim}${box.vertical}${colors.reset} ${colors.dim}(not a git repository)${colors.reset}`
+    );
   }
 
   lines.push("");

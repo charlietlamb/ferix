@@ -7,7 +7,7 @@ import {
   disableRawMode,
   enableRawMode,
 } from "../../../utils/terminal/index.js";
-import { colors, getTerminalSize, screen } from "../../ansi.js";
+import { colors, getTerminalSize, screen, symbols } from "../../ansi.js";
 import { renderQuestionBox } from "../box-renderer.js";
 
 /**
@@ -40,6 +40,12 @@ function handleConfirmKey(
   return { action: "none", value: currentValue };
 }
 
+/** Build footer text with diamond bullets */
+function buildFooter(): string {
+  const d = `${colors.magenta}${symbols.diamond}${colors.reset}`;
+  return `${d} ${colors.dim}↑/↓ or y/n${colors.reset}  ${d} ${colors.dim}Enter confirm${colors.reset}  ${d} ${colors.dim}Ctrl+C cancel${colors.reset}`;
+}
+
 /**
  * Ask a confirm question
  */
@@ -65,15 +71,15 @@ export function askConfirm(
     }
 
     const yesStyle = value
-      ? `${colors.cyan}▸ ${colors.brightWhite}Yes${colors.reset}`
+      ? `${colors.brightMagenta}${symbols.arrowRight} ${colors.brightWhite}Yes${colors.reset}`
       : `${colors.dim}  Yes${colors.reset}`;
     const noStyle = value
       ? `${colors.dim}  No${colors.reset}`
-      : `${colors.cyan}▸ ${colors.brightWhite}No${colors.reset}`;
+      : `${colors.brightMagenta}${symbols.arrowRight} ${colors.brightWhite}No${colors.reset}`;
 
     renderQuestionBox(question.label, undefined, {
       content: [yesStyle, noStyle],
-      footer: "↑/↓ or y/n | Enter confirm | Ctrl+C cancel",
+      footer: buildFooter(),
     });
   };
 
@@ -99,7 +105,7 @@ export function askConfirm(
       process.stdin.removeListener("data", onKey);
       screen.showCursor();
       console.log(
-        `${colors.green}  ✓${colors.reset} ${colors.dim}${value ? "Yes" : "No"}${colors.reset}`
+        `${colors.green}  ${symbols.checkmark}${colors.reset} ${colors.dim}${value ? "Yes" : "No"}${colors.reset}`
       );
       console.log();
       onAnswer(value);

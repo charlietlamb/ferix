@@ -3,7 +3,7 @@
  */
 
 import type { DevModeState } from "../../../types/tui.js";
-import { colors } from "../../ansi.js";
+import { box, colors, symbols } from "../../ansi.js";
 import { SPINNER_FRAMES, TOOL_COLORS } from "../layout.js";
 import { formatElapsed, getTaskProgress, spinnerState } from "../state.js";
 
@@ -26,29 +26,36 @@ export function getStatus(state: DevModeState): {
 
       // Show execution mode instead of generic "RUN"
       let modeText: string;
+      let modeColor: string;
       switch (executionMode) {
         case "breakdown":
           modeText = "BREAKDOWN";
+          modeColor = colors.brightMagenta;
           break;
         case "planning":
           modeText = currentTaskId ? `PLAN #${currentTaskId}` : "PLANNING";
+          modeColor = colors.brightCyan;
           break;
         case "working":
           modeText = currentTaskId ? `WORK #${currentTaskId}` : "WORKING";
+          modeColor = colors.brightGreen;
           break;
         case "reviewing":
           modeText = currentTaskId ? `REVIEW #${currentTaskId}` : "REVIEWING";
+          modeColor = colors.brightYellow;
           break;
         case "verifying":
           modeText = state.verifyAttempt
             ? `VERIFY (${state.verifyAttempt}/3)`
             : "VERIFY";
+          modeColor = colors.yellow;
           break;
         default:
           modeText = "RUN";
+          modeColor = colors.brightGreen;
       }
 
-      return { text: `${spinner} ${modeText}`, color: colors.brightGreen };
+      return { text: `${spinner} ${modeText}`, color: modeColor };
     }
     case "complete":
       return { text: "DONE", color: colors.brightCyan };
@@ -86,8 +93,11 @@ export function buildStatusBarContent(state: DevModeState): string {
   const { iteration, maxIterations, currentTool, startTime } = state;
   const status = getStatus(state);
 
+  // Brand with magenta diamonds and brightMagenta text
+  const brand = `${colors.magenta}${symbols.diamond}${colors.reset} ${colors.brightMagenta}FERIX${colors.reset} ${colors.magenta}${symbols.diamond}${colors.reset}`;
+
   const parts = [
-    `${colors.brightWhite}FERIX${colors.reset}`,
+    brand,
     `${status.color}${status.text}${colors.reset}`,
     `${colors.brightWhite}${iteration}${colors.dim}/${maxIterations}${colors.reset}`,
     `${colors.dim}${formatElapsed(startTime)}${colors.reset}`,
@@ -113,5 +123,7 @@ export function buildStatusBarContent(state: DevModeState): string {
     parts.push(`${colors.yellow}${cmdDisplay}${colors.reset}`);
   }
 
-  return ` ${parts.join(`${colors.dim} | ${colors.reset}`)} `;
+  // Use box.vertical separator instead of pipe
+  const separator = `${colors.dim} ${box.vertical} ${colors.reset}`;
+  return ` ${parts.join(separator)} `;
 }

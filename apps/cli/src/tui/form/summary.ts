@@ -3,7 +3,7 @@
  */
 
 import { UI } from "../../constants.js";
-import { box, colors, getTerminalSize, stripAnsi } from "../ansi.js";
+import { box, colors, getTerminalSize, stripAnsi, symbols } from "../ansi.js";
 import { calculatePadding } from "./box-renderer.js";
 
 /**
@@ -20,11 +20,12 @@ export function showSummary(items: Record<string, string>): void {
     `${pad}${colors.brightCyan}${box.doubleTopLeft}${box.doubleHorizontal.repeat(innerWidth)}${box.doubleTopRight}${colors.reset}`
   );
 
-  // Title
-  const title = " CONFIGURATION ";
-  const titlePad = Math.max(0, Math.floor((innerWidth - title.length) / 2));
+  // Title with magenta diamond decorations
+  const title = `${colors.magenta}${symbols.diamond}${colors.reset} ${colors.bold}${colors.brightWhite}CONFIGURATION${colors.reset} ${colors.magenta}${symbols.diamond}${colors.reset}`;
+  const titleText = `${symbols.diamond} CONFIGURATION ${symbols.diamond}`;
+  const titlePad = Math.max(0, Math.floor((innerWidth - titleText.length) / 2));
   console.log(
-    `${pad}${colors.brightCyan}${box.doubleVertical}${colors.reset}${" ".repeat(titlePad)}${colors.bold}${colors.brightWhite}${title}${colors.reset}${" ".repeat(innerWidth - titlePad - title.length)}${colors.brightCyan}${box.doubleVertical}${colors.reset}`
+    `${pad}${colors.brightCyan}${box.doubleVertical}${colors.reset}${" ".repeat(titlePad)}${title}${" ".repeat(innerWidth - titlePad - titleText.length)}${colors.brightCyan}${box.doubleVertical}${colors.reset}`
   );
 
   console.log(

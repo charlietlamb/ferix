@@ -8,7 +8,7 @@ import {
   disableRawMode,
   enableRawMode,
 } from "../../../utils/terminal/index.js";
-import { colors, getTerminalSize, screen } from "../../ansi.js";
+import { colors, getTerminalSize, screen, symbols } from "../../ansi.js";
 import {
   type BoxLayout,
   calculateBoxLayout,
@@ -39,6 +39,12 @@ function calculateBoxHeight(
   return baseHeight + (hasPlaceholder ? 1 : 0) + inputLineCount;
 }
 
+/** Build footer text with diamond bullets */
+function buildFooter(): string {
+  const d = `${colors.magenta}${symbols.diamond}${colors.reset}`;
+  return `${d} ${colors.dim}Enter submit${colors.reset}  ${d} ${colors.dim}Alt+Enter newline${colors.reset}  ${d} ${colors.dim}Ctrl+C cancel${colors.reset}`;
+}
+
 /**
  * Render the text input box
  */
@@ -67,11 +73,10 @@ function renderTextBox(
   // Label line
   console.log(drawContentLine(layout, question.label, { bright: true }));
 
-  // Hint line (placeholder)
+  // Hint line (placeholder) - dim magenta
   if (hasPlaceholder) {
-    console.log(
-      drawContentLine(layout, question.placeholder ?? "", { dim: true })
-    );
+    const placeholder = `${colors.dim}${colors.magenta}${question.placeholder ?? ""}${colors.reset}`;
+    console.log(drawContentLine(layout, placeholder));
   }
 
   // Separator
@@ -85,16 +90,8 @@ function renderTextBox(
   // Footer separator
   console.log(drawSeparator(layout));
 
-  // Footer
-  console.log(
-    drawContentLine(
-      layout,
-      "Enter submit | Alt+Enter newline | Ctrl+C cancel",
-      {
-        dim: true,
-      }
-    )
-  );
+  // Footer with diamond bullets
+  console.log(drawContentLine(layout, buildFooter()));
 
   // Bottom border
   console.log(drawBottomBorder(layout));
