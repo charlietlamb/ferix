@@ -60,5 +60,6 @@ export function createProcessorState(): ProcessorState {
     startedPhaseIds: new Set(),
     completedPhaseIds: new Set(),
     reportedCriterionIds: new Set(),
+    criteriaEmittedForTasks: new Set(),
   };
 }

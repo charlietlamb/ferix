@@ -204,6 +204,9 @@ function handleTuiEvent(tui: DevMode, event: ClaudeEvent): void {
     case "phases_defined":
       tui.setPhases(event.taskId, event.phases);
       break;
+    case "criteria_defined":
+      tui.setCriteria(event.taskId, event.criteria);
+      break;
     case "phase_start":
       tui.setPhaseInProgress(event.id);
       break;

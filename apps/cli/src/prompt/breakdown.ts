@@ -96,16 +96,15 @@ The implementation details (module structure, loading, validation, types, integr
 - Tasks are NOT implementation steps - those become phases later
 - Use sequential numeric IDs starting at 1
 - Order tasks by dependencies (prerequisites first)
-- Most requests should have **1-5 tasks** (rarely more)
-- A PRD with 2 features = 2-3 tasks (features + optional verification task)
+- A PRD with 2 features = 2 tasks
 - Keep descriptions concise (under 60 characters)
 
 **Examples of good task sizing:**
 - "Add dark mode toggle" (1 task) - NOT 5 tasks for component, state, styles, etc.
 - "Implement user authentication" (1 task) - NOT 8 tasks for middleware, login, logout, tests, etc.
-- PRD with Config + Summary features (2-3 tasks) - NOT 14 implementation steps
+- PRD with Config + Summary features 2 tasks - NOT 14 implementation steps
 
-### Step 3.5: Extract Success Criteria
+### Step 3.5: Extract and Output Success Criteria
 
 For EACH task, extract **testable success criteria** from the requirements.
 
@@ -123,6 +122,22 @@ For EACH task, extract **testable success criteria** from the requirements.
 
 **Criteria will be verified by a reviewer after implementation.**
 If ANY criterion fails after 5 attempts, the task will be marked as failed and execution will stop.
+
+**After outputting the tasks, emit success criteria for EACH task in this format:**
+<ferix:criteria task="1">
+  <criterion id="1.c1">First criterion description</criterion>
+  <criterion id="1.c2">Second criterion description</criterion>
+</ferix:criteria>
+<ferix:criteria task="2">
+  <criterion id="2.c1">Criterion for task 2</criterion>
+  <criterion id="2.c2">Another criterion</criterion>
+</ferix:criteria>
+
+**Rules for criteria signals:**
+- Emit criteria AFTER the tasks block, BEFORE writing the plan file
+- Use ID format: taskId.cN (e.g., "1.c1", "1.c2", "2.c1")
+- Each task should have at least one criterion
+- Keep criterion descriptions concise but specific
 
 ### Step 4: Create the Plan File
 

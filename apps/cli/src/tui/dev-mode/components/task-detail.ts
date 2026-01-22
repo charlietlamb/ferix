@@ -117,9 +117,9 @@ function buildCriteriaLines(criteria: Criterion[]): string[] {
 
     const icon = CRITERION_ICONS[criterion.status];
 
-    // Main criterion line
+    // Main criterion line (with ID like phases)
     lines.push(
-      `   ${colors.dim}${prefix}${colors.reset} ${icon} ${criterion.description}`
+      `   ${colors.dim}${prefix}${colors.reset} ${icon} ${colors.dim}[${criterion.id}]${colors.reset} ${criterion.description}`
     );
 
     // Failure reason line (if failed)
@@ -171,10 +171,6 @@ function buildGitInfoLines(gitInfo: GitInfo): string[] {
 function buildCriteriaSection(task: Task, innerWidth: number): string[] {
   const lines: string[] = [];
 
-  if (!task.criteria || task.criteria.length === 0) {
-    return lines;
-  }
-
   lines.push(`  ${colors.dim}${"─".repeat(innerWidth - 4)}${colors.reset}`);
 
   const attemptsDisplay = task.attempts
@@ -183,6 +179,11 @@ function buildCriteriaSection(task: Task, innerWidth: number): string[] {
   lines.push(
     `   ${colors.brightWhite}SUCCESS CRITERIA${colors.reset}${attemptsDisplay}`
   );
+
+  if (!task.criteria || task.criteria.length === 0) {
+    lines.push(`   ${colors.dim}(criteria pending)${colors.reset}`);
+    return lines;
+  }
 
   const criteriaLines = buildCriteriaLines(task.criteria);
   for (const line of criteriaLines) {

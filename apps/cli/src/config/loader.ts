@@ -24,13 +24,13 @@ const NEWLINE_REGEX = /\n/g;
 function extractLineNumber(error: Error, content?: string): number | undefined {
   // First try to match explicit line number
   const lineMatch = error.message.match(LINE_REGEX);
-  if (lineMatch) {
+  if (lineMatch?.[1]) {
     return Number.parseInt(lineMatch[1], 10);
   }
 
   // Try to calculate line from position if content is provided
   const positionMatch = error.message.match(POSITION_REGEX);
-  if (positionMatch && content) {
+  if (positionMatch?.[1] && content) {
     const position = Number.parseInt(positionMatch[1], 10);
     // Count newlines before the error position to get line number
     const beforeError = content.slice(0, position);

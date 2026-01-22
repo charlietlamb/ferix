@@ -11,6 +11,7 @@ import type {
   StreamMessage,
 } from "../../types/events.js";
 import {
+  extractCriteriaBlock,
   extractCriterionSignals,
   extractPhases,
   extractTasks,
@@ -110,6 +111,27 @@ function checkPhaseSignals(
 }
 
 /**
+ * Check for criteria definition signals (from breakdown)
+ */
+function checkCriteriaDefinedSignals(
+  state: ProcessorState,
+  emit: (e: ClaudeEvent) => void
+): void {
+  const criteriaResults = extractCriteriaBlock(state.fullOutput);
+
+  for (const result of criteriaResults) {
+    if (!state.criteriaEmittedForTasks.has(result.taskId)) {
+      state.criteriaEmittedForTasks.add(result.taskId);
+      emit({
+        type: "criteria_defined",
+        taskId: result.taskId,
+        criteria: result.criteria,
+      });
+    }
+  }
+}
+
+/**
  * Check for criterion-related signals (from reviewer)
  */
 function checkCriterionSignals(
@@ -152,6 +174,9 @@ export function checkTaskSignals(
 
   // Check phase signals
   checkPhaseSignals(state, emit);
+
+  // Check criteria defined signals (from breakdown)
+  checkCriteriaDefinedSignals(state, emit);
 
   // Check criterion signals (from reviewer)
   checkCriterionSignals(state, emit);

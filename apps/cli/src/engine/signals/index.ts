@@ -5,6 +5,7 @@
 export { mightContainFerixTagStart } from "./detector.js";
 export type { CriterionResult } from "./parser.js";
 export {
+  extractCriteriaBlock,
   extractCriterionSignals,
   extractError,
   extractPhases,

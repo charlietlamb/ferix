@@ -2,7 +2,7 @@
  * Event types for Claude engine streaming
  */
 
-import type { Phase, Task } from "./config.js";
+import type { Criterion, Phase, Task } from "./config.js";
 
 /**
  * Stream JSON message types from Claude Code CLI
@@ -55,6 +55,7 @@ export type ClaudeEvent =
   | { type: "phase_start"; id: string }
   | { type: "phase_done"; id: string }
   | { type: "phase_failed"; id: string; reason: string }
+  | { type: "criteria_defined"; taskId: string; criteria: Criterion[] }
   | { type: "criterion_passed"; id: string }
   | { type: "criterion_failed"; id: string; reason: string };
 
@@ -90,4 +91,6 @@ export interface ProcessorState {
   completedPhaseIds: Set<string>;
   /** Track which criteria have been reported (passed or failed) */
   reportedCriterionIds: Set<string>;
+  /** Track which tasks have had their criteria emitted */
+  criteriaEmittedForTasks: Set<string>;
 }

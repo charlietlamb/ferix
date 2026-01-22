@@ -3,7 +3,7 @@
  * Retro/dev style with bordered layout, header, and footer
  */
 
-import type { Phase, Task } from "../../types/config.js";
+import type { Criterion, Phase, Task } from "../../types/config.js";
 import type { DevModeState, ExecutionMode, GitInfo } from "../../types/tui.js";
 import {
   disableRawMode,
@@ -410,6 +410,17 @@ export class DevMode {
     const task = this.state.tasks.find((t) => t.id === taskId);
     if (task) {
       task.phases = phases;
+      this.render();
+    }
+  }
+
+  /**
+   * Set criteria for a task
+   */
+  setCriteria(taskId: string, criteria: Criterion[]): void {
+    const task = this.state.tasks.find((t) => t.id === taskId);
+    if (task) {
+      task.criteria = criteria;
       this.render();
     }
   }

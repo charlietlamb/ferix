@@ -3,7 +3,7 @@
  */
 
 import { SIGNALS } from "../../constants.js";
-import type { Phase, Task } from "../../types/config.js";
+import type { Criterion, Phase, Task } from "../../types/config.js";
 
 // Top-level regex patterns for performance
 const TASK_DONE_REGEX = /<ferix:task-done id="\d+"\/>/g;
@@ -14,6 +14,12 @@ const PHASE_FAILED_REGEX =
   /<ferix:phase-failed id="[\d.]+">.*?<\/ferix:phase-failed>/g;
 const EXTRACT_PHASES_REGEX =
   /<ferix:phases task="(\d+)">([\s\S]*?)<\/ferix:phases>/;
+
+// Criteria block patterns (for breakdown phase)
+const CRITERIA_BLOCK_REGEX =
+  /<ferix:criteria task="\d+">[\s\S]*?<\/ferix:criteria>/g;
+const EXTRACT_CRITERIA_REGEX =
+  /<ferix:criteria task="(\d+)">([\s\S]*?)<\/ferix:criteria>/g;
 
 // Criterion signal patterns
 const CRITERION_PASSED_REGEX = /<ferix:criterion-passed id="[\d.c]+"\/>/g;
@@ -55,7 +61,8 @@ export function stripSignalTags(text: string): string {
     .replace(CRITERION_PASSED_REGEX, "")
     .replace(CRITERION_FAILED_REGEX, "")
     .replace(REVIEW_PASSED_REGEX, "")
-    .replace(REVIEW_FAILED_REGEX, "");
+    .replace(REVIEW_FAILED_REGEX, "")
+    .replace(CRITERIA_BLOCK_REGEX, "");
 }
 
 /**
@@ -181,4 +188,45 @@ export function extractReviewPassed(output: string): boolean {
  */
 export function extractReviewFailed(output: string): boolean {
   return output.includes("<ferix:review-failed/>");
+}
+
+/**
+ * Extract criteria from <ferix:criteria task="N">...</ferix:criteria> block
+ * Returns the task ID and array of criteria (used during breakdown phase)
+ */
+export function extractCriteriaBlock(
+  output: string
+): { taskId: string; criteria: Criterion[] }[] {
+  const results: { taskId: string; criteria: Criterion[] }[] = [];
+
+  for (const match of output.matchAll(EXTRACT_CRITERIA_REGEX)) {
+    const taskId = match[1];
+    const content = match[2];
+    if (!(taskId && content)) {
+      continue;
+    }
+
+    const criteria: Criterion[] = [];
+    const criterionMatches = content.matchAll(
+      /<criterion id="([^"]+)">([^<]+)<\/criterion>/g
+    );
+
+    for (const criterionMatch of criterionMatches) {
+      const id = criterionMatch[1];
+      const desc = criterionMatch[2];
+      if (id && desc) {
+        criteria.push({
+          id,
+          description: desc.trim(),
+          status: "pending",
+        });
+      }
+    }
+
+    if (criteria.length > 0) {
+      results.push({ taskId, criteria });
+    }
+  }
+
+  return results;
 }

@@ -80,6 +80,23 @@ function styleFerixTags(line: string, width: number): string {
   // Style </ferix:phases>
   styled = styled.replace(/<\/ferix:phases>/g, "");
 
+  // Style <ferix:criteria task="N"> - criteria header
+  if (styled.includes("<ferix:criteria")) {
+    styled = styled.replace(
+      /<ferix:criteria task="(\d+)">/g,
+      `${colors.cyan}│${colors.reset}   ${colors.dim}Success criteria for task $1:${colors.reset}`
+    );
+  }
+
+  // Style </ferix:criteria>
+  styled = styled.replace(/<\/ferix:criteria>/g, "");
+
+  // Style <criterion id="N.cM">...</criterion> with tree structure
+  styled = styled.replace(
+    /<criterion id="([^"]+)">([^<]+)<\/criterion>/g,
+    `${colors.cyan}│${colors.reset}   ${colors.dim}├─${colors.reset} ${colors.dim}○${colors.reset} ${colors.dim}[$1]${colors.reset} $2`
+  );
+
   // Style <phase id="N.M">...</phase> with tree structure
   styled = styled.replace(
     /<phase id="([^"]+)">([^<]+)<\/phase>/g,
