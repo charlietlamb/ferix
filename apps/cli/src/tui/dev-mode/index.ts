@@ -398,7 +398,16 @@ export class DevMode {
   markTaskDone(taskId: string): void {
     const task = this.state.tasks.find((t) => t.id === taskId);
     if (task) {
+      const now = Date.now();
       task.done = true;
+      task.completedAt = now;
+      // Mark any in-progress phases as done
+      for (const phase of task.phases) {
+        if (phase.status === "in_progress") {
+          phase.status = "done";
+          phase.completedAt = now;
+        }
+      }
       this.render();
     }
   }
