@@ -10,6 +10,39 @@ import type {
 import { handleAssistantMessage, handleStreamEvent } from "./handlers.js";
 
 /**
+ * Check if a tool result block contains an error
+ */
+function isToolResultError(block: {
+  type: string;
+  content?: string;
+  is_error?: boolean;
+}): boolean {
+  return (
+    block.type === "tool_result" &&
+    typeof block.content === "string" &&
+    (block.content.includes("Error:") || Boolean(block.is_error))
+  );
+}
+
+/**
+ * Handle tool result messages that may contain errors
+ */
+function handleToolResultErrors(
+  msg: StreamMessage,
+  emit: (e: ClaudeEvent) => void
+): void {
+  if (msg.type !== "user" || !msg.message?.content) {
+    return;
+  }
+
+  for (const block of msg.message.content) {
+    if (isToolResultError(block) && typeof block.content === "string") {
+      emit({ type: "error", message: block.content });
+    }
+  }
+}
+
+/**
  * Process a single line of stream output
  */
 export function processLine(
@@ -32,6 +65,9 @@ export function processLine(
 
     handleAssistantMessage(msg, emit, writeToStdout);
 
+    // Handle tool result messages that may contain errors
+    handleToolResultErrors(msg, emit);
+
     if (msg.type === "result") {
       emit({ type: "complete" });
       if (writeToStdout) {
@@ -39,6 +75,10 @@ export function processLine(
       }
     }
   } catch {
+    // Non-JSON line - could be an error or other output, show it to the user
+    if (line.trim()) {
+      emit({ type: "error", message: line });
+    }
     if (writeToStdout) {
       process.stdout.write(`${line}\n`);
     }

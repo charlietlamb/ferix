@@ -4,6 +4,7 @@
 
 export * from "./config.js";
 export * from "./engine.js";
+export * from "./errors/index.js";
 export * from "./errors.js";
 export * from "./events.js";
 export * from "./questions.js";

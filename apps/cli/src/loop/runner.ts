@@ -164,8 +164,41 @@ function parseErrorType(errorMessage: string): {
  * @param tui - DevMode TUI instance
  * @returns Event handler function
  */
-function createTuiEventHandler(tui: DevMode): (event: ClaudeEvent) => void {
-  return (event: ClaudeEvent) => handleTuiEvent(tui, event);
+/** Maximum consecutive errors before aborting */
+const MAX_CONSECUTIVE_ERRORS = 3;
+
+function createTuiEventHandler(
+  tui: DevMode
+): (event: ClaudeEvent) => undefined | { abort: true; error: string } {
+  let lastError = "";
+  let sameErrorCount = 0;
+
+  return (event: ClaudeEvent) => {
+    if (event.type === "error") {
+      if (event.message === lastError) {
+        sameErrorCount++;
+      } else {
+        lastError = event.message;
+        sameErrorCount = 1;
+      }
+
+      tui.addOutput(`${colors.red}[ERROR] ${event.message}${colors.reset}\n`);
+
+      if (sameErrorCount >= MAX_CONSECUTIVE_ERRORS) {
+        tui.addOutput(
+          `\n${colors.red}[FATAL] Same error repeated ${sameErrorCount} times. Stopping.${colors.reset}\n`
+        );
+        tui.setError();
+        return {
+          abort: true,
+          error: `Aborted after same error repeated ${MAX_CONSECUTIVE_ERRORS} times`,
+        };
+      }
+      return;
+    }
+
+    handleTuiEvent(tui, event);
+  };
 }
 
 /**
@@ -223,11 +256,8 @@ function handleTuiEvent(tui: DevMode, event: ClaudeEvent): void {
     case "criterion_failed":
       tui.markCriterionFailed(event.id, event.reason);
       break;
-    case "error":
-      tui.setError();
-      break;
     default:
-      // "complete" event is handled after execute returns
+      // "complete" and "error" events are handled elsewhere
       break;
   }
 }

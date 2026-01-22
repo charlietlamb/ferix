@@ -25,12 +25,25 @@ export function executeWithClaude(
 
   return new Promise((resolve) => {
     const state = createProcessorState();
+    let aborted = false;
+    let abortError = "";
 
     const emit = (event: ClaudeEvent) => {
-      onEvent?.(event);
+      if (aborted) {
+        return;
+      }
+      const result = onEvent?.(event);
+      if (result?.abort) {
+        aborted = true;
+        abortError = result.error;
+        child.kill("SIGTERM");
+      }
     };
 
     const outputText = (text: string) => {
+      if (aborted) {
+        return;
+      }
       if (writeToStdout) {
         process.stdout.write(text);
       }
@@ -76,16 +89,36 @@ export function executeWithClaude(
     });
 
     rl.on("line", (line) => {
-      processLine(line, state, emit, outputText, writeToStdout);
+      if (!aborted) {
+        processLine(line, state, emit, outputText, writeToStdout);
+      }
     });
 
     child.stderr?.on("data", (data: Buffer) => {
+      if (aborted) {
+        return;
+      }
+      const text = data.toString().trim();
+      if (text) {
+        emit({ type: "error", message: text });
+      }
       if (writeToStdout) {
         process.stderr.write(data);
       }
     });
 
     child.on("close", (exitCode) => {
+      if (aborted) {
+        resolve({
+          success: false,
+          output: state.fullOutput,
+          complete: false,
+          hasError: true,
+          errorMessage: abortError,
+        });
+        return;
+      }
+
       const errorMessage = extractError(state.fullOutput);
 
       if (errorMessage) {

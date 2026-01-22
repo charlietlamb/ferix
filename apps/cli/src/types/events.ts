@@ -17,6 +17,8 @@ export interface StreamMessage {
       text?: string;
       name?: string;
       input?: Record<string, unknown>;
+      content?: string;
+      is_error?: boolean;
     }>;
   };
   result?: string;
@@ -61,8 +63,11 @@ export type ClaudeEvent =
 
 /**
  * Event handler callback type
+ * Returns an abort signal with optional error message to terminate execution
  */
-export type ClaudeEventHandler = (event: ClaudeEvent) => void;
+export type ClaudeEventHandler = (
+  event: ClaudeEvent
+) => undefined | { abort: true; error: string };
 
 /**
  * Options for Claude execution
