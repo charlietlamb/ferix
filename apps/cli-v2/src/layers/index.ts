@@ -1,0 +1,99 @@
+import { Layer } from "effect";
+import { ClaudeCLI } from "./llm/claude-cli.js";
+import { Mock } from "./llm/mock.js";
+import { FileSystemPlan } from "./plan/file-system.js";
+import { MemoryPlan } from "./plan/memory.js";
+import { FileSystemSession } from "./session/file-system.js";
+import { MemorySession } from "./session/memory.js";
+import { FerixParser } from "./signal/ferix-parser.js";
+
+export { ClaudeCLI } from "./llm/claude-cli.js";
+export { Mock, Mock as MockLLM } from "./llm/mock.js";
+export { FileSystemPlan } from "./plan/file-system.js";
+export { MemoryPlan } from "./plan/memory.js";
+export { FileSystemSession } from "./session/file-system.js";
+export { MemorySession } from "./session/memory.js";
+export { FerixParser } from "./signal/ferix-parser.js";
+
+/**
+ * Production layer bundle.
+ *
+ * Uses real implementations:
+ * - Claude CLI for LLM
+ * - Ferix parser for signals
+ * - File system for plan and session storage
+ *
+ * @example
+ * ```typescript
+ * const program = runLoop(config);
+ *
+ * Effect.runPromise(
+ *   program.pipe(
+ *     Stream.runForEach(console.log),
+ *     Effect.provide(ProductionLayers)
+ *   )
+ * );
+ * ```
+ */
+export const ProductionLayers = Layer.mergeAll(
+  ClaudeCLI.Live,
+  FerixParser.Live,
+  FileSystemPlan.Live,
+  FileSystemSession.Live
+);
+
+/**
+ * Test layer bundle.
+ *
+ * Uses mock/in-memory implementations:
+ * - Mock LLM (configurable events)
+ * - Ferix parser (real implementation - pure)
+ * - In-memory plan and session storage
+ *
+ * @example
+ * ```typescript
+ * const testProgram = runLoop(config);
+ *
+ * const result = await Effect.runPromise(
+ *   testProgram.pipe(
+ *     Stream.runCollect,
+ *     Effect.provide(TestLayers)
+ *   )
+ * );
+ *
+ * expect(result).toContainEqual({ _tag: "LoopCompleted", ... });
+ * ```
+ */
+export const TestLayers = Layer.mergeAll(
+  Mock.Live,
+  FerixParser.Live,
+  MemoryPlan.Live,
+  MemorySession.Live
+);
+
+/**
+ * Creates a test layer bundle with custom mock LLM events.
+ *
+ * @param events - Events to emit from the mock LLM
+ * @returns A layer bundle for testing with the specified events
+ *
+ * @example
+ * ```typescript
+ * const customTestLayers = createTestLayers([
+ *   { _tag: "Text", text: "<ferix:tasks>...</ferix:tasks>" },
+ *   { _tag: "Done", output: "..." },
+ * ]);
+ *
+ * Effect.runPromise(program.pipe(Effect.provide(customTestLayers)));
+ * ```
+ */
+export function createTestLayers(
+  events: Parameters<typeof Mock.layer>[0]["events"]
+) {
+  return Layer.mergeAll(
+    Mock.layer({ events }),
+    FerixParser.Live,
+    MemoryPlan.layer(),
+    MemorySession.layer()
+  );
+}

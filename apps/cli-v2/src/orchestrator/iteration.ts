@@ -1,0 +1,193 @@
+import { Effect, pipe, Ref, Stream } from "effect";
+import type { LoopConfig } from "../domain/config.js";
+import { OrchestratorError } from "../domain/errors.js";
+import type { DomainEvent } from "../domain/events.js";
+import type { Plan } from "../domain/plan.js";
+import type { Signal } from "../domain/signals.js";
+import type { LLMEvent } from "../services/llm.js";
+import type { PlanStoreService } from "../services/plan-store.js";
+import type { SignalParserService } from "../services/signal-parser.js";
+import { mapLLMEventToDomain, mapSignalToDomain } from "./event-mapping.js";
+import {
+  flushPlanPersistence,
+  type PlanPersistenceState,
+  updatePlanFromSignal,
+} from "./plan-updates.js";
+import { buildPrompt } from "./prompt.js";
+
+/**
+ * Process signals from text and return events with completion flag and signals for plan updates.
+ */
+function processTextSignals(
+  signalParser: SignalParserService,
+  text: string
+): Effect.Effect<
+  { events: DomainEvent[]; completed: boolean; signals: Signal[] },
+  never,
+  never
+> {
+  return Effect.gen(function* () {
+    const events: DomainEvent[] = [];
+    let completed = false;
+    const parsedSignals: Signal[] = [];
+
+    const signals = yield* signalParser.parse(text).pipe(
+      Effect.tapError((error) =>
+        Effect.logDebug(
+          "Signal parsing failed, continuing with empty signals",
+          {
+            error: String(error),
+            textLength: text.length,
+          }
+        )
+      ),
+      Effect.orElseSucceed(() => [])
+    );
+
+    for (const signal of signals) {
+      events.push(mapSignalToDomain(signal));
+      parsedSignals.push(signal);
+      if (signal._tag === "LoopComplete") {
+        completed = true;
+      }
+    }
+
+    return { events, completed, signals: parsedSignals };
+  });
+}
+
+/**
+ * Process a single LLM event and return domain events along with parsed signals.
+ */
+function processLLMEvent(
+  signalParser: SignalParserService,
+  llmEvent: LLMEvent
+): Effect.Effect<
+  { events: DomainEvent[]; completed: boolean; signals: Signal[] },
+  never,
+  never
+> {
+  return Effect.gen(function* () {
+    const domainEvent = mapLLMEventToDomain(llmEvent);
+    const events: DomainEvent[] = [domainEvent];
+    let completed = false;
+    const allSignals: Signal[] = [];
+
+    if (llmEvent._tag === "Text" && llmEvent.text) {
+      const result = yield* processTextSignals(signalParser, llmEvent.text);
+      events.push(...result.events);
+      allSignals.push(...result.signals);
+      if (result.completed) {
+        completed = true;
+      }
+    }
+
+    if (llmEvent._tag === "Done") {
+      const result = yield* processTextSignals(signalParser, llmEvent.output);
+      allSignals.push(...result.signals);
+      if (result.completed) {
+        completed = true;
+      }
+    }
+
+    return { events, completed, signals: allSignals };
+  });
+}
+
+/**
+ * Creates a stream for a single iteration.
+ * Plan updates are batched and persisted once at the end of each iteration.
+ */
+export function createIterationStream(
+  llm: { execute: (prompt: string) => Stream.Stream<LLMEvent, unknown> },
+  signalParser: SignalParserService,
+  planStore: PlanStoreService,
+  currentPlanRef: Ref.Ref<Plan | undefined>,
+  loopCompletedRef: Ref.Ref<boolean>,
+  config: LoopConfig,
+  iteration: number,
+  sessionId: string
+): Stream.Stream<DomainEvent, OrchestratorError, never> {
+  return Stream.unwrap(
+    Effect.gen(function* () {
+      // Read current plan from Ref before building prompt
+      const currentPlan = yield* Ref.get(currentPlanRef);
+
+      // Create persistence state ref for batched plan persistence
+      const persistenceStateRef = yield* Ref.make<PlanPersistenceState>({
+        dirty: false,
+        pendingOperation: null,
+      });
+
+      const iterStarted: DomainEvent = {
+        _tag: "IterationStarted",
+        iteration,
+      };
+
+      const llmStream: Stream.Stream<DomainEvent, OrchestratorError, never> =
+        llm.execute(buildPrompt(config, iteration, currentPlan)).pipe(
+          Stream.mapError(
+            (e) =>
+              new OrchestratorError({
+                message: `LLM execution failed: ${String(e)}`,
+                phase: "iteration",
+                cause: e,
+              })
+          ),
+          Stream.flatMap((llmEvent) =>
+            Stream.unwrap(
+              Effect.gen(function* () {
+                const result = yield* processLLMEvent(signalParser, llmEvent);
+                const events = [...result.events];
+
+                // Process signals to update plan state (in-memory only)
+                for (const signal of result.signals) {
+                  const planEvents = yield* updatePlanFromSignal(
+                    currentPlanRef,
+                    persistenceStateRef,
+                    signal,
+                    sessionId,
+                    config.task
+                  );
+                  events.push(...planEvents);
+                }
+
+                // Update completion state
+                if (result.completed) {
+                  yield* Ref.set(loopCompletedRef, true);
+                }
+
+                return Stream.fromIterable(events);
+              })
+            )
+          )
+        );
+
+      // Completion stream that flushes batched persistence and emits IterationCompleted
+      const completionStream: Stream.Stream<DomainEvent, never, never> =
+        Stream.fromEffect(
+          Effect.gen(function* () {
+            // Flush batched plan persistence at end of iteration
+            const persistEvents = yield* flushPlanPersistence(
+              planStore,
+              currentPlanRef,
+              persistenceStateRef
+            );
+
+            const iterCompleted: DomainEvent = {
+              _tag: "IterationCompleted",
+              iteration,
+            };
+
+            return [...persistEvents, iterCompleted];
+          })
+        ).pipe(Stream.flatMap((events) => Stream.fromIterable(events)));
+
+      return pipe(
+        Stream.succeed(iterStarted),
+        Stream.concat(llmStream),
+        Stream.concat(completionStream)
+      );
+    })
+  );
+}

@@ -1,0 +1,46 @@
+{
+  "name": "@ferix/cli-v2",
+  "version": "0.1.0",
+  "description": "Composable RALPH loops for AI coding agents - v2 with Effect",
+  "type": "module",
+  "bin": {
+    "ferix-v2": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check-types": "tsc --noEmit",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
+  },
+  "dependencies": {
+    "effect": "^3.12.0",
+    "@effect/platform": "^0.72.0",
+    "@effect/platform-node": "^0.66.0",
+    "commander": "catalog:",
+    "picocolors": "catalog:"
+  },
+  "devDependencies": {
+    "@ferix/typescript-config": "*",
+    "@types/bun": "latest",
+    "@types/node": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "cli",
+    "ai",
+    "ralph",
+    "claude",
+    "coding-agent",
+    "automation",
+    "effect"
+  ],
+  "license": "MIT"
+}

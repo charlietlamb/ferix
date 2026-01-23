@@ -5,6 +5,8 @@
     "build": "turbo run build",
     "build:cli": "bun run --filter=@ferix/cli build",
     "cli": "bun build:cli && node apps/cli/dist/index.js",
+    "build:cli-v2": "bun run --filter=@ferix/cli-v2 build",
+    "cli-v2": "bun build:cli-v2 && node apps/cli-v2/dist/index.js",
     "dev": "turbo run dev",
     "lint": "bunx biome lint",
     "format": "bunx biome format --write",
