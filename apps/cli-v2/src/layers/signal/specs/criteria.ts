@@ -1,0 +1,88 @@
+import type {
+  CriteriaDefinedSignal,
+  CriterionFailedSignal,
+  CriterionPassedSignal,
+  Signal,
+} from "../../../domain/signals.js";
+import { type SignalSpec, signalSpecRegistry } from "./registry.js";
+
+const CRITERIA_BLOCK =
+  /<ferix:criteria task="(\d+)">([\s\S]*?)<\/ferix:criteria>/g;
+const CRITERION = /<criterion id="([^"]+)">([^<]+)<\/criterion>/g;
+const CRITERION_PASSED = /<ferix:criterion-passed id="([\d.c]+)"\/>/g;
+const CRITERION_FAILED =
+  /<ferix:criterion-failed id="([\d.c]+)" reason="([^"]*)"\/>/g;
+
+function resetRegex(pattern: RegExp): RegExp {
+  pattern.lastIndex = 0;
+  return pattern;
+}
+
+const criteriaDefinedSpec: SignalSpec<CriteriaDefinedSignal> = {
+  tag: "CriteriaDefined",
+  closingTag: "</ferix:criteria>",
+  parse: (text) => {
+    const signals: CriteriaDefinedSignal[] = [];
+    for (const match of text.matchAll(resetRegex(CRITERIA_BLOCK))) {
+      if (!(match[1] && match[2])) {
+        continue;
+      }
+      const criteria: Array<{ id: string; description: string }> = [];
+      for (const m of match[2].matchAll(resetRegex(CRITERION))) {
+        if (m[1] && m[2]) {
+          criteria.push({ id: m[1], description: m[2].trim() });
+        }
+      }
+      if (criteria.length > 0) {
+        signals.push({
+          _tag: "CriteriaDefined" as const,
+          taskId: match[1],
+          criteria,
+        });
+      }
+    }
+    return signals;
+  },
+  keyFields: (s) => {
+    const sig = s as Signal & { taskId: string; criteria: { id: string }[] };
+    return `${sig.taskId}:${sig.criteria.map((c) => c.id).join(",")}`;
+  },
+};
+
+const criterionPassedSpec: SignalSpec<CriterionPassedSignal> = {
+  tag: "CriterionPassed",
+  closingTag: "<ferix:criterion-passed",
+  parse: (text) => {
+    const signals: CriterionPassedSignal[] = [];
+    for (const m of text.matchAll(resetRegex(CRITERION_PASSED))) {
+      if (m[1]) {
+        signals.push({ _tag: "CriterionPassed" as const, criterionId: m[1] });
+      }
+    }
+    return signals;
+  },
+  keyFields: (s) => (s as Signal & { criterionId: string }).criterionId,
+};
+
+const criterionFailedSpec: SignalSpec<CriterionFailedSignal> = {
+  tag: "CriterionFailed",
+  closingTag: "<ferix:criterion-failed",
+  parse: (text) => {
+    const signals: CriterionFailedSignal[] = [];
+    for (const m of text.matchAll(resetRegex(CRITERION_FAILED))) {
+      if (m[1]) {
+        signals.push({
+          _tag: "CriterionFailed" as const,
+          criterionId: m[1],
+          reason: m[2] || "Unknown reason",
+        });
+      }
+    }
+    return signals;
+  },
+  keyFields: (s) => (s as Signal & { criterionId: string }).criterionId,
+};
+
+signalSpecRegistry.register(criteriaDefinedSpec);
+signalSpecRegistry.register(criterionPassedSpec);
+signalSpecRegistry.register(criterionFailedSpec);

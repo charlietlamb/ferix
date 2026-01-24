@@ -1,0 +1,12 @@
+// Import all specs to register them
+import "./check.js";
+import "./criteria.js";
+import "./loop-complete.js";
+import "./phases.js";
+import "./review.js";
+import "./task-complete.js";
+import "./tasks.js";
+
+export type { SignalSpec, SignalSpecRegistry } from "./registry.js";
+// Re-export registry
+export { signalSpecRegistry } from "./registry.js";

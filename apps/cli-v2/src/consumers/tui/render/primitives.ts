@@ -22,7 +22,7 @@ export const colors = {
 };
 
 // Tool-specific colors
-export const toolColors: Record<string, (s: string) => string> = {
+const toolColors: Record<string, (s: string) => string> = {
   Read: pc.cyan,
   Edit: pc.yellow,
   Write: pc.green,

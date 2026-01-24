@@ -1,15 +1,11 @@
-import type { TerminalOutput } from "../output.js";
+import { FIXED_ROWS } from "../constants.js";
+import type { TerminalOutput } from "../output/index.js";
 import type { TUIState } from "../state.js";
 import { renderFooter } from "./footer.js";
-import { renderOutputArea } from "./output-area.js";
 import { separator, topBorder } from "./primitives.js";
 import { renderStatusBar } from "./status-bar.js";
 import { renderTaskBar } from "./task-bar.js";
-import { renderTaskDetailView } from "./task-detail.js";
-import { renderTasksListView } from "./tasks-list.js";
-
-// Fixed rows: top border + status + task + separator + separator + footer
-const FIXED_ROWS = 6;
+import { viewRendererRegistry } from "./views/index.js";
 
 export function render(state: TUIState, output: TerminalOutput): void {
   const width = output.getWidth();
@@ -36,19 +32,13 @@ export function render(state: TUIState, output: TerminalOutput): void {
   // Separator
   lines.push(separator(width));
 
-  // Content area (based on view mode)
-  let contentLines: string[];
-  switch (state.viewMode) {
-    case "tasks":
-      contentLines = renderTasksListView(state, outputHeight, width);
-      break;
-    case "detail":
-      contentLines = renderTaskDetailView(state, outputHeight, width);
-      break;
-    default:
-      contentLines = renderOutputArea(state, outputHeight, width);
-      break;
-  }
+  // Content area (based on view mode) - uses registry
+  const contentLines = viewRendererRegistry.render(
+    state.viewMode,
+    state,
+    outputHeight,
+    width
+  );
 
   for (const line of contentLines) {
     lines.push(line);
@@ -79,3 +69,5 @@ export { renderStatusBar } from "./status-bar.js";
 export { renderTaskBar } from "./task-bar.js";
 export { renderTaskDetailView } from "./task-detail.js";
 export { renderTasksListView } from "./tasks-list.js";
+export type { ViewRenderer, ViewRendererRegistry } from "./views/index.js";
+export { viewRendererRegistry } from "./views/index.js";
