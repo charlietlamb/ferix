@@ -31,7 +31,7 @@ export function CodeHero({ variant = "default" }: CodeHeroProps) {
               className={cn(
                 isCompact
                   ? "text-lg md:text-xl"
-                  : "text-4xl md:text-5xl lg:text-6xl"
+                  : "text-2xl md:text-3xl lg:text-4xl"
               )}
             >
               {t("title")}
