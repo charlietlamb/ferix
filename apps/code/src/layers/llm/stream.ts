@@ -9,7 +9,7 @@ import {
   parseJsonLine,
   safeParseJson,
   unwrapStreamEvent,
-} from "./parsers.js";
+} from "./providers/parsers/claude.js";
 
 /**
  * State for tracking tool usage during streaming.
@@ -81,10 +81,14 @@ export function processJsonLine(
 }
 
 /**
- * Creates an LLM event stream from a Claude CLI child process.
+ * Creates an LLM event stream from an LLM CLI child process.
+ *
+ * @param child - The spawned child process
+ * @param providerName - Name of the provider for error messages (defaults to "LLM")
  */
 export function createEventStream(
-  child: ChildProcess
+  child: ChildProcess,
+  providerName = "LLM"
 ): Stream.Stream<LLMEvent, LLMError> {
   return Stream.async<LLMEvent, LLMError>((emit) => {
     const outputChunks: string[] = [];
@@ -121,7 +125,7 @@ export function createEventStream(
       if (exitCode !== 0) {
         emit.fail(
           new LLMError({
-            message: `Claude CLI exited with code ${exitCode}`,
+            message: `${providerName} CLI exited with code ${exitCode}`,
           })
         );
       } else {

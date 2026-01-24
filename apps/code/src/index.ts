@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import packageJson from "../package.json" with { type: "json" };
-import type { LoopConfig } from "./domain/index.js";
+import type { LoopConfig, ProviderName } from "./domain/index.js";
 import { main } from "./program.js";
 
 const program = new Command();
@@ -15,6 +15,7 @@ program
   .option("--branch <name>", "Git branch to create")
   .option("--push", "Push branch after completion")
   .option("--pr", "Create PR after pushing")
+  .option("--provider <name>", "LLM provider to use (claude, cursor)", "claude")
   .action(async (task: string, options) => {
     const config: LoopConfig = {
       task,
@@ -23,6 +24,7 @@ program
       branch: options.branch,
       push: options.push,
       pr: options.pr,
+      provider: options.provider as ProviderName,
     };
 
     try {

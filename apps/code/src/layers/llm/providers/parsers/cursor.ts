@@ -1,5 +1,12 @@
 /**
- * Parses a JSON line from Claude CLI stream-json output.
+ * Cursor Agent CLI stream-json parser.
+ *
+ * Parses the JSON events emitted by the Cursor Agent CLI when using --output-format stream-json.
+ * The format is similar to Claude CLI but may have slight differences.
+ */
+
+/**
+ * Parses a JSON line from Cursor Agent CLI output.
  *
  * @param line - Raw JSON line from stdout
  * @returns Parsed JSON object or null if invalid
@@ -46,7 +53,7 @@ export function isToolUse(json: unknown): json is {
 }
 
 /**
- * Extracts text from various Claude CLI stream-json message formats.
+ * Extracts text from various Cursor Agent CLI message formats.
  */
 export function extractText(json: unknown): string | null {
   if (!isTextContent(json)) {
@@ -152,7 +159,6 @@ export function safeParseJson(jsonStr: string): unknown | null {
 
 /**
  * Unwraps a stream_event envelope if present.
- * Claude CLI wraps streaming events: { type: "stream_event", event: {...} }
  */
 export function unwrapStreamEvent(json: unknown): unknown {
   if (

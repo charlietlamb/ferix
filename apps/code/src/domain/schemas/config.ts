@@ -1,5 +1,11 @@
 import { Schema as S } from "effect";
 
+/**
+ * Supported LLM provider names.
+ */
+export const ProviderNameSchema = S.Literal("claude", "cursor");
+export type ProviderName = typeof ProviderNameSchema.Type;
+
 export const PhasePromptOverridesSchema = S.Struct({
   breakdown: S.optional(S.String),
   planning: S.optional(S.String),
@@ -28,6 +34,8 @@ export const LoopConfigSchema = S.Struct({
   pr: S.optional(S.Boolean),
   verbose: S.optional(S.Boolean),
   prompts: S.optional(PromptConfigSchema),
+  /** LLM provider to use. Defaults to "claude". */
+  provider: S.optional(ProviderNameSchema),
 });
 export type LoopConfig = typeof LoopConfigSchema.Type;
 

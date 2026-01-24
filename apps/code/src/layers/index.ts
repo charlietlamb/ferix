@@ -1,10 +1,11 @@
 import { Layer } from "effect";
+import type { ProviderName } from "../domain/schemas/config.js";
 import { FileSystemGit } from "./git/file-system.js";
 import { MemoryGit } from "./git/memory.js";
 import { FileSystemGuardrails } from "./guardrails/file-system.js";
 import { MemoryGuardrails } from "./guardrails/memory.js";
-import { ClaudeCLI } from "./llm/claude-cli.js";
 import { Mock } from "./llm/mock.js";
+import { ClaudeCLI, createProviderLayer } from "./llm/providers/index.js";
 import { FileSystemPlan } from "./plan/file-system.js";
 import { MemoryPlan } from "./plan/memory.js";
 import { FileSystemProgress } from "./progress/file-system.js";
@@ -17,8 +18,15 @@ export { FileSystemGit } from "./git/file-system.js";
 export { MemoryGit } from "./git/memory.js";
 export { FileSystemGuardrails } from "./guardrails/file-system.js";
 export { MemoryGuardrails } from "./guardrails/memory.js";
-export { ClaudeCLI } from "./llm/claude-cli.js";
 export { Mock, Mock as MockLLM } from "./llm/mock.js";
+export {
+  ClaudeCLI,
+  CursorCLI,
+  createProviderLayer,
+} from "./llm/providers/index.js";
+// Re-export types
+export type { Provider, ProviderConfig } from "./llm/types.js";
+export { PROVIDER_CONFIGS } from "./llm/types.js";
 export { FileSystemPlan } from "./plan/file-system.js";
 export { MemoryPlan } from "./plan/memory.js";
 export { FileSystemProgress } from "./progress/file-system.js";
@@ -31,7 +39,7 @@ export { FerixParser } from "./signal/ferix-parser.js";
  * Production layer bundle.
  *
  * Uses real implementations:
- * - Claude CLI for LLM
+ * - Claude CLI for LLM (default)
  * - Ferix parser for signals
  * - File system for plan, session, progress, guardrails, and git storage
  *
@@ -56,6 +64,39 @@ export const ProductionLayers = Layer.mergeAll(
   FileSystemGuardrails.Live,
   FileSystemGit.Live
 );
+
+/**
+ * Creates production layers with a specific LLM provider.
+ *
+ * @param provider - The provider name to use (defaults to "claude")
+ * @returns A layer bundle with the specified provider
+ *
+ * @example
+ * ```typescript
+ * // Use Cursor instead of Claude
+ * const layers = createProductionLayers("cursor");
+ *
+ * Effect.runPromise(
+ *   program.pipe(
+ *     Stream.runForEach(console.log),
+ *     Effect.provide(layers)
+ *   )
+ * );
+ * ```
+ */
+export function createProductionLayers(provider: ProviderName = "claude") {
+  const llmLayer = createProviderLayer(provider);
+
+  return Layer.mergeAll(
+    llmLayer,
+    FerixParser.Live,
+    FileSystemPlan.Live,
+    FileSystemSession.Live,
+    FileSystemProgress.Live,
+    FileSystemGuardrails.Live,
+    FileSystemGit.Live
+  );
+}
 
 /**
  * Test layer bundle.

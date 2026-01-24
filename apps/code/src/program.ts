@@ -7,6 +7,7 @@ import type { DomainEvent, LoopConfig } from "./domain/index.js";
 import type { LLMEvent } from "./domain/schemas/llm.js";
 import type { ConsumerType } from "./domain/schemas/program.js";
 import {
+  createProductionLayers,
   createTestLayers,
   ProductionLayers,
   TestLayers,
@@ -82,9 +83,12 @@ export function run(options: RunOptions): Effect.Effect<void, unknown, never> {
     ? events.pipe(Stream.tap((event) => Effect.sync(() => onEvent(event))))
     : events;
 
-  const eventsWithLayers = eventsWithCallback.pipe(
-    Stream.provideLayer(ProductionLayers)
-  );
+  // Use provider-specific layers if a provider is specified in config
+  const layers = config.provider
+    ? createProductionLayers(config.provider)
+    : ProductionLayers;
+
+  const eventsWithLayers = eventsWithCallback.pipe(Stream.provideLayer(layers));
 
   if (consumerType === "none") {
     return eventsWithLayers.pipe(Stream.runDrain);
