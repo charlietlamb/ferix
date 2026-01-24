@@ -1,13 +1,13 @@
-import { MAX_OUTPUT_LINES } from "../constants.js";
 import type {
-  CriterionStatus,
-  PhaseStatus,
-  TaskStatus,
   TUICriterion,
+  TUICriterionStatus,
   TUIPhase,
+  TUIPhaseStatus,
   TUIState,
   TUITask,
-} from "../state.js";
+  TUITaskStatus,
+} from "../../../domain/schemas/tui.js";
+import { MAX_OUTPUT_LINES } from "../constants.js";
 import { formatToolInput } from "../tools/index.js";
 
 /**
@@ -153,7 +153,7 @@ interface PhaseStatusEvent {
  */
 export function setPhaseStatus(
   state: TUIState,
-  status: PhaseStatus,
+  status: TUIPhaseStatus,
   event: PhaseStatusEvent
 ): TUIState {
   const tasks = state.tasks.map((task) => {
@@ -182,7 +182,7 @@ export function setPhaseStatus(
 export function setCriterionStatus(
   state: TUIState,
   criterionId: string,
-  status: CriterionStatus,
+  status: TUICriterionStatus,
   failureReason?: string
 ): TUIState {
   const tasks = state.tasks.map((task) => {
@@ -209,7 +209,7 @@ interface TaskStatusEvent {
  */
 export function setTaskStatus(
   state: TUIState,
-  status: TaskStatus,
+  status: TUITaskStatus,
   event: TaskStatusEvent
 ): TUIState {
   const tasks = state.tasks.map((task) =>

@@ -13,7 +13,7 @@ export { eventMappingRegistry } from "./registry.js";
 
 // Re-export convenience functions
 import type { DomainEvent, Signal } from "../../domain/index.js";
-import type { LLMEvent } from "../../services/llm.js";
+import type { LLMEvent } from "../../domain/schemas/llm.js";
 import type { MappingContext } from "./registry.js";
 import { eventMappingRegistry } from "./registry.js";
 

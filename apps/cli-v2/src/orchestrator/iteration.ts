@@ -1,7 +1,7 @@
 import { DateTime, Effect, pipe, Ref, Stream } from "effect";
 import { OrchestratorError } from "../domain/errors.js";
 import type { DomainEvent, LoopConfig, Plan, Signal } from "../domain/index.js";
-import type { LLMEvent } from "../services/llm.js";
+import type { LLMEvent } from "../domain/schemas/llm.js";
 import type { PlanStoreService } from "../services/plan-store.js";
 import type { SignalParserService } from "../services/signal-parser.js";
 import {

@@ -1,12 +1,15 @@
 import { appendFile, mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { DateTime, Effect, Layer, Ref } from "effect";
+import type {
+  FileLoggerConfig,
+  LogEntry,
+  LogLevel,
+} from "../../domain/schemas/logger.js";
 import {
   LOG_LEVEL_PRIORITY,
-  type LogEntry,
   Logger,
   type LoggerService,
-  type LogLevel,
 } from "../../services/logger.js";
 
 /**
@@ -89,23 +92,6 @@ function createFileLogger(
     getLevel: () => Ref.get(levelRef),
     setLevel: (level) => Ref.set(levelRef, level),
   };
-}
-
-/**
- * Configuration for file logger.
- */
-export interface FileLoggerConfig {
-  /**
-   * Path to the log file.
-   * @default ".ferix/logs/ferix.log"
-   */
-  readonly path?: string;
-
-  /**
-   * Minimum log level to output.
-   * @default "info"
-   */
-  readonly level?: LogLevel;
 }
 
 /**

@@ -9,7 +9,7 @@ import type {
   TaskCompletedEvent,
   TasksDefinedEvent,
 } from "../../../domain/index.js";
-import type { ExecutionMode } from "../state.js";
+import type { ExecutionMode } from "../../../domain/schemas/tui.js";
 import {
   setCriterionStatus,
   setPhaseStatus,

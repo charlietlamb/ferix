@@ -1,4 +1,4 @@
-import type { ViewMode } from "../state.js";
+import type { ViewMode } from "../../../domain/schemas/tui.js";
 
 /**
  * Key action types.

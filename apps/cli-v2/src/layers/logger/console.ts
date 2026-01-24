@@ -1,10 +1,13 @@
 import { DateTime, Effect, Layer, Ref } from "effect";
+import type {
+  ConsoleLoggerConfig,
+  LogEntry,
+  LogLevel,
+} from "../../domain/schemas/logger.js";
 import {
   LOG_LEVEL_PRIORITY,
-  type LogEntry,
   Logger,
   type LoggerService,
-  type LogLevel,
 } from "../../services/logger.js";
 
 /**
@@ -86,23 +89,6 @@ function createConsoleLogger(
     getLevel: () => Ref.get(levelRef),
     setLevel: (level) => Ref.set(levelRef, level),
   };
-}
-
-/**
- * Configuration for console logger.
- */
-export interface ConsoleLoggerConfig {
-  /**
-   * Minimum log level to output.
-   * @default "info"
-   */
-  readonly level?: LogLevel;
-
-  /**
-   * Whether to use ANSI colors.
-   * @default true
-   */
-  readonly colors?: boolean;
 }
 
 /**

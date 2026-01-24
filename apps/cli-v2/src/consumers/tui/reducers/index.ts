@@ -25,7 +25,7 @@ export { stateReducerRegistry } from "./registry.js";
 
 // Re-export reduce function
 import type { DomainEvent } from "../../../domain/index.js";
-import type { TUIState } from "../state.js";
+import type { TUIState } from "../../../domain/schemas/tui.js";
 import { stateReducerRegistry } from "./registry.js";
 
 /**

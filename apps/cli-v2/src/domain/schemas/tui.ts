@@ -1,0 +1,110 @@
+import { Schema as S } from "effect";
+
+// View/status literal schemas
+export const ViewModeSchema = S.Literal("logs", "tasks", "detail");
+export type ViewMode = typeof ViewModeSchema.Type;
+
+export const LoopStatusSchema = S.Literal(
+  "idle",
+  "running",
+  "complete",
+  "error"
+);
+export type LoopStatus = typeof LoopStatusSchema.Type;
+
+export const ExecutionModeSchema = S.Literal(
+  "idle",
+  "breakdown",
+  "planning",
+  "working",
+  "checking",
+  "verifying",
+  "reviewing"
+);
+export type ExecutionMode = typeof ExecutionModeSchema.Type;
+
+// TUI-specific status schemas (prefixed to avoid conflicts with plan.ts)
+export const TUIPhaseStatusSchema = S.Literal(
+  "pending",
+  "in_progress",
+  "done",
+  "failed"
+);
+export type TUIPhaseStatus = typeof TUIPhaseStatusSchema.Type;
+
+export const TUICriterionStatusSchema = S.Literal(
+  "pending",
+  "passed",
+  "failed"
+);
+export type TUICriterionStatus = typeof TUICriterionStatusSchema.Type;
+
+export const TUITaskStatusSchema = S.Literal(
+  "pending",
+  "in_progress",
+  "done",
+  "failed"
+);
+export type TUITaskStatus = typeof TUITaskStatusSchema.Type;
+
+// TUI data schemas
+export const TUIPhaseSchema = S.Struct({
+  id: S.String,
+  description: S.String,
+  status: TUIPhaseStatusSchema,
+  startedAt: S.optional(S.Number),
+  completedAt: S.optional(S.Number),
+});
+export type TUIPhase = typeof TUIPhaseSchema.Type;
+
+export const TUICriterionSchema = S.Struct({
+  id: S.String,
+  description: S.String,
+  status: TUICriterionStatusSchema,
+  failureReason: S.optional(S.String),
+});
+export type TUICriterion = typeof TUICriterionSchema.Type;
+
+export const TUITaskSchema = S.Struct({
+  id: S.String,
+  title: S.String,
+  status: TUITaskStatusSchema,
+  phases: S.Array(TUIPhaseSchema),
+  criteria: S.Array(TUICriterionSchema),
+  startedAt: S.optional(S.Number),
+  completedAt: S.optional(S.Number),
+});
+export type TUITask = typeof TUITaskSchema.Type;
+
+export const TUIStateSchema = S.Struct({
+  // Loop info
+  task: S.String,
+  iteration: S.Number,
+  maxIterations: S.Number,
+  status: LoopStatusSchema,
+  startTime: S.Number,
+
+  // Current activity
+  executionMode: ExecutionModeSchema,
+  currentTool: S.optional(S.String),
+  currentTaskId: S.optional(S.String),
+
+  // Output
+  outputLines: S.Array(S.String),
+  partialLine: S.String,
+
+  // Tasks
+  tasks: S.Array(TUITaskSchema),
+
+  // Navigation
+  viewMode: ViewModeSchema,
+  selectedTaskIndex: S.Number,
+  scrollOffset: S.Number,
+  userScrolled: S.Boolean,
+
+  // Git
+  gitBranch: S.optional(S.String),
+  gitPushed: S.Boolean,
+  prUrl: S.optional(S.String),
+});
+export type TUIState = typeof TUIStateSchema.Type;

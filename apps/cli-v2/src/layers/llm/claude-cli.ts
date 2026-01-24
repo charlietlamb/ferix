@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
 import { Effect, Layer, Stream } from "effect";
 import type { LLMError } from "../../domain/errors.js";
-import { LLM, type LLMEvent, type LLMService } from "../../services/llm.js";
+import type { LLMEvent } from "../../domain/schemas/llm.js";
+import { LLM, type LLMService } from "../../services/llm.js";
 import { createEventStream } from "./stream.js";
 
 /**

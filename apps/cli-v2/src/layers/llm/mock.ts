@@ -1,21 +1,15 @@
-import { Effect, Layer, Stream } from "effect";
-import { LLM, type LLMEvent, type LLMService } from "../../services/llm.js";
+import { Effect, Layer, Schema as S, Stream } from "effect";
+import { type LLMEvent, LLMEventSchema } from "../../domain/schemas/llm.js";
+import { LLM, type LLMService } from "../../services/llm.js";
 
 /**
- * Configuration for the mock LLM service.
+ * Schema for MockLLMConfig for runtime validation.
  */
-export interface MockLLMConfig {
-  /**
-   * Events to emit in sequence.
-   */
-  readonly events: readonly LLMEvent[];
-
-  /**
-   * Delay between events in milliseconds.
-   * @default 0
-   */
-  readonly delayMs?: number;
-}
+export const MockLLMConfigSchema = S.Struct({
+  events: S.Array(LLMEventSchema),
+  delayMs: S.optional(S.Number),
+});
+export type MockLLMConfig = typeof MockLLMConfigSchema.Type;
 
 /**
  * Creates a mock LLM service that emits predefined events.

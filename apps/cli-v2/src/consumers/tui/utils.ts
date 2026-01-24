@@ -1,6 +1,6 @@
+import type { TUIState } from "../../domain/schemas/tui.js";
 import type { TerminalOutput } from "./output/index.js";
 import { render } from "./render/index.js";
-import type { TUIState } from "./state.js";
 
 /**
  * Safe wrapper for render that catches exceptions and logs to stderr.

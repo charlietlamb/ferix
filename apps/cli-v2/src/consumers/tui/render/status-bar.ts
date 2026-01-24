@@ -1,4 +1,4 @@
-import type { ExecutionMode, TUIState } from "../state.js";
+import type { ExecutionMode, TUIState } from "../../../domain/schemas/tui.js";
 import {
   borderedLine,
   colors,

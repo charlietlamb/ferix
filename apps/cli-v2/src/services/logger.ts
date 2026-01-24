@@ -1,34 +1,5 @@
 import { Context, type Effect } from "effect";
-
-/**
- * Log level for filtering messages.
- */
-export type LogLevel = "debug" | "info" | "warn" | "error";
-
-/**
- * Structured log entry.
- */
-export interface LogEntry {
-  /**
-   * Log level.
-   */
-  readonly level: LogLevel;
-
-  /**
-   * Log message.
-   */
-  readonly message: string;
-
-  /**
-   * ISO timestamp.
-   */
-  readonly timestamp: string;
-
-  /**
-   * Optional context data.
-   */
-  readonly context?: Record<string, unknown>;
-}
+import type { LogLevel } from "../domain/schemas/logger.js";
 
 /**
  * Service interface for logging.

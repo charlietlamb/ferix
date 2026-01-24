@@ -1,5 +1,9 @@
 import pc from "picocolors";
-import type { TUICriterion, TUIPhase, TUIState } from "../state.js";
+import type {
+  TUICriterion,
+  TUIPhase,
+  TUIState,
+} from "../../../domain/schemas/tui.js";
 import {
   borderedLine,
   box,

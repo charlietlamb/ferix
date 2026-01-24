@@ -13,10 +13,10 @@ export { keyBindingRegistry } from "./registry.js";
 
 // Re-export parsing and handling logic
 import { Effect, Ref, Stream } from "effect";
+import type { TUIState, ViewMode } from "../../../domain/schemas/tui.js";
 import { FIXED_ROWS, MOUSE_SCROLL_DELTA } from "../constants.js";
 import type { TerminalOutput } from "../output/index.js";
 import { getMaxOutputOffset } from "../render/output-area.js";
-import type { TUIState, ViewMode } from "../state.js";
 import { navigate, scroll, scrollTo } from "../state.js";
 import { safeRender } from "../utils.js";
 import type { KeyAction } from "./registry.js";

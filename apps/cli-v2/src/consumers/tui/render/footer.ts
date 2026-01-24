@@ -1,5 +1,5 @@
 import pc from "picocolors";
-import type { TUIState } from "../state.js";
+import type { TUIState } from "../../../domain/schemas/tui.js";
 import { box, colors, stripAnsi, symbols } from "./primitives.js";
 
 function hint(key: string, description: string): string {

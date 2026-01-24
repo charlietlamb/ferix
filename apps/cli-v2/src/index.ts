@@ -43,7 +43,6 @@ export * from "./domain/index.js";
 export * from "./layers/index.js";
 export * from "./orchestrator/index.js";
 export {
-  type ConsumerType,
   collectEvents,
   main,
   type RunOptions,

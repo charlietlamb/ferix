@@ -1,4 +1,4 @@
-import type { TUIState, ViewMode } from "../../state.js";
+import type { TUIState, ViewMode } from "../../../../domain/schemas/tui.js";
 
 /**
  * View renderer interface.

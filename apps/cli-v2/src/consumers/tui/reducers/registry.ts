@@ -1,5 +1,5 @@
 import type { DomainEvent } from "../../../domain/index.js";
-import type { TUIState } from "../state.js";
+import type { TUIState } from "../../../domain/schemas/tui.js";
 
 /**
  * State reducer interface for TUI state updates.

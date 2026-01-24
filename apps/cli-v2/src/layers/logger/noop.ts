@@ -1,9 +1,6 @@
 import { Effect, Layer, Ref } from "effect";
-import {
-  Logger,
-  type LoggerService,
-  type LogLevel,
-} from "../../services/logger.js";
+import type { LogLevel } from "../../domain/schemas/logger.js";
+import { Logger, type LoggerService } from "../../services/logger.js";
 
 /**
  * Creates a no-op logger service that discards all logs.

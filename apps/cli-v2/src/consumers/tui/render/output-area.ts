@@ -1,4 +1,4 @@
-import type { TUIState } from "../state.js";
+import type { TUIState } from "../../../domain/schemas/tui.js";
 import { styleFerixTags } from "../tags.js";
 import { borderedLine, stripAnsi, truncate } from "./primitives.js";
 

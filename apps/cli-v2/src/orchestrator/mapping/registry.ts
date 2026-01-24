@@ -1,5 +1,5 @@
 import type { DomainEvent, Signal } from "../../domain/index.js";
-import type { LLMEvent } from "../../services/llm.js";
+import type { LLMEvent } from "../../domain/schemas/llm.js";
 
 /**
  * Context passed to event mappers.

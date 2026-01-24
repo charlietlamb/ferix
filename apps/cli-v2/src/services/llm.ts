@@ -1,16 +1,6 @@
 import { Context, type Stream } from "effect";
 import type { LLMError } from "../domain/errors.js";
-
-/**
- * Raw event emitted by an LLM provider during execution.
- * These are provider-level events, before signal parsing.
- */
-export type LLMEvent =
-  | { readonly _tag: "Text"; readonly text: string }
-  | { readonly _tag: "ToolStart"; readonly tool: string }
-  | { readonly _tag: "ToolUse"; readonly tool: string; readonly input: unknown }
-  | { readonly _tag: "ToolEnd"; readonly tool: string }
-  | { readonly _tag: "Done"; readonly output: string };
+import type { LLMEvent } from "../domain/schemas/llm.js";
 
 /**
  * Service interface for LLM execution.

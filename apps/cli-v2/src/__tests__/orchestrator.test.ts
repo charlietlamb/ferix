@@ -1,11 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import { Chunk, Effect, Layer, Stream } from "effect";
+import type { LLMEvent } from "../domain/schemas/llm.js";
 import { Mock } from "../layers/llm/mock.js";
 import { MemoryPlan } from "../layers/plan/memory.js";
 import { MemorySession } from "../layers/session/memory.js";
 import { FerixParser } from "../layers/signal/ferix-parser.js";
 import { runLoop } from "../orchestrator/loop.js";
-import type { LLMEvent } from "../services/llm.js";
 
 /**
  * Creates a test layer with the specified LLM events.

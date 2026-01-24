@@ -4,18 +4,14 @@ import {
   createTUIConsumer,
 } from "./consumers/index.js";
 import type { DomainEvent, LoopConfig } from "./domain/index.js";
+import type { LLMEvent } from "./domain/schemas/llm.js";
+import type { ConsumerType } from "./domain/schemas/program.js";
 import {
   createTestLayers,
   ProductionLayers,
   TestLayers,
 } from "./layers/index.js";
 import { runLoop } from "./orchestrator/index.js";
-import type { LLMEvent } from "./services/llm.js";
-
-/**
- * Consumer type selection.
- */
-export type ConsumerType = "tui" | "headless" | "none";
 
 /**
  * Options for running the ralph loop program.

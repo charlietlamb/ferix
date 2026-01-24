@@ -1,6 +1,6 @@
+import type { TUIState } from "../../../domain/schemas/tui.js";
 import { FIXED_ROWS } from "../constants.js";
 import type { TerminalOutput } from "../output/index.js";
-import type { TUIState } from "../state.js";
 import { renderFooter } from "./footer.js";
 import { separator, topBorder } from "./primitives.js";
 import { renderStatusBar } from "./status-bar.js";

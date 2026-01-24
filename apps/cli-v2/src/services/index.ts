@@ -1,4 +1,4 @@
-export { LLM, type LLMEvent, type LLMService } from "./llm.js";
+export { LLM, type LLMService } from "./llm.js";
 export { PlanStore, type PlanStoreService } from "./plan-store.js";
 export { SessionStore, type SessionStoreService } from "./session-store.js";
 export {

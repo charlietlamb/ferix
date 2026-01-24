@@ -2,7 +2,7 @@ import type { ChildProcess } from "node:child_process";
 import { createInterface } from "node:readline";
 import { Effect, Stream } from "effect";
 import { LLMError } from "../../domain/errors.js";
-import type { LLMEvent } from "../../services/llm.js";
+import type { LLMEvent } from "../../domain/schemas/llm.js";
 import {
   extractText,
   extractToolInfo,
