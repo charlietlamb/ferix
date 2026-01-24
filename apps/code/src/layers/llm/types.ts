@@ -74,4 +74,10 @@ export const PROVIDER_CONFIGS: Readonly<Record<ProviderName, ProviderConfig>> =
       permissions: "acceptEdits",
       installUrl: "https://cursor.sh/agent",
     },
+    opencode: {
+      name: "opencode",
+      cliCommand: "opencode",
+      args: ["run", "--format", "json"],
+      installUrl: "https://opencode.ai/docs/",
+    },
   } as const;

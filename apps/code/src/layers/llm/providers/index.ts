@@ -8,9 +8,18 @@ import {
 } from "../types.js";
 import { ClaudeCLI, ClaudeProvider } from "./claude.js";
 import { CursorCLI, CursorProvider } from "./cursor.js";
+import {
+  OpenCodeCLI as _OpenCodeCLI,
+  OpenCodeProvider as _OpenCodeProvider,
+} from "./opencode.js";
 
 export { ClaudeCLI, ClaudeProvider } from "./claude.js";
 export { CursorCLI, CursorProvider } from "./cursor.js";
+export { OpenCodeCLI, OpenCodeProvider } from "./opencode.js";
+
+// Re-aliased for internal use to avoid lint rule "noExportedImports"
+const OpenCodeCLI = _OpenCodeCLI;
+const OpenCodeProvider = _OpenCodeProvider;
 
 /**
  * Registry of all available providers.
@@ -18,7 +27,31 @@ export { CursorCLI, CursorProvider } from "./cursor.js";
 export const PROVIDERS: Readonly<Record<ProviderName, Provider>> = {
   claude: ClaudeProvider,
   cursor: CursorProvider,
+  opencode: OpenCodeProvider,
 };
+
+/**
+ * Checks if a CLI command is available in the system PATH.
+ *
+ * @param command - The command to check
+ * @returns Effect that succeeds with true if available, false otherwise
+ */
+export function isCommandAvailable(
+  command: string
+): Effect.Effect<boolean, never> {
+  return Effect.tryPromise({
+    try: async () => {
+      const { execSync } = await import("node:child_process");
+      try {
+        execSync(`which ${command}`, { stdio: "ignore" });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    catch: () => false,
+  }).pipe(Effect.orElseSucceed(() => false));
+}
 
 /**
  * Checks if a provider's CLI is available and returns a user-friendly error if not.
@@ -74,35 +107,14 @@ export function createProviderLayer(name: ProviderName): Layer.Layer<LLM> {
       return ClaudeCLI.Live;
     case "cursor":
       return CursorCLI.Live;
+    case "opencode":
+      return OpenCodeCLI.Live;
     default: {
       // Exhaustive check
       const _exhaustive: never = name;
       return _exhaustive;
     }
   }
-}
-
-/**
- * Checks if a CLI command is available in the system PATH.
- *
- * @param command - The command to check
- * @returns Effect that succeeds with true if available, false otherwise
- */
-export function isCommandAvailable(
-  command: string
-): Effect.Effect<boolean, never> {
-  return Effect.tryPromise({
-    try: async () => {
-      const { execSync } = await import("node:child_process");
-      try {
-        execSync(`which ${command}`, { stdio: "ignore" });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    catch: () => false,
-  }).pipe(Effect.orElseSucceed(() => false));
 }
 
 /**
@@ -114,18 +126,16 @@ export function detectAvailableProviders(): Effect.Effect<
   readonly ProviderName[],
   never
 > {
-  return Effect.all([
-    isCommandAvailable("claude").pipe(
-      Effect.map((available): ProviderName | null =>
-        available ? "claude" : null
-      )
-    ),
-    isCommandAvailable("cursor-agent").pipe(
-      Effect.map((available): ProviderName | null =>
-        available ? "cursor" : null
-      )
-    ),
-  ]).pipe(
+  const providerNames = Object.keys(PROVIDER_CONFIGS) as ProviderName[];
+
+  const checks = providerNames.map((name) => {
+    const config = PROVIDER_CONFIGS[name];
+    return isCommandAvailable(config.cliCommand).pipe(
+      Effect.map((available): ProviderName | null => (available ? name : null))
+    );
+  });
+
+  return Effect.all(checks).pipe(
     Effect.map((results) =>
       results.filter((name): name is ProviderName => name !== null)
     )

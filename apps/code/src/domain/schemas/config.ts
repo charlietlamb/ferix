@@ -3,7 +3,7 @@ import { Schema as S } from "effect";
 /**
  * Supported LLM provider names.
  */
-export const ProviderNameSchema = S.Literal("claude", "cursor");
+export const ProviderNameSchema = S.Literal("claude", "cursor", "opencode");
 export type ProviderName = typeof ProviderNameSchema.Type;
 
 export const PhasePromptOverridesSchema = S.Struct({
