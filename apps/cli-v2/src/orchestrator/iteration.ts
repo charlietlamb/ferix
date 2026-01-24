@@ -107,7 +107,7 @@ export function createIterationStream(
   config: LoopConfig,
   iteration: number,
   sessionId: string
-): Stream.Stream<DomainEvent, OrchestratorError, never> {
+): Stream.Stream<DomainEvent, never, never> {
   return Stream.unwrap(
     Effect.gen(function* () {
       // Read current plan from Ref before building prompt
@@ -124,8 +124,9 @@ export function createIterationStream(
         iteration,
       };
 
-      const llmStream: Stream.Stream<DomainEvent, OrchestratorError, never> =
-        llm.execute(buildPrompt(config, iteration, currentPlan)).pipe(
+      const llmStream: Stream.Stream<DomainEvent, never, never> = llm
+        .execute(buildPrompt(config, iteration, currentPlan))
+        .pipe(
           Stream.mapError(
             (e) =>
               new OrchestratorError({
@@ -160,6 +161,17 @@ export function createIterationStream(
                 return Stream.fromIterable(events);
               })
             )
+          ),
+          // Convert LLM errors to LoopFailed events with iteration context
+          Stream.catchAll((error: OrchestratorError) =>
+            Stream.succeed({
+              _tag: "LoopFailed",
+              error: {
+                message: error.message,
+                phase: error.phase,
+                iteration,
+              },
+            } as DomainEvent)
           )
         );
 

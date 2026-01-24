@@ -20,275 +20,338 @@ const MAX_BUFFER_SIZE = 1024 * 1024;
 const PATTERNS = {
   TASKS_BLOCK: /<ferix:tasks>([\s\S]*?)<\/ferix:tasks>/,
   TASK: /<task id="(\d+)">([^<]+)<\/task>/g,
-
   PHASES_BLOCK: /<ferix:phases task="(\d+)">([\s\S]*?)<\/ferix:phases>/,
   PHASE: /<phase id="([\d.]+)">([^<]+)<\/phase>/g,
-
   CRITERIA_BLOCK: /<ferix:criteria task="(\d+)">([\s\S]*?)<\/ferix:criteria>/g,
   CRITERION: /<criterion id="([^"]+)">([^<]+)<\/criterion>/g,
-
   PHASE_START: /<ferix:phase-start id="([\d.]+)"\/>/g,
   PHASE_DONE: /<ferix:phase-done id="([\d.]+)"\/>/g,
   PHASE_FAILED:
     /<ferix:phase-failed id="([\d.]+)">([^<]*)<\/ferix:phase-failed>/g,
-
   CRITERION_PASSED: /<ferix:criterion-passed id="([\d.c]+)"\/>/g,
   CRITERION_FAILED:
     /<ferix:criterion-failed id="([\d.c]+)" reason="([^"]*)"\/>/g,
-
   CHECK_PASSED: /<ferix:check-passed\/>/,
   CHECK_FAILED: /<ferix:check-failed\/>/,
-
   REVIEW_COMPLETE: /<ferix:review-complete\/>/,
   REVIEW_CHANGES: /<ferix:review-changes-made\/>/,
-
   TASK_COMPLETE:
     /<ferix:task-complete id="(\d+)">([\s\S]*?)<\/ferix:task-complete>/,
   SUMMARY: /<summary>([\s\S]*?)<\/summary>/,
   FILES_MODIFIED: /<files-modified>([\s\S]*?)<\/files-modified>/,
   FILES_CREATED: /<files-created>([\s\S]*?)<\/files-created>/,
-
   LOOP_COMPLETE: /<ferix:complete>/,
 } as const;
 
 /**
- * Parses tasks from a ferix:tasks block.
+ * Specification for parsing a signal type.
+ * Each spec fully describes how to parse and identify a signal.
  */
-function parseTasks(text: string): Signal[] {
-  const match = text.match(PATTERNS.TASKS_BLOCK);
-  if (!match?.[1]) {
-    return [];
-  }
-
-  const tasks: Array<{ id: string; title: string; description: string }> = [];
-  const content = match[1];
-
-  for (const taskMatch of content.matchAll(PATTERNS.TASK)) {
-    const id = taskMatch[1];
-    const desc = taskMatch[2];
-    if (id && desc) {
-      tasks.push({
-        id,
-        title: desc.trim(),
-        description: desc.trim(),
-      });
-    }
-  }
-
-  if (tasks.length === 0) {
-    return [];
-  }
-
-  return [{ _tag: "TasksDefined", tasks }];
+interface SignalSpec<T extends Signal = Signal> {
+  readonly tag: T["_tag"];
+  readonly closingTag: string;
+  readonly parse: (text: string) => T[];
+  readonly keyFields: (signal: T) => string;
 }
 
 /**
- * Parses phases from a ferix:phases block.
+ * Helper to parse comma-separated file lists.
  */
-function parsePhases(text: string): Signal[] {
-  const match = text.match(PATTERNS.PHASES_BLOCK);
-  if (!(match?.[1] && match?.[2])) {
+function parseFileList(content: string | undefined): string[] {
+  if (!content) {
     return [];
   }
-
-  const taskId = match[1];
-  const phases: Array<{ id: string; description: string }> = [];
-  const content = match[2];
-
-  for (const phaseMatch of content.matchAll(PATTERNS.PHASE)) {
-    const id = phaseMatch[1];
-    const desc = phaseMatch[2];
-    if (id && desc) {
-      phases.push({ id, description: desc.trim() });
-    }
-  }
-
-  if (phases.length === 0) {
-    return [];
-  }
-
-  return [{ _tag: "PhasesDefined", taskId, phases }];
+  return content
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean);
 }
 
 /**
- * Parses criteria from ferix:criteria blocks.
+ * Resets a global regex to ensure consistent matching behavior.
  */
-function parseCriteria(text: string): Signal[] {
-  const signals: Signal[] = [];
+function resetRegex(pattern: RegExp): RegExp {
+  pattern.lastIndex = 0;
+  return pattern;
+}
 
-  for (const match of text.matchAll(PATTERNS.CRITERIA_BLOCK)) {
-    const taskId = match[1];
-    const content = match[2];
-    if (!(taskId && content)) {
-      continue;
-    }
-
-    const criteria: Array<{ id: string; description: string }> = [];
-    for (const criterionMatch of content.matchAll(PATTERNS.CRITERION)) {
-      const id = criterionMatch[1];
-      const desc = criterionMatch[2];
-      if (id && desc) {
-        criteria.push({ id, description: desc.trim() });
+/**
+ * Signal specifications array - the single source of truth for parsing.
+ * To add a new signal type, simply add a new spec entry.
+ */
+const SIGNAL_SPECS: SignalSpec[] = [
+  // Tasks definition
+  {
+    tag: "TasksDefined",
+    closingTag: "</ferix:tasks>",
+    parse: (text) => {
+      const match = text.match(PATTERNS.TASKS_BLOCK);
+      if (!match?.[1]) {
+        return [];
       }
-    }
+      const tasks: Array<{ id: string; title: string; description: string }> =
+        [];
+      for (const m of match[1].matchAll(resetRegex(PATTERNS.TASK))) {
+        if (m[1] && m[2]) {
+          tasks.push({
+            id: m[1],
+            title: m[2].trim(),
+            description: m[2].trim(),
+          });
+        }
+      }
+      if (tasks.length === 0) {
+        return [];
+      }
+      return [{ _tag: "TasksDefined" as const, tasks }];
+    },
+    keyFields: (s) =>
+      (s as Signal & { tasks: { id: string }[] }).tasks
+        .map((t) => t.id)
+        .join(","),
+  },
 
-    if (criteria.length > 0) {
-      signals.push({ _tag: "CriteriaDefined", taskId, criteria });
-    }
-  }
+  // Phases definition
+  {
+    tag: "PhasesDefined",
+    closingTag: "</ferix:phases>",
+    parse: (text) => {
+      const match = text.match(PATTERNS.PHASES_BLOCK);
+      if (!(match?.[1] && match?.[2])) {
+        return [];
+      }
+      const phases: Array<{ id: string; description: string }> = [];
+      for (const m of match[2].matchAll(resetRegex(PATTERNS.PHASE))) {
+        if (m[1] && m[2]) {
+          phases.push({ id: m[1], description: m[2].trim() });
+        }
+      }
+      if (phases.length === 0) {
+        return [];
+      }
+      return [{ _tag: "PhasesDefined" as const, taskId: match[1], phases }];
+    },
+    keyFields: (s) => {
+      const sig = s as Signal & { taskId: string; phases: { id: string }[] };
+      return `${sig.taskId}:${sig.phases.map((p) => p.id).join(",")}`;
+    },
+  },
 
-  return signals;
-}
+  // Criteria definition
+  {
+    tag: "CriteriaDefined",
+    closingTag: "</ferix:criteria>",
+    parse: (text) => {
+      const signals: Signal[] = [];
+      for (const match of text.matchAll(resetRegex(PATTERNS.CRITERIA_BLOCK))) {
+        if (!(match[1] && match[2])) {
+          continue;
+        }
+        const criteria: Array<{ id: string; description: string }> = [];
+        for (const m of match[2].matchAll(resetRegex(PATTERNS.CRITERION))) {
+          if (m[1] && m[2]) {
+            criteria.push({ id: m[1], description: m[2].trim() });
+          }
+        }
+        if (criteria.length > 0) {
+          signals.push({
+            _tag: "CriteriaDefined" as const,
+            taskId: match[1],
+            criteria,
+          });
+        }
+      }
+      return signals;
+    },
+    keyFields: (s) => {
+      const sig = s as Signal & { taskId: string; criteria: { id: string }[] };
+      return `${sig.taskId}:${sig.criteria.map((c) => c.id).join(",")}`;
+    },
+  },
+
+  // Phase started
+  {
+    tag: "PhaseStarted",
+    closingTag: "<ferix:phase-start",
+    parse: (text) => {
+      const signals: Signal[] = [];
+      for (const m of text.matchAll(resetRegex(PATTERNS.PHASE_START))) {
+        if (m[1]) {
+          signals.push({ _tag: "PhaseStarted" as const, phaseId: m[1] });
+        }
+      }
+      return signals;
+    },
+    keyFields: (s) => (s as Signal & { phaseId: string }).phaseId,
+  },
+
+  // Phase completed
+  {
+    tag: "PhaseCompleted",
+    closingTag: "<ferix:phase-done",
+    parse: (text) => {
+      const signals: Signal[] = [];
+      for (const m of text.matchAll(resetRegex(PATTERNS.PHASE_DONE))) {
+        if (m[1]) {
+          signals.push({ _tag: "PhaseCompleted" as const, phaseId: m[1] });
+        }
+      }
+      return signals;
+    },
+    keyFields: (s) => (s as Signal & { phaseId: string }).phaseId,
+  },
+
+  // Phase failed
+  {
+    tag: "PhaseFailed",
+    closingTag: "</ferix:phase-failed>",
+    parse: (text) => {
+      const signals: Signal[] = [];
+      for (const m of text.matchAll(resetRegex(PATTERNS.PHASE_FAILED))) {
+        if (m[1]) {
+          signals.push({
+            _tag: "PhaseFailed" as const,
+            phaseId: m[1],
+            reason: m[2] || "Unknown reason",
+          });
+        }
+      }
+      return signals;
+    },
+    keyFields: (s) => (s as Signal & { phaseId: string }).phaseId,
+  },
+
+  // Criterion passed
+  {
+    tag: "CriterionPassed",
+    closingTag: "<ferix:criterion-passed",
+    parse: (text) => {
+      const signals: Signal[] = [];
+      for (const m of text.matchAll(resetRegex(PATTERNS.CRITERION_PASSED))) {
+        if (m[1]) {
+          signals.push({ _tag: "CriterionPassed" as const, criterionId: m[1] });
+        }
+      }
+      return signals;
+    },
+    keyFields: (s) => (s as Signal & { criterionId: string }).criterionId,
+  },
+
+  // Criterion failed
+  {
+    tag: "CriterionFailed",
+    closingTag: "<ferix:criterion-failed",
+    parse: (text) => {
+      const signals: Signal[] = [];
+      for (const m of text.matchAll(resetRegex(PATTERNS.CRITERION_FAILED))) {
+        if (m[1]) {
+          signals.push({
+            _tag: "CriterionFailed" as const,
+            criterionId: m[1],
+            reason: m[2] || "Unknown reason",
+          });
+        }
+      }
+      return signals;
+    },
+    keyFields: (s) => (s as Signal & { criterionId: string }).criterionId,
+  },
+
+  // Check passed
+  {
+    tag: "CheckPassed",
+    closingTag: "<ferix:check-passed/>",
+    parse: (text) => {
+      if (PATTERNS.CHECK_PASSED.test(text)) {
+        return [{ _tag: "CheckPassed" as const }];
+      }
+      return [];
+    },
+    keyFields: () => "",
+  },
+
+  // Check failed
+  {
+    tag: "CheckFailed",
+    closingTag: "<ferix:check-failed/>",
+    parse: (text) => {
+      if (PATTERNS.CHECK_FAILED.test(text)) {
+        return [{ _tag: "CheckFailed" as const }];
+      }
+      return [];
+    },
+    keyFields: () => "",
+  },
+
+  // Review complete
+  {
+    tag: "ReviewComplete",
+    closingTag: "<ferix:review-complete/>",
+    parse: (text) => {
+      if (!PATTERNS.REVIEW_COMPLETE.test(text)) {
+        return [];
+      }
+      const changesMade = PATTERNS.REVIEW_CHANGES.test(text);
+      return [{ _tag: "ReviewComplete" as const, changesMade }];
+    },
+    keyFields: (s) =>
+      String((s as Signal & { changesMade: boolean }).changesMade),
+  },
+
+  // Task complete
+  {
+    tag: "TaskComplete",
+    closingTag: "</ferix:task-complete>",
+    parse: (text) => {
+      const match = text.match(PATTERNS.TASK_COMPLETE);
+      if (!match?.[1]) {
+        return [];
+      }
+      const content = match[2] || "";
+      const summaryMatch = content.match(PATTERNS.SUMMARY);
+      const filesModifiedMatch = content.match(PATTERNS.FILES_MODIFIED);
+      const filesCreatedMatch = content.match(PATTERNS.FILES_CREATED);
+      return [
+        {
+          _tag: "TaskComplete" as const,
+          taskId: match[1],
+          summary: summaryMatch?.[1]?.trim() || "",
+          filesModified: parseFileList(filesModifiedMatch?.[1]),
+          filesCreated: parseFileList(filesCreatedMatch?.[1]),
+        },
+      ];
+    },
+    keyFields: (s) => (s as Signal & { taskId: string }).taskId,
+  },
+
+  // Loop complete
+  {
+    tag: "LoopComplete",
+    closingTag: "<ferix:complete>",
+    parse: (text) => {
+      if (PATTERNS.LOOP_COMPLETE.test(text)) {
+        return [{ _tag: "LoopComplete" as const }];
+      }
+      return [];
+    },
+    keyFields: () => "",
+  },
+];
 
 /**
- * Parses phase lifecycle signals.
- */
-function parsePhaseSignals(text: string): Signal[] {
-  const signals: Signal[] = [];
-
-  for (const match of text.matchAll(PATTERNS.PHASE_START)) {
-    if (match[1]) {
-      signals.push({ _tag: "PhaseStarted", phaseId: match[1] });
-    }
-  }
-
-  for (const match of text.matchAll(PATTERNS.PHASE_DONE)) {
-    if (match[1]) {
-      signals.push({ _tag: "PhaseCompleted", phaseId: match[1] });
-    }
-  }
-
-  for (const match of text.matchAll(PATTERNS.PHASE_FAILED)) {
-    if (match[1]) {
-      signals.push({
-        _tag: "PhaseFailed",
-        phaseId: match[1],
-        reason: match[2] || "Unknown reason",
-      });
-    }
-  }
-
-  return signals;
-}
-
-/**
- * Parses criterion verification signals.
- */
-function parseCriterionSignals(text: string): Signal[] {
-  const signals: Signal[] = [];
-
-  for (const match of text.matchAll(PATTERNS.CRITERION_PASSED)) {
-    if (match[1]) {
-      signals.push({ _tag: "CriterionPassed", criterionId: match[1] });
-    }
-  }
-
-  for (const match of text.matchAll(PATTERNS.CRITERION_FAILED)) {
-    if (match[1]) {
-      signals.push({
-        _tag: "CriterionFailed",
-        criterionId: match[1],
-        reason: match[2] || "Unknown reason",
-      });
-    }
-  }
-
-  return signals;
-}
-
-/**
- * Parses check stage signals.
- */
-function parseCheckSignals(text: string): Signal[] {
-  const signals: Signal[] = [];
-
-  if (PATTERNS.CHECK_PASSED.test(text)) {
-    signals.push({ _tag: "CheckPassed" });
-  }
-
-  if (PATTERNS.CHECK_FAILED.test(text)) {
-    signals.push({ _tag: "CheckFailed" });
-  }
-
-  return signals;
-}
-
-/**
- * Parses review stage signals.
- */
-function parseReviewSignals(text: string): Signal[] {
-  const signals: Signal[] = [];
-  const hasComplete = PATTERNS.REVIEW_COMPLETE.test(text);
-  const hasChanges = PATTERNS.REVIEW_CHANGES.test(text);
-
-  if (hasComplete) {
-    signals.push({ _tag: "ReviewComplete", changesMade: hasChanges });
-  }
-
-  return signals;
-}
-
-/**
- * Parses task completion signals.
- */
-function parseTaskComplete(text: string): Signal[] {
-  const match = text.match(PATTERNS.TASK_COMPLETE);
-  if (!match?.[1]) {
-    return [];
-  }
-
-  const taskId = match[1];
-  const content = match[2] || "";
-
-  const summaryMatch = content.match(PATTERNS.SUMMARY);
-  const summary = summaryMatch?.[1]?.trim() || "";
-
-  const filesModifiedMatch = content.match(PATTERNS.FILES_MODIFIED);
-  const filesModified = filesModifiedMatch?.[1]
-    ? filesModifiedMatch[1]
-        .split(",")
-        .map((f) => f.trim())
-        .filter(Boolean)
-    : [];
-
-  const filesCreatedMatch = content.match(PATTERNS.FILES_CREATED);
-  const filesCreated = filesCreatedMatch?.[1]
-    ? filesCreatedMatch[1]
-        .split(",")
-        .map((f) => f.trim())
-        .filter(Boolean)
-    : [];
-
-  return [
-    { _tag: "TaskComplete", taskId, summary, filesModified, filesCreated },
-  ];
-}
-
-/**
- * Parses loop completion signal.
- */
-function parseLoopComplete(text: string): Signal[] {
-  if (PATTERNS.LOOP_COMPLETE.test(text)) {
-    return [{ _tag: "LoopComplete" }];
-  }
-  return [];
-}
-
-/**
- * Parses all signals from a text string.
+ * Parses all signals from a text string using the signal specifications.
  */
 function parseAllSignals(text: string): Signal[] {
-  return [
-    ...parseTasks(text),
-    ...parsePhases(text),
-    ...parseCriteria(text),
-    ...parsePhaseSignals(text),
-    ...parseCriterionSignals(text),
-    ...parseCheckSignals(text),
-    ...parseReviewSignals(text),
-    ...parseTaskComplete(text),
-    ...parseLoopComplete(text),
-  ];
+  return SIGNAL_SPECS.flatMap((spec) => spec.parse(text));
+}
+
+/**
+ * Generates a deduplication key for a signal using its spec.
+ */
+function getSignalKey(signal: Signal): string {
+  const spec = SIGNAL_SPECS.find((s) => s.tag === signal._tag);
+  const fields = spec?.keyFields(signal) ?? "";
+  return fields ? `${signal._tag}:${fields}` : signal._tag;
 }
 
 /**
@@ -296,74 +359,25 @@ function parseAllSignals(text: string): Signal[] {
  * Used to prune processed content while keeping incomplete signals.
  */
 function findLastCompleteSignalEnd(buffer: string): number {
-  const closingTags = [
-    "</ferix:tasks>",
-    "</ferix:phases>",
-    "</ferix:criteria>",
-    "</ferix:phase-failed>",
-    "</ferix:task-complete>",
-    "<ferix:complete>",
-    "<ferix:phase-start",
-    "<ferix:phase-done",
-    "<ferix:criterion-passed",
-    "<ferix:criterion-failed",
-    "<ferix:check-passed/>",
-    "<ferix:check-failed/>",
-    "<ferix:review-complete/>",
-    "<ferix:review-changes-made/>",
-  ];
-
   let maxEnd = -1;
-  for (const tag of closingTags) {
-    const idx = buffer.lastIndexOf(tag);
+  for (const spec of SIGNAL_SPECS) {
+    const idx = buffer.lastIndexOf(spec.closingTag);
     if (idx !== -1) {
-      const endPos = idx + tag.length;
+      const endPos = idx + spec.closingTag.length;
       if (endPos > maxEnd) {
         maxEnd = endPos;
       }
     }
   }
-  return maxEnd;
-}
-
-/**
- * Generates an efficient deduplication key for a signal.
- * Uses tag + identifying fields instead of JSON.stringify to avoid O(n) serialization.
- */
-function getSignalKey(signal: Signal): string {
-  switch (signal._tag) {
-    case "TasksDefined":
-      return `TasksDefined:${signal.tasks.map((t) => t.id).join(",")}`;
-    case "PhasesDefined":
-      return `PhasesDefined:${signal.taskId}:${signal.phases.map((p) => p.id).join(",")}`;
-    case "CriteriaDefined":
-      return `CriteriaDefined:${signal.taskId}:${signal.criteria.map((c) => c.id).join(",")}`;
-    case "PhaseStarted":
-      return `PhaseStarted:${signal.phaseId}`;
-    case "PhaseCompleted":
-      return `PhaseCompleted:${signal.phaseId}`;
-    case "PhaseFailed":
-      return `PhaseFailed:${signal.phaseId}`;
-    case "CriterionPassed":
-      return `CriterionPassed:${signal.criterionId}`;
-    case "CriterionFailed":
-      return `CriterionFailed:${signal.criterionId}`;
-    case "TaskComplete":
-      return `TaskComplete:${signal.taskId}`;
-    case "CheckPassed":
-      return "CheckPassed";
-    case "CheckFailed":
-      return "CheckFailed";
-    case "ReviewComplete":
-      return `ReviewComplete:${signal.changesMade}`;
-    case "LoopComplete":
-      return "LoopComplete";
-    default: {
-      // Exhaustive check - TypeScript will error if we miss a case
-      const _exhaustive: never = signal;
-      return `Unknown:${(_exhaustive as Signal)._tag}`;
+  // Also check for review-changes-made which is a modifier tag
+  const reviewChangesIdx = buffer.lastIndexOf("<ferix:review-changes-made/>");
+  if (reviewChangesIdx !== -1) {
+    const endPos = reviewChangesIdx + "<ferix:review-changes-made/>".length;
+    if (endPos > maxEnd) {
+      maxEnd = endPos;
     }
   }
+  return maxEnd;
 }
 
 /**
@@ -373,7 +387,6 @@ function getSignalKey(signal: Signal): string {
  */
 function createAccumulatorImpl(): Effect.Effect<SignalAccumulator> {
   return Effect.gen(function* () {
-    // Use array of chunks instead of string concatenation for better perf
     const chunksRef = yield* Ref.make<string[]>([]);
     const emittedRef = yield* Ref.make<Set<string>>(new Set());
 
@@ -381,19 +394,14 @@ function createAccumulatorImpl(): Effect.Effect<SignalAccumulator> {
       Effect.gen(function* () {
         const chunks = yield* Ref.get(chunksRef);
         chunks.push(text);
-
-        // Join chunks only when we need to parse
         const buffer = chunks.join("");
-
-        // Enforce max buffer size by truncating from start if needed
         if (buffer.length > MAX_BUFFER_SIZE) {
-          const truncatedBuffer = buffer.slice(buffer.length - MAX_BUFFER_SIZE);
-          yield* Ref.set(chunksRef, [truncatedBuffer]);
+          yield* Ref.set(chunksRef, [
+            buffer.slice(buffer.length - MAX_BUFFER_SIZE),
+          ]);
         }
-
         const signals = parseAllSignals(buffer);
         const emitted = yield* Ref.get(emittedRef);
-
         const newSignals = signals.filter((signal) => {
           const key = getSignalKey(signal);
           if (emitted.has(key)) {
@@ -402,16 +410,12 @@ function createAccumulatorImpl(): Effect.Effect<SignalAccumulator> {
           emitted.add(key);
           return true;
         });
-
-        // Prune buffer after extracting signals to prevent unbounded growth
-        // Keep only content after the last complete signal
         if (newSignals.length > 0) {
           const lastEndPos = findLastCompleteSignalEnd(buffer);
           if (lastEndPos > 0 && lastEndPos < buffer.length) {
             yield* Ref.set(chunksRef, [buffer.slice(lastEndPos)]);
           }
         }
-
         yield* Ref.set(emittedRef, emitted);
         return newSignals;
       });
@@ -420,20 +424,13 @@ function createAccumulatorImpl(): Effect.Effect<SignalAccumulator> {
       Effect.gen(function* () {
         const chunks = yield* Ref.get(chunksRef);
         const buffer = chunks.join("");
-
-        // Clear both chunks and emitted set on flush
         yield* Ref.set(chunksRef, []);
         const emitted = yield* Ref.get(emittedRef);
-
         const signals = parseAllSignals(buffer);
-        const result = signals.filter((signal) => {
-          const key = getSignalKey(signal);
-          return !emitted.has(key);
-        });
-
-        // Clear emitted set on flush to free memory
+        const result = signals.filter(
+          (signal) => !emitted.has(getSignalKey(signal))
+        );
         yield* Ref.set(emittedRef, new Set());
-
         return result;
       });
 
@@ -447,7 +444,6 @@ function createAccumulatorImpl(): Effect.Effect<SignalAccumulator> {
 const make: SignalParserService = {
   parse: (text: string): Effect.Effect<readonly Signal[], ParseError> =>
     Effect.succeed(parseAllSignals(text)),
-
   createAccumulator: createAccumulatorImpl,
 };
 

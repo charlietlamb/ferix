@@ -61,7 +61,7 @@ export type OrchestratorServices =
  */
 export function runLoop(
   config: LoopConfig
-): Stream.Stream<DomainEvent, OrchestratorError, OrchestratorServices> {
+): Stream.Stream<DomainEvent, never, OrchestratorServices> {
   return Stream.unwrap(
     Effect.gen(function* () {
       const llm = yield* LLM;
@@ -94,34 +94,31 @@ export function runLoop(
       const loopStarted: DomainEvent = { _tag: "LoopStarted", config };
 
       // Use unfoldEffect to create iterations with effectful termination condition
-      const iterationsStream: Stream.Stream<
-        DomainEvent,
-        OrchestratorError,
-        never
-      > = Stream.unfoldEffect(1, (iteration: number) =>
-        Effect.gen(function* () {
-          // Check if we should continue
-          const completed = yield* Ref.get(loopCompletedRef);
-          if (completed || iteration > maxIterations) {
-            return Option.none<readonly [number, number]>(); // Stop the stream
-          }
-          // Return the current iteration and the next state
-          return Option.some([iteration, iteration + 1] as const);
-        })
-      ).pipe(
-        Stream.flatMap((iteration: number) =>
-          createIterationStream(
-            llm,
-            signalParser,
-            planStore,
-            currentPlanRef,
-            loopCompletedRef,
-            config,
-            iteration,
-            session.id
+      const iterationsStream: Stream.Stream<DomainEvent, never, never> =
+        Stream.unfoldEffect(1, (iteration: number) =>
+          Effect.gen(function* () {
+            // Check if we should continue
+            const completed = yield* Ref.get(loopCompletedRef);
+            if (completed || iteration > maxIterations) {
+              return Option.none<readonly [number, number]>(); // Stop the stream
+            }
+            // Return the current iteration and the next state
+            return Option.some([iteration, iteration + 1] as const);
+          })
+        ).pipe(
+          Stream.flatMap((iteration: number) =>
+            createIterationStream(
+              llm,
+              signalParser,
+              planStore,
+              currentPlanRef,
+              loopCompletedRef,
+              config,
+              iteration,
+              session.id
+            )
           )
-        )
-      );
+        );
 
       const completionStream = createCompletionStream(
         sessionStore,
@@ -136,7 +133,20 @@ export function runLoop(
         Stream.concat(iterationsStream),
         Stream.concat(completionStream)
       );
-    })
+    }).pipe(
+      // Also catch setup errors (e.g., session creation failure)
+      Effect.catchAll((error: OrchestratorError) =>
+        Effect.succeed(
+          Stream.succeed({
+            _tag: "LoopFailed",
+            error: {
+              message: error.message,
+              phase: error.phase,
+            },
+          } as DomainEvent)
+        )
+      )
+    )
   );
 }
 

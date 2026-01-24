@@ -63,6 +63,21 @@ export interface TerminalOutput {
    * Returns an unsubscribe function.
    */
   readonly onResize: (callback: () => void) => () => void;
+
+  /**
+   * Move cursor to specific position.
+   */
+  readonly moveTo: (row: number, col: number) => void;
+
+  /**
+   * Enable mouse tracking (SGR format).
+   */
+  readonly enableMouse: () => void;
+
+  /**
+   * Disable mouse tracking.
+   */
+  readonly disableMouse: () => void;
 }
 
 /**
@@ -76,6 +91,8 @@ const ANSI = {
   ALTERNATE_BUFFER_ON: "\x1b[?1049h",
   ALTERNATE_BUFFER_OFF: "\x1b[?1049l",
   CLEAR_LINE: "\x1b[2K",
+  MOUSE_ON: "\x1b[?1000h\x1b[?1006h",
+  MOUSE_OFF: "\x1b[?1000l\x1b[?1006l",
 } as const;
 
 /**
@@ -150,6 +167,18 @@ export class ANSIOutput implements TerminalOutput {
       this.resizeListeners.delete(callback);
     };
   }
+
+  moveTo(row: number, col: number): void {
+    process.stdout.write(`\x1b[${row};${col}H`);
+  }
+
+  enableMouse(): void {
+    process.stdout.write(ANSI.MOUSE_ON);
+  }
+
+  disableMouse(): void {
+    process.stdout.write(ANSI.MOUSE_OFF);
+  }
 }
 
 /**
@@ -221,6 +250,18 @@ export class BufferOutput implements TerminalOutput {
     return () => {
       // Intentionally empty - no cleanup needed for buffer output
     };
+  }
+
+  moveTo(row: number, col: number): void {
+    this.buffer.push(`[MOVE_TO:${row},${col}]`);
+  }
+
+  enableMouse(): void {
+    this.buffer.push("[ENABLE_MOUSE]");
+  }
+
+  disableMouse(): void {
+    this.buffer.push("[DISABLE_MOUSE]");
   }
 
   /**

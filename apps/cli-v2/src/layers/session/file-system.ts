@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Effect, Layer } from "effect";
+import { humanId } from "human-id";
 import { SessionStoreError } from "../../domain/errors.js";
 import { decodeSession } from "../../domain/schemas.js";
 import {
@@ -15,106 +16,18 @@ import {
 const SESSIONS_DIR = ".ferix/sessions";
 
 /**
- * Word lists for generating human-readable session IDs.
- */
-const ADJECTIVES = [
-  "brave",
-  "calm",
-  "eager",
-  "fair",
-  "gentle",
-  "happy",
-  "keen",
-  "lively",
-  "merry",
-  "noble",
-  "proud",
-  "quick",
-  "sharp",
-  "swift",
-  "warm",
-  "wise",
-  "bold",
-  "bright",
-  "clear",
-  "crisp",
-];
-
-const COLORS = [
-  "amber",
-  "azure",
-  "coral",
-  "crimson",
-  "cyan",
-  "gold",
-  "jade",
-  "indigo",
-  "ivory",
-  "lime",
-  "magenta",
-  "navy",
-  "olive",
-  "pearl",
-  "ruby",
-  "silver",
-  "teal",
-  "violet",
-  "bronze",
-  "copper",
-];
-
-const ANIMALS = [
-  "badger",
-  "falcon",
-  "dolphin",
-  "eagle",
-  "fox",
-  "hawk",
-  "jaguar",
-  "koala",
-  "lion",
-  "otter",
-  "panda",
-  "raven",
-  "tiger",
-  "wolf",
-  "bear",
-  "crane",
-  "deer",
-  "elk",
-  "owl",
-  "seal",
-];
-
-/**
- * Maximum retries for collision detection.
- */
-const MAX_ID_RETRIES = 5;
-
-/**
  * Generates a human-readable session ID with timestamp for uniqueness.
  *
- * Format: "adjective-color-animal-timestamp"
- * Example: "brave-azure-falcon-1705678901234"
+ * Format: "adjective-noun-verb-timestamp"
+ * Example: "calm-snails-dream-1705678901234"
  *
- * The timestamp suffix ensures uniqueness at scale while maintaining
- * human-readability. If collisions occur (rare), retries with new random words.
+ * Uses the human-id package which provides a pool of 15m+ combinations.
+ * The timestamp suffix ensures uniqueness.
  */
 function generateSessionId(): string {
-  const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-  const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+  const id = humanId({ separator: "-", capitalize: false });
   const timestamp = Date.now();
-  return `${adjective}-${color}-${animal}-${timestamp}`;
-}
-
-/**
- * Generates a fallback UUID-style ID if word-based IDs keep colliding.
- */
-function generateFallbackId(): string {
-  const random = Math.random().toString(36).substring(2, 10);
-  const timestamp = Date.now().toString(36);
-  return `session-${timestamp}-${random}`;
+  return `${id}-${timestamp}`;
 }
 
 /**
@@ -184,47 +97,13 @@ function deserializeSession(
  *
  * Stores sessions as JSON files in `.ferix/sessions/`.
  */
-/**
- * Checks if a session file already exists.
- */
-function sessionExists(sessionId: string): Effect.Effect<boolean> {
-  return Effect.tryPromise({
-    try: async () => {
-      const { access } = await import("node:fs/promises");
-      await access(getSessionPath(sessionId));
-      return true;
-    },
-    catch: () => false,
-  }).pipe(Effect.orElseSucceed(() => false));
-}
-
 const make: SessionStoreService = {
   create: (originalTask: string): Effect.Effect<Session, SessionStoreError> =>
     Effect.gen(function* () {
       const sessionsDir = join(process.cwd(), SESSIONS_DIR);
       yield* ensureDir(sessionsDir);
 
-      // Try to generate a unique session ID with collision detection
-      let sessionId: string | undefined;
-      let retries = 0;
-
-      while (retries < MAX_ID_RETRIES) {
-        const candidateId = generateSessionId();
-        const exists = yield* sessionExists(candidateId);
-
-        if (!exists) {
-          sessionId = candidateId;
-          break;
-        }
-
-        retries++;
-      }
-
-      // Fallback to UUID-style if word-based IDs keep colliding
-      if (!sessionId) {
-        sessionId = generateFallbackId();
-      }
-
+      const sessionId = generateSessionId();
       const session: Session = {
         id: sessionId,
         createdAt: new Date().toISOString(),

@@ -80,14 +80,55 @@ function extractText(json: unknown): string | null {
 }
 
 /**
+ * Checks if the parsed JSON represents a tool input delta event.
+ */
+function isToolInputDelta(json: unknown): json is {
+  type: string;
+  delta?: { type: string; partial_json?: string };
+} {
+  return (
+    typeof json === "object" &&
+    json !== null &&
+    "type" in json &&
+    (json as Record<string, unknown>).type === "content_block_delta" &&
+    "delta" in json
+  );
+}
+
+/**
  * Extracts tool information from stream events.
  */
 function extractToolInfo(json: unknown): {
-  type: "start" | "use" | "end";
+  type: "start" | "input_delta" | "end";
   name: string;
-  input?: unknown;
+  partialJson?: string;
 } | null {
+  // Check for content_block_stop first (doesn't have content_block field)
+  if (
+    typeof json === "object" &&
+    json !== null &&
+    "type" in json &&
+    (json as Record<string, unknown>).type === "content_block_stop"
+  ) {
+    return {
+      type: "end",
+      name: "unknown",
+    };
+  }
+
   if (!isToolUse(json)) {
+    // Check for input delta separately
+    if (
+      isToolInputDelta(json) &&
+      json.delta?.type === "input_json_delta" &&
+      json.delta.partial_json
+    ) {
+      return {
+        type: "input_delta",
+        name: "",
+        partialJson: json.delta.partial_json,
+      };
+    }
     return null;
   }
 
@@ -101,14 +142,104 @@ function extractToolInfo(json: unknown): {
     };
   }
 
-  if (json.type === "content_block_stop") {
-    return {
-      type: "end",
-      name: "unknown",
-    };
+  return null;
+}
+
+/**
+ * Safely parse accumulated JSON, returning null on failure.
+ */
+function safeParseJson(jsonStr: string): unknown | null {
+  try {
+    return JSON.parse(jsonStr);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Unwraps a stream_event envelope if present.
+ * Claude CLI wraps streaming events: { type: "stream_event", event: {...} }
+ */
+function unwrapStreamEvent(json: unknown): unknown {
+  if (
+    typeof json === "object" &&
+    json !== null &&
+    "type" in json &&
+    (json as Record<string, unknown>).type === "stream_event" &&
+    "event" in json
+  ) {
+    return (json as Record<string, unknown>).event;
+  }
+  return json;
+}
+
+/**
+ * State for tracking tool usage during streaming.
+ */
+interface ToolState {
+  currentTool: string;
+  inputChunks: string[];
+}
+
+/**
+ * Handle tool-related events and emit appropriate LLM events.
+ */
+function handleToolEvent(
+  toolInfo: {
+    type: "start" | "input_delta" | "end";
+    name: string;
+    partialJson?: string;
+  },
+  toolState: ToolState,
+  emit: { single: (event: LLMEvent) => void }
+): void {
+  if (toolInfo.type === "start") {
+    toolState.currentTool = toolInfo.name;
+    toolState.inputChunks.length = 0;
+    emit.single({ _tag: "ToolStart", tool: toolInfo.name });
+    return;
   }
 
-  return null;
+  if (toolInfo.type === "input_delta" && toolInfo.partialJson) {
+    toolState.inputChunks.push(toolInfo.partialJson);
+    return;
+  }
+
+  if (toolInfo.type === "end" && toolState.currentTool) {
+    const inputJson = toolState.inputChunks.join("");
+    const input = safeParseJson(inputJson);
+    if (input !== null) {
+      emit.single({ _tag: "ToolUse", tool: toolState.currentTool, input });
+    }
+    emit.single({ _tag: "ToolEnd", tool: toolState.currentTool });
+    toolState.currentTool = "";
+    toolState.inputChunks.length = 0;
+  }
+}
+
+/**
+ * Process a single JSON line and emit appropriate events.
+ */
+function processJsonLine(
+  json: unknown,
+  outputChunks: string[],
+  toolState: ToolState,
+  emit: { single: (event: LLMEvent) => void }
+): void {
+  // Unwrap stream_event envelope if present
+  const event = unwrapStreamEvent(json);
+
+  const text = extractText(event);
+  if (text) {
+    outputChunks.push(text);
+    emit.single({ _tag: "Text", text });
+    return;
+  }
+
+  const toolInfo = extractToolInfo(event);
+  if (toolInfo) {
+    handleToolEvent(toolInfo, toolState, emit);
+  }
 }
 
 /**
@@ -118,9 +249,8 @@ function createEventStream(
   child: ChildProcess
 ): Stream.Stream<LLMEvent, LLMError> {
   return Stream.async<LLMEvent, LLMError>((emit) => {
-    // Use array-based chunking to avoid O(n²) string concatenation
     const outputChunks: string[] = [];
-    let currentTool = "";
+    const toolState: ToolState = { currentTool: "", inputChunks: [] };
 
     const stdout = child.stdout;
     if (!stdout) {
@@ -137,26 +267,8 @@ function createEventStream(
 
     rl.on("line", (line) => {
       const json = parseJsonLine(line);
-      if (!json) {
-        return;
-      }
-
-      const text = extractText(json);
-      if (text) {
-        outputChunks.push(text);
-        emit.single({ _tag: "Text", text });
-        return;
-      }
-
-      const toolInfo = extractToolInfo(json);
-      if (toolInfo) {
-        if (toolInfo.type === "start") {
-          currentTool = toolInfo.name;
-          emit.single({ _tag: "ToolStart", tool: toolInfo.name });
-        } else if (toolInfo.type === "end" && currentTool) {
-          emit.single({ _tag: "ToolEnd", tool: currentTool });
-          currentTool = "";
-        }
+      if (json) {
+        processJsonLine(json, outputChunks, toolState, emit);
       }
     });
 
@@ -175,7 +287,6 @@ function createEventStream(
           })
         );
       } else {
-        // Join chunks once at the end instead of concatenating per chunk
         const fullOutput = outputChunks.join("");
         emit.single({ _tag: "Done", output: fullOutput });
         emit.end();
