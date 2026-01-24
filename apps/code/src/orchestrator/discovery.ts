@@ -121,14 +121,28 @@ function planTasksToGeneratedTasks(plan: Plan): GeneratedTask[] {
  * Creates a stream for the discovery phase.
  * This phase runs the LLM to break down the task into subtasks,
  * then writes tasks.md and initializes the plan.
+ *
+ * @param llm - LLM service for executing prompts
+ * @param signalParser - Signal parser service
+ * @param planStore - Plan storage service
+ * @param currentPlanRef - Reference to current plan
+ * @param config - Loop configuration
+ * @param sessionId - Session identifier
+ * @param worktreePath - Optional worktree path for isolated execution
  */
 export function createDiscoveryStream(
-  llm: { execute: (prompt: string) => Stream.Stream<LLMEvent, unknown> },
+  llm: {
+    execute: (
+      prompt: string,
+      options?: { cwd?: string }
+    ) => Stream.Stream<LLMEvent, unknown>;
+  },
   signalParser: SignalParserService,
   planStore: PlanStoreService,
   currentPlanRef: Ref.Ref<Plan | undefined>,
   config: LoopConfig,
-  sessionId: string
+  sessionId: string,
+  worktreePath?: string
 ): Stream.Stream<DomainEvent, never, never> {
   return Stream.unwrap(
     Effect.gen(function* () {
@@ -157,7 +171,7 @@ export function createDiscoveryStream(
       const prompt = buildDiscoveryPrompt(config);
 
       const llmStream: Stream.Stream<DomainEvent, never, never> = llm
-        .execute(prompt)
+        .execute(prompt, worktreePath ? { cwd: worktreePath } : undefined)
         .pipe(
           Stream.mapError(
             (e) =>

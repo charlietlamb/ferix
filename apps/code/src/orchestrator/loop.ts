@@ -7,6 +7,7 @@ import type {
   Plan,
   Session,
 } from "../domain/index.js";
+import { Git, type WorktreePath } from "../services/git.js";
 import { GuardrailsStore } from "../services/guardrails-store.js";
 import { LLM } from "../services/llm.js";
 import { PlanStore } from "../services/plan-store.js";
@@ -21,7 +22,7 @@ import {
 
 /**
  * Required services for the orchestrator.
- * Now includes ProgressStore and GuardrailsStore for RALPH pattern support.
+ * Now includes ProgressStore, GuardrailsStore, and Git for worktree support.
  */
 export type OrchestratorServices =
   | LLM
@@ -29,7 +30,8 @@ export type OrchestratorServices =
   | PlanStore
   | SessionStore
   | ProgressStore
-  | GuardrailsStore;
+  | GuardrailsStore
+  | Git;
 
 /**
  * Run the ralph loop.
@@ -80,6 +82,7 @@ export function runLoop(
       const signalParser = yield* SignalParser;
       const sessionStore = yield* SessionStore;
       const planStore = yield* PlanStore;
+      const git = yield* Git;
 
       const session = yield* sessionStore.create(config.task).pipe(
         Effect.mapError(
@@ -92,8 +95,47 @@ export function runLoop(
         )
       );
 
+      // Create worktree for isolated execution
+      const worktreePath = yield* git.createWorktree(session.id).pipe(
+        Effect.mapError(
+          (e) =>
+            new OrchestratorError({
+              message: `Failed to create worktree: ${e.message}`,
+              phase: "setup",
+              cause: e,
+            })
+        )
+      );
+
+      const branchName = git.getBranchName(session.id);
+
+      // Update session with worktree info
+      yield* sessionStore
+        .update(session.id, {
+          ...session,
+          worktreePath,
+          branchName,
+        })
+        .pipe(
+          Effect.tapError((error) =>
+            Effect.logDebug("Failed to update session with worktree info", {
+              error: String(error),
+            })
+          ),
+          Effect.orElseSucceed(() => undefined)
+        );
+
       const startTimeUtc = yield* DateTime.now;
       const startTime = DateTime.toEpochMillis(startTimeUtc);
+
+      // Emit worktree created event
+      const worktreeCreated: DomainEvent = {
+        _tag: "WorktreeCreated",
+        sessionId: session.id,
+        worktreePath,
+        branchName,
+        timestamp: startTime,
+      };
 
       // Use Effect Ref for mutable state instead of closure mutation
       const loopCompletedRef = yield* Ref.make(false);
@@ -118,7 +160,8 @@ export function runLoop(
         planStore,
         currentPlanRef,
         config,
-        session.id
+        session.id,
+        worktreePath
       );
 
       // Use unfoldEffect to create iterations with effectful termination condition
@@ -143,21 +186,25 @@ export function runLoop(
               loopCompletedRef,
               config,
               iteration,
-              session.id
+              session.id,
+              worktreePath
             )
           )
         );
 
       const completionStream = createCompletionStream(
         sessionStore,
+        git,
         session,
         config,
         startTime,
-        loopCompletedRef
+        loopCompletedRef,
+        worktreePath
       );
 
       return pipe(
         Stream.succeed(loopStarted),
+        Stream.concat(Stream.succeed(worktreeCreated)),
         Stream.concat(discoveryStream),
         Stream.concat(iterationsStream),
         Stream.concat(completionStream)
@@ -202,6 +249,7 @@ export function runRalphLoop(
       const planStore = yield* PlanStore;
       const progressStore = yield* ProgressStore;
       const guardrailsStore = yield* GuardrailsStore;
+      const git = yield* Git;
 
       const session = yield* sessionStore.create(config.task).pipe(
         Effect.mapError(
@@ -214,8 +262,47 @@ export function runRalphLoop(
         )
       );
 
+      // Create worktree for isolated execution
+      const worktreePath = yield* git.createWorktree(session.id).pipe(
+        Effect.mapError(
+          (e) =>
+            new OrchestratorError({
+              message: `Failed to create worktree: ${e.message}`,
+              phase: "setup",
+              cause: e,
+            })
+        )
+      );
+
+      const branchName = git.getBranchName(session.id);
+
+      // Update session with worktree info
+      yield* sessionStore
+        .update(session.id, {
+          ...session,
+          worktreePath,
+          branchName,
+        })
+        .pipe(
+          Effect.tapError((error) =>
+            Effect.logDebug("Failed to update session with worktree info", {
+              error: String(error),
+            })
+          ),
+          Effect.orElseSucceed(() => undefined)
+        );
+
       const startTimeUtc = yield* DateTime.now;
       const startTime = DateTime.toEpochMillis(startTimeUtc);
+
+      // Emit worktree created event
+      const worktreeCreated: DomainEvent = {
+        _tag: "WorktreeCreated",
+        sessionId: session.id,
+        worktreePath,
+        branchName,
+        timestamp: startTime,
+      };
 
       // Use Effect Ref for mutable state - still needed for in-iteration updates
       // but state is read fresh from files at the START of each iteration
@@ -240,7 +327,8 @@ export function runRalphLoop(
         planStore,
         currentPlanRef,
         config,
-        session.id
+        session.id,
+        worktreePath
       );
 
       // RALPH iterations - each reads fresh context from files
@@ -265,21 +353,25 @@ export function runRalphLoop(
               loopCompletedRef,
               config,
               iteration,
-              session.id
+              session.id,
+              worktreePath
             )
           )
         );
 
       const completionStream = createCompletionStream(
         sessionStore,
+        git,
         session,
         config,
         startTime,
-        loopCompletedRef
+        loopCompletedRef,
+        worktreePath
       );
 
       return pipe(
         Stream.succeed(loopStarted),
+        Stream.concat(Stream.succeed(worktreeCreated)),
         Stream.concat(discoveryStream),
         Stream.concat(iterationsStream),
         Stream.concat(completionStream)
@@ -302,21 +394,44 @@ export function runRalphLoop(
 
 /**
  * Creates the completion stream that finalizes the loop.
+ * Handles session update and emits completion event.
+ * Note: Worktree is intentionally kept for user review/merge.
  */
 function createCompletionStream(
   sessionStore: {
     update: (id: string, session: Session) => Effect.Effect<void, unknown>;
   },
+  git: {
+    commitChanges: (
+      sessionId: string,
+      message: string
+    ) => Effect.Effect<unknown, unknown>;
+  },
   session: Session,
   config: LoopConfig,
   startTime: number,
-  loopCompletedRef: Ref.Ref<boolean>
+  loopCompletedRef: Ref.Ref<boolean>,
+  _worktreePath: WorktreePath
 ): Stream.Stream<DomainEvent, never, never> {
-  return Stream.fromEffect(
+  return Stream.unwrap(
     Effect.gen(function* () {
       const endTimeUtc = yield* DateTime.now;
       const durationMs = DateTime.toEpochMillis(endTimeUtc) - startTime;
       const completed = yield* Ref.get(loopCompletedRef);
+
+      // Final commit before completion
+      yield* git
+        .commitChanges(session.id, `feat: complete session ${session.id}`)
+        .pipe(
+          Effect.tapError((error) =>
+            Effect.logDebug("Final commit failed, continuing", {
+              sessionId: session.id,
+              error: String(error),
+            })
+          ),
+          Effect.orElseSucceed(() => undefined)
+        );
+
       const summary: LoopSummary = {
         iterations: config.maxIterations,
         success: completed,
@@ -342,8 +457,8 @@ function createCompletionStream(
           Effect.orElseSucceed(() => undefined)
         );
 
-      const event: DomainEvent = { _tag: "LoopCompleted", summary };
-      return event;
+      const loopCompleted: DomainEvent = { _tag: "LoopCompleted", summary };
+      return Stream.succeed(loopCompleted);
     })
   );
 }

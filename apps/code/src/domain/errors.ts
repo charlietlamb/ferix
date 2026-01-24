@@ -64,6 +64,21 @@ export class OrchestratorError extends Data.TaggedError("OrchestratorError")<{
 }> {}
 
 /**
+ * Error that occurs during git operations.
+ */
+export class GitError extends Data.TaggedError("GitError")<{
+  readonly message: string;
+  readonly operation:
+    | "createWorktree"
+    | "removeWorktree"
+    | "commit"
+    | "push"
+    | "createPR"
+    | "status";
+  readonly cause?: unknown;
+}> {}
+
+/**
  * Union of all possible errors in the system.
  */
 export type FerixError =
@@ -73,4 +88,5 @@ export type FerixError =
   | SessionStoreError
   | ProgressStoreError
   | GuardrailsStoreError
-  | OrchestratorError;
+  | OrchestratorError
+  | GitError;

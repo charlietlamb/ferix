@@ -249,6 +249,26 @@ export const ProgressUpdatedEventSchema = taggedEvent("ProgressUpdated", {
 export type ProgressUpdatedEvent = typeof ProgressUpdatedEventSchema.Type;
 
 /**
+ * Worktree created event - signals that a git worktree was created for the session.
+ */
+export const WorktreeCreatedEventSchema = taggedEvent("WorktreeCreated", {
+  sessionId: S.String,
+  worktreePath: S.String,
+  branchName: S.String,
+  timestamp: S.Number,
+});
+export type WorktreeCreatedEvent = typeof WorktreeCreatedEventSchema.Type;
+
+/**
+ * Worktree removed event - signals that a git worktree was cleaned up.
+ */
+export const WorktreeRemovedEventSchema = taggedEvent("WorktreeRemoved", {
+  sessionId: S.String,
+  timestamp: S.Number,
+});
+export type WorktreeRemovedEvent = typeof WorktreeRemovedEventSchema.Type;
+
+/**
  * Union of all domain events.
  */
 export const DomainEventSchema = S.Union(
@@ -280,7 +300,9 @@ export const DomainEventSchema = S.Union(
   PlanUpdateFailedEventSchema,
   LearningRecordedEventSchema,
   GuardrailAddedEventSchema,
-  ProgressUpdatedEventSchema
+  ProgressUpdatedEventSchema,
+  WorktreeCreatedEventSchema,
+  WorktreeRemovedEventSchema
 );
 
 /**
@@ -315,7 +337,9 @@ export type DomainEvent =
   | PlanUpdateFailedEvent
   | LearningRecordedEvent
   | GuardrailAddedEvent
-  | ProgressUpdatedEvent;
+  | ProgressUpdatedEvent
+  | WorktreeCreatedEvent
+  | WorktreeRemovedEvent;
 
 /**
  * Type guard utilities for domain events.

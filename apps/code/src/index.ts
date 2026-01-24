@@ -8,10 +8,10 @@ const program = new Command();
 program
   .name("ferix-code")
   .description("Composable RALPH loops for AI coding agents")
-  .version(packageJson.version)
+  .version(packageJson.version, "-v, --version", "Output the version number")
   .argument("<task>", "Task description or path to PRD file")
   .option("-i, --iterations <n>", "Maximum iterations", "1")
-  .option("-v, --verify <commands...>", "Verification commands")
+  .option("-c, --verify <commands...>", "Verification commands to run")
   .option("--branch <name>", "Git branch to create")
   .option("--push", "Push branch after completion")
   .option("--pr", "Create PR after pushing")

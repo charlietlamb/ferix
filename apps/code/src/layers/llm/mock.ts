@@ -32,7 +32,7 @@ export type MockLLMConfig = typeof MockLLMConfigSchema.Type;
  */
 export function createMockLLM(config: MockLLMConfig): LLMService {
   return {
-    execute: (_prompt: string): Stream.Stream<LLMEvent, never> => {
+    execute: (_prompt: string, _options?): Stream.Stream<LLMEvent, never> => {
       const baseStream = Stream.fromIterable(config.events);
 
       if (config.delayMs !== undefined && config.delayMs > 0) {

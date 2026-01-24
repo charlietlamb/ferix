@@ -1,8 +1,16 @@
 export {
+  type CommitHash,
+  Git,
+  type GitService,
+  type PrUrl,
+  type WorktreeInfo,
+  type WorktreePath,
+} from "./git.js";
+export {
   GuardrailsStore,
   type GuardrailsStoreService,
 } from "./guardrails-store.js";
-export { LLM, type LLMService } from "./llm.js";
+export { LLM, type LLMExecuteOptions, type LLMService } from "./llm.js";
 export { PlanStore, type PlanStoreService } from "./plan-store.js";
 export {
   ProgressStore,

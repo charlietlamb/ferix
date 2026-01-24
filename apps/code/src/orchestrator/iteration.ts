@@ -176,16 +176,32 @@ function extractLearnings(
 /**
  * Creates a stream for a single iteration.
  * Plan updates are batched and persisted once at the end of each iteration.
+ *
+ * @param llm - LLM service for executing prompts
+ * @param signalParser - Signal parser service
+ * @param planStore - Plan storage service
+ * @param currentPlanRef - Reference to current plan
+ * @param loopCompletedRef - Reference to loop completion state
+ * @param config - Loop configuration
+ * @param iteration - Current iteration number
+ * @param sessionId - Session identifier
+ * @param worktreePath - Optional worktree path for isolated execution
  */
 export function createIterationStream(
-  llm: { execute: (prompt: string) => Stream.Stream<LLMEvent, unknown> },
+  llm: {
+    execute: (
+      prompt: string,
+      options?: { cwd?: string }
+    ) => Stream.Stream<LLMEvent, unknown>;
+  },
   signalParser: SignalParserService,
   planStore: PlanStoreService,
   currentPlanRef: Ref.Ref<Plan | undefined>,
   loopCompletedRef: Ref.Ref<boolean>,
   config: LoopConfig,
   iteration: number,
-  sessionId: string
+  sessionId: string,
+  worktreePath?: string
 ): Stream.Stream<DomainEvent, never, never> {
   return Stream.unwrap(
     Effect.gen(function* () {
@@ -204,7 +220,10 @@ export function createIterationStream(
       };
 
       const llmStream: Stream.Stream<DomainEvent, never, never> = llm
-        .execute(buildPrompt(config, iteration, currentPlan))
+        .execute(
+          buildPrompt(config, iteration, currentPlan),
+          worktreePath ? { cwd: worktreePath } : undefined
+        )
         .pipe(
           Stream.mapError(
             (e) =>
@@ -300,9 +319,26 @@ export function createIterationStream(
  * 3. Reads recent progress from progressStore
  * 4. Uses buildRalphPrompt for single-task focus
  * 5. Persists learnings and guardrails at end of iteration
+ *
+ * @param llm - LLM service for executing prompts
+ * @param signalParser - Signal parser service
+ * @param planStore - Plan storage service
+ * @param progressStore - Progress storage service
+ * @param guardrailsStore - Guardrails storage service
+ * @param currentPlanRef - Reference to current plan
+ * @param loopCompletedRef - Reference to loop completion state
+ * @param config - Loop configuration
+ * @param iteration - Current iteration number
+ * @param sessionId - Session identifier
+ * @param worktreePath - Optional worktree path for isolated execution
  */
 export function createRalphIterationStream(
-  llm: { execute: (prompt: string) => Stream.Stream<LLMEvent, unknown> },
+  llm: {
+    execute: (
+      prompt: string,
+      options?: { cwd?: string }
+    ) => Stream.Stream<LLMEvent, unknown>;
+  },
   signalParser: SignalParserService,
   planStore: PlanStoreService,
   progressStore: ProgressStoreService,
@@ -311,7 +347,8 @@ export function createRalphIterationStream(
   loopCompletedRef: Ref.Ref<boolean>,
   config: LoopConfig,
   iteration: number,
-  sessionId: string
+  sessionId: string,
+  worktreePath?: string
 ): Stream.Stream<DomainEvent, never, never> {
   return Stream.unwrap(
     Effect.gen(function* () {
@@ -363,7 +400,7 @@ export function createRalphIterationStream(
       const prompt = buildRalphPrompt(config, iteration, context);
 
       const llmStream: Stream.Stream<DomainEvent, never, never> = llm
-        .execute(prompt)
+        .execute(prompt, worktreePath ? { cwd: worktreePath } : undefined)
         .pipe(
           Stream.mapError(
             (e) =>

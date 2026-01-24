@@ -1,4 +1,6 @@
 import { Layer } from "effect";
+import { FileSystemGit } from "./git/file-system.js";
+import { MemoryGit } from "./git/memory.js";
 import { FileSystemGuardrails } from "./guardrails/file-system.js";
 import { MemoryGuardrails } from "./guardrails/memory.js";
 import { ClaudeCLI } from "./llm/claude-cli.js";
@@ -11,6 +13,8 @@ import { FileSystemSession } from "./session/file-system.js";
 import { MemorySession } from "./session/memory.js";
 import { FerixParser } from "./signal/ferix-parser.js";
 
+export { FileSystemGit } from "./git/file-system.js";
+export { MemoryGit } from "./git/memory.js";
 export { FileSystemGuardrails } from "./guardrails/file-system.js";
 export { MemoryGuardrails } from "./guardrails/memory.js";
 export { ClaudeCLI } from "./llm/claude-cli.js";
@@ -29,7 +33,7 @@ export { FerixParser } from "./signal/ferix-parser.js";
  * Uses real implementations:
  * - Claude CLI for LLM
  * - Ferix parser for signals
- * - File system for plan, session, progress, and guardrails storage
+ * - File system for plan, session, progress, guardrails, and git storage
  *
  * @example
  * ```typescript
@@ -49,7 +53,8 @@ export const ProductionLayers = Layer.mergeAll(
   FileSystemPlan.Live,
   FileSystemSession.Live,
   FileSystemProgress.Live,
-  FileSystemGuardrails.Live
+  FileSystemGuardrails.Live,
+  FileSystemGit.Live
 );
 
 /**
@@ -58,7 +63,7 @@ export const ProductionLayers = Layer.mergeAll(
  * Uses mock/in-memory implementations:
  * - Mock LLM (configurable events)
  * - Ferix parser (real implementation - pure)
- * - In-memory plan, session, progress, and guardrails storage
+ * - In-memory plan, session, progress, guardrails, and git storage
  *
  * @example
  * ```typescript
@@ -80,7 +85,8 @@ export const TestLayers = Layer.mergeAll(
   MemoryPlan.Live,
   MemorySession.Live,
   MemoryProgress.Live,
-  MemoryGuardrails.Live
+  MemoryGuardrails.Live,
+  MemoryGit.Live
 );
 
 /**
@@ -108,6 +114,7 @@ export function createTestLayers(
     MemoryPlan.layer(),
     MemorySession.layer(),
     MemoryProgress.layer(),
-    MemoryGuardrails.layer()
+    MemoryGuardrails.layer(),
+    MemoryGit.layer()
   );
 }

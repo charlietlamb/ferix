@@ -3,6 +3,17 @@ import type { LLMError } from "../domain/errors.js";
 import type { LLMEvent } from "../domain/schemas/llm.js";
 
 /**
+ * Options for LLM execution.
+ */
+export interface LLMExecuteOptions {
+  /**
+   * Working directory for the LLM process.
+   * Used when running in a worktree context.
+   */
+  readonly cwd?: string;
+}
+
+/**
  * Service interface for LLM execution.
  *
  * Implementations include:
@@ -28,9 +39,13 @@ export interface LLMService {
    * The final event will be a "Done" event containing the full output.
    *
    * @param prompt - The prompt to send to the LLM
+   * @param options - Optional execution options (e.g., cwd for worktree)
    * @returns Stream of LLM events that can be consumed by any subscriber
    */
-  readonly execute: (prompt: string) => Stream.Stream<LLMEvent, LLMError>;
+  readonly execute: (
+    prompt: string,
+    options?: LLMExecuteOptions
+  ) => Stream.Stream<LLMEvent, LLMError>;
 }
 
 /**

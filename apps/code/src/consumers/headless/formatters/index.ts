@@ -7,6 +7,7 @@ import "./loop.js";
 import "./phases.js";
 import "./plan.js";
 import "./tasks.js";
+import "./worktree.js";
 
 export type {
   EventFormatter,

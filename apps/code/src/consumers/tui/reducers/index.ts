@@ -6,6 +6,7 @@ import "./llm.js";
 import "./loop.js";
 import "./progress.js";
 import "./tasks.js";
+import "./worktree.js";
 
 // Re-export formatToolInput from tools
 export { formatToolInput } from "../tools/index.js";

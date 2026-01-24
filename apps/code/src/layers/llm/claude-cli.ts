@@ -2,7 +2,11 @@ import { spawn } from "node:child_process";
 import { Effect, Layer, Stream } from "effect";
 import type { LLMError } from "../../domain/errors.js";
 import type { LLMEvent } from "../../domain/schemas/llm.js";
-import { LLM, type LLMService } from "../../services/llm.js";
+import {
+  LLM,
+  type LLMExecuteOptions,
+  type LLMService,
+} from "../../services/llm.js";
 import { createEventStream } from "./stream.js";
 
 /**
@@ -12,7 +16,10 @@ import { createEventStream } from "./stream.js";
  * the JSON stream into typed LLM events.
  */
 const make: LLMService = {
-  execute: (prompt: string): Stream.Stream<LLMEvent, LLMError> => {
+  execute: (
+    prompt: string,
+    options?: LLMExecuteOptions
+  ): Stream.Stream<LLMEvent, LLMError> => {
     return Stream.unwrap(
       Effect.sync(() => {
         const child = spawn(
@@ -29,6 +36,7 @@ const make: LLMService = {
           ],
           {
             stdio: ["inherit", "pipe", "pipe"],
+            cwd: options?.cwd,
             env: {
               ...process.env,
               FORCE_COLOR: "1",

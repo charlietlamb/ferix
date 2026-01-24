@@ -21,6 +21,8 @@ export const SessionSchema = S.Struct({
   originalTask: S.String,
   completedTasks: S.Array(S.String),
   currentTaskId: S.optional(S.String),
+  worktreePath: S.optional(S.String),
+  branchName: S.optional(S.String),
 });
 export type Session = typeof SessionSchema.Type;
 

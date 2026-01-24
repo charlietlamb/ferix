@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { Chunk, Effect, Layer, Stream } from "effect";
 import type { LLMEvent } from "../domain/schemas/llm.js";
+import { MemoryGit } from "../layers/git/memory.js";
 import { MemoryGuardrails } from "../layers/guardrails/memory.js";
 import { Mock } from "../layers/llm/mock.js";
 import { MemoryPlan } from "../layers/plan/memory.js";
@@ -19,6 +20,7 @@ function createTestLayers(events: LLMEvent[]) {
     MemoryPlan.layer(),
     MemoryProgress.layer(),
     MemoryGuardrails.layer(),
+    MemoryGit.layer(),
     FerixParser.Live
   );
 }
