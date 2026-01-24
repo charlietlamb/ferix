@@ -1,9 +1,12 @@
-import { Effect, Option, pipe, Ref, Stream } from "effect";
-import type { LoopConfig, LoopSummary } from "../domain/config.js";
+import { DateTime, Effect, Option, pipe, Ref, Stream } from "effect";
 import { OrchestratorError } from "../domain/errors.js";
-import type { DomainEvent } from "../domain/events.js";
-import type { Plan } from "../domain/plan.js";
-import type { Session } from "../domain/session.js";
+import type {
+  DomainEvent,
+  LoopConfig,
+  LoopSummary,
+  Plan,
+  Session,
+} from "../domain/index.js";
 import { LLM } from "../services/llm.js";
 import { PlanStore } from "../services/plan-store.js";
 import { SessionStore } from "../services/session-store.js";
@@ -80,7 +83,8 @@ export function runLoop(
         )
       );
 
-      const startTime = Date.now();
+      const startTimeUtc = yield* DateTime.now;
+      const startTime = DateTime.toEpochMillis(startTimeUtc);
 
       // Use Effect Ref for mutable state instead of closure mutation
       const loopCompletedRef = yield* Ref.make(false);
@@ -91,7 +95,11 @@ export function runLoop(
           ? Number.POSITIVE_INFINITY
           : config.maxIterations;
 
-      const loopStarted: DomainEvent = { _tag: "LoopStarted", config };
+      const loopStarted: DomainEvent = {
+        _tag: "LoopStarted",
+        config,
+        timestamp: startTime,
+      };
 
       // Use unfoldEffect to create iterations with effectful termination condition
       const iterationsStream: Stream.Stream<DomainEvent, never, never> =
@@ -164,7 +172,8 @@ function createCompletionStream(
 ): Stream.Stream<DomainEvent, never, never> {
   return Stream.fromEffect(
     Effect.gen(function* () {
-      const durationMs = Date.now() - startTime;
+      const endTimeUtc = yield* DateTime.now;
+      const durationMs = DateTime.toEpochMillis(endTimeUtc) - startTime;
       const completed = yield* Ref.get(loopCompletedRef);
       const summary: LoopSummary = {
         iterations: config.maxIterations,

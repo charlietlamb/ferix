@@ -1,9 +1,12 @@
-import type {
-  CriteriaDefinedSignal,
-  CriterionFailedSignal,
-  CriterionPassedSignal,
-  Signal,
-} from "../../../domain/signals.js";
+import { Schema as S } from "effect";
+import {
+  type CriteriaDefinedSignal,
+  CriteriaDefinedSignalSchema,
+  type CriterionFailedSignal,
+  CriterionFailedSignalSchema,
+  type CriterionPassedSignal,
+  CriterionPassedSignalSchema,
+} from "../../../domain/index.js";
 import { type SignalSpec, signalSpecRegistry } from "./registry.js";
 
 const CRITERIA_BLOCK =
@@ -21,6 +24,7 @@ function resetRegex(pattern: RegExp): RegExp {
 const criteriaDefinedSpec: SignalSpec<CriteriaDefinedSignal> = {
   tag: "CriteriaDefined",
   closingTag: "</ferix:criteria>",
+  schema: CriteriaDefinedSignalSchema,
   parse: (text) => {
     const signals: CriteriaDefinedSignal[] = [];
     for (const match of text.matchAll(resetRegex(CRITERIA_BLOCK))) {
@@ -34,53 +38,64 @@ const criteriaDefinedSpec: SignalSpec<CriteriaDefinedSignal> = {
         }
       }
       if (criteria.length > 0) {
-        signals.push({
+        const raw = {
           _tag: "CriteriaDefined" as const,
           taskId: match[1],
           criteria,
-        });
+        };
+        const result = S.decodeUnknownEither(CriteriaDefinedSignalSchema)(raw);
+        if (result._tag === "Right") {
+          signals.push(result.right);
+        }
       }
     }
     return signals;
   },
-  keyFields: (s) => {
-    const sig = s as Signal & { taskId: string; criteria: { id: string }[] };
-    return `${sig.taskId}:${sig.criteria.map((c) => c.id).join(",")}`;
-  },
+  keyFields: (s) => `${s.taskId}:${s.criteria.map((c) => c.id).join(",")}`,
 };
 
 const criterionPassedSpec: SignalSpec<CriterionPassedSignal> = {
   tag: "CriterionPassed",
   closingTag: "<ferix:criterion-passed",
+  schema: CriterionPassedSignalSchema,
   parse: (text) => {
     const signals: CriterionPassedSignal[] = [];
     for (const m of text.matchAll(resetRegex(CRITERION_PASSED))) {
       if (m[1]) {
-        signals.push({ _tag: "CriterionPassed" as const, criterionId: m[1] });
+        const raw = { _tag: "CriterionPassed" as const, criterionId: m[1] };
+        const result = S.decodeUnknownEither(CriterionPassedSignalSchema)(raw);
+        if (result._tag === "Right") {
+          signals.push(result.right);
+        }
       }
     }
     return signals;
   },
-  keyFields: (s) => (s as Signal & { criterionId: string }).criterionId,
+  keyFields: (s) => s.criterionId,
 };
 
 const criterionFailedSpec: SignalSpec<CriterionFailedSignal> = {
   tag: "CriterionFailed",
   closingTag: "<ferix:criterion-failed",
+  schema: CriterionFailedSignalSchema,
   parse: (text) => {
     const signals: CriterionFailedSignal[] = [];
     for (const m of text.matchAll(resetRegex(CRITERION_FAILED))) {
       if (m[1]) {
-        signals.push({
+        const raw = {
           _tag: "CriterionFailed" as const,
           criterionId: m[1],
           reason: m[2] || "Unknown reason",
-        });
+        };
+        const result = S.decodeUnknownEither(CriterionFailedSignalSchema)(raw);
+        if (result._tag === "Right") {
+          signals.push(result.right);
+        }
       }
     }
     return signals;
   },
-  keyFields: (s) => (s as Signal & { criterionId: string }).criterionId,
+  keyFields: (s) => s.criterionId,
 };
 
 signalSpecRegistry.register(criteriaDefinedSpec);

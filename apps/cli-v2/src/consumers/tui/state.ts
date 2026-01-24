@@ -86,7 +86,7 @@ export function createInitialState(): TUIState {
     iteration: 0,
     maxIterations: 0,
     status: "idle",
-    startTime: Date.now(),
+    startTime: 0, // Will be set when LoopStarted event is received
     executionMode: "idle",
     outputLines: [],
     partialLine: "",

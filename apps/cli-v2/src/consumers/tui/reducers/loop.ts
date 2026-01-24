@@ -1,21 +1,24 @@
+import type {
+  LoopFailedEvent,
+  LoopStartedEvent,
+} from "../../../domain/index.js";
 import { MAX_OUTPUT_LINES } from "../constants.js";
 import { appendError } from "./helpers.js";
+import type { StateReducer } from "./registry.js";
 import { stateReducerRegistry } from "./registry.js";
 
-// Loop started
-stateReducerRegistry.register({
+const loopStartedReducer: StateReducer<"LoopStarted"> = {
   tag: "LoopStarted",
-  reduce: (state, event) => ({
+  reduce: (state, event: LoopStartedEvent) => ({
     ...state,
     task: event.config.task,
     maxIterations: event.config.maxIterations,
     status: "running",
-    startTime: Date.now(),
+    startTime: event.timestamp,
   }),
-});
+};
 
-// Loop completed
-stateReducerRegistry.register({
+const loopCompletedReducer: StateReducer<"LoopCompleted"> = {
   tag: "LoopCompleted",
   reduce: (state) => {
     if (state.partialLine) {
@@ -28,15 +31,18 @@ stateReducerRegistry.register({
     }
     return { ...state, status: "complete" };
   },
-});
+};
 
-// Loop failed
-stateReducerRegistry.register({
+const loopFailedReducer: StateReducer<"LoopFailed"> = {
   tag: "LoopFailed",
-  reduce: (state, event) => {
+  reduce: (state, event: LoopFailedEvent) => {
     const errorMsg = event.error.iteration
       ? `[${event.error.phase}] Iteration ${event.error.iteration}: ${event.error.message}`
       : `[${event.error.phase}] ${event.error.message}`;
     return appendError(state, errorMsg);
   },
-});
+};
+
+stateReducerRegistry.register(loopStartedReducer);
+stateReducerRegistry.register(loopCompletedReducer);
+stateReducerRegistry.register(loopFailedReducer);

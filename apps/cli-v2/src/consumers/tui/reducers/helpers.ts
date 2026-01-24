@@ -141,24 +141,32 @@ export function updateTaskCriteria(
 }
 
 /**
- * Set phase status.
+ * Event shape for phase status updates.
+ */
+interface PhaseStatusEvent {
+  readonly phaseId: string;
+  readonly timestamp?: number;
+}
+
+/**
+ * Set phase status from event.
  */
 export function setPhaseStatus(
   state: TUIState,
-  phaseId: string,
-  status: PhaseStatus
+  status: PhaseStatus,
+  event: PhaseStatusEvent
 ): TUIState {
-  const now = Date.now();
   const tasks = state.tasks.map((task) => {
     const phases = task.phases.map((phase) =>
-      phase.id === phaseId
+      phase.id === event.phaseId
         ? {
             ...phase,
             status,
-            startedAt: status === "in_progress" ? now : phase.startedAt,
+            startedAt:
+              status === "in_progress" ? event.timestamp : phase.startedAt,
             completedAt:
               status === "done" || status === "failed"
-                ? now
+                ? event.timestamp
                 : phase.completedAt,
           }
         : phase
@@ -189,22 +197,32 @@ export function setCriterionStatus(
 }
 
 /**
- * Set task status.
+ * Event shape for task status updates.
+ */
+interface TaskStatusEvent {
+  readonly taskId: string;
+  readonly timestamp?: number;
+}
+
+/**
+ * Set task status from event.
  */
 export function setTaskStatus(
   state: TUIState,
-  taskId: string,
-  status: TaskStatus
+  status: TaskStatus,
+  event: TaskStatusEvent
 ): TUIState {
-  const now = Date.now();
   const tasks = state.tasks.map((task) =>
-    task.id === taskId
+    task.id === event.taskId
       ? {
           ...task,
           status,
-          startedAt: status === "in_progress" ? now : task.startedAt,
+          startedAt:
+            status === "in_progress" ? event.timestamp : task.startedAt,
           completedAt:
-            status === "done" || status === "failed" ? now : task.completedAt,
+            status === "done" || status === "failed"
+              ? event.timestamp
+              : task.completedAt,
         }
       : task
   );

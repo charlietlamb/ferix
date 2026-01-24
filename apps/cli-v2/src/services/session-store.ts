@@ -1,9 +1,6 @@
 import { Context, type Effect } from "effect";
 import type { SessionStoreError } from "../domain/errors.js";
-import type { Session } from "../domain/session.js";
-
-// Re-export Session types from domain for backwards compatibility
-export type { Session, SessionStatus } from "../domain/session.js";
+import type { Session } from "../domain/index.js";
 
 /**
  * Service interface for session persistence.

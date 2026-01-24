@@ -2,8 +2,7 @@ import { access, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Effect, Layer } from "effect";
 import { PlanStoreError } from "../../domain/errors.js";
-import { type Plan, PlanId } from "../../domain/plan.js";
-import { decodePlanData } from "../../domain/schemas.js";
+import { decodePlanData, type Plan, PlanId } from "../../domain/index.js";
 import { PlanStore, type PlanStoreService } from "../../services/plan-store.js";
 
 /**

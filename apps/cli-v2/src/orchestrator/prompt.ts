@@ -1,5 +1,4 @@
-import type { LoopConfig, PromptConfig } from "../domain/config.js";
-import type { Plan } from "../domain/plan.js";
+import type { LoopConfig, Plan, PromptConfig } from "../domain/index.js";
 
 /**
  * Default system prompt for the ralph loop.

@@ -1,10 +1,9 @@
-import { Effect, Ref } from "effect";
-import type { DomainEvent } from "../domain/events.js";
-import type { Plan } from "../domain/plan.js";
-import type { Signal } from "../domain/signals.js";
+import { DateTime, Effect, Ref } from "effect";
+import type { DomainEvent, Plan, Signal } from "../domain/index.js";
 import type { PlanStoreService } from "../services/plan-store.js";
 
 export type {
+  PlanUpdateContext,
   PlanUpdateHandler,
   PlanUpdateRegistry,
   PlanUpdateResult,
@@ -75,12 +74,13 @@ export function updatePlanFromSignal(
 ): Effect.Effect<DomainEvent[], never, never> {
   return Effect.gen(function* () {
     const currentPlan = yield* Ref.get(currentPlanRef);
-    const updateResult = computePlanUpdate(
-      signal,
-      currentPlan,
+    const now = yield* DateTime.now;
+    const timestamp = DateTime.formatIso(now);
+    const updateResult = computePlanUpdate(signal, currentPlan, {
       sessionId,
-      originalTask
-    );
+      originalTask,
+      timestamp,
+    });
 
     if (!updateResult) {
       return [];

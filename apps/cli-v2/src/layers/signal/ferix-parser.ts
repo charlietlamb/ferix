@@ -1,6 +1,6 @@
 import { Effect, Layer, Ref } from "effect";
 import type { ParseError } from "../../domain/errors.js";
-import type { Signal } from "../../domain/signals.js";
+import type { Signal } from "../../domain/index.js";
 import {
   type SignalAccumulator,
   SignalParser,

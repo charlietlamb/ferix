@@ -1,5 +1,5 @@
 import { Cause, Effect, Fiber, Ref, Stream } from "effect";
-import type { DomainEvent } from "../../domain/events.js";
+import type { DomainEvent } from "../../domain/index.js";
 import type { Consumer } from "../types.js";
 import { runInputLoop } from "./input.js";
 import { ANSIOutput } from "./output/index.js";

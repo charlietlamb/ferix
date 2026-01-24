@@ -1,4 +1,8 @@
-import type { Signal, TaskCompleteSignal } from "../../../domain/signals.js";
+import { Schema as S } from "effect";
+import {
+  type TaskCompleteSignal,
+  TaskCompleteSignalSchema,
+} from "../../../domain/index.js";
 import { type SignalSpec, signalSpecRegistry } from "./registry.js";
 
 const TASK_COMPLETE =
@@ -23,6 +27,7 @@ function parseFileList(content: string | undefined): string[] {
 const taskCompleteSpec: SignalSpec<TaskCompleteSignal> = {
   tag: "TaskComplete",
   closingTag: "</ferix:task-complete>",
+  schema: TaskCompleteSignalSchema,
   parse: (text) => {
     const match = text.match(TASK_COMPLETE);
     if (!match?.[1]) {
@@ -32,17 +37,20 @@ const taskCompleteSpec: SignalSpec<TaskCompleteSignal> = {
     const summaryMatch = content.match(SUMMARY);
     const filesModifiedMatch = content.match(FILES_MODIFIED);
     const filesCreatedMatch = content.match(FILES_CREATED);
-    return [
-      {
-        _tag: "TaskComplete" as const,
-        taskId: match[1],
-        summary: summaryMatch?.[1]?.trim() || "",
-        filesModified: parseFileList(filesModifiedMatch?.[1]),
-        filesCreated: parseFileList(filesCreatedMatch?.[1]),
-      },
-    ];
+    const raw = {
+      _tag: "TaskComplete" as const,
+      taskId: match[1],
+      summary: summaryMatch?.[1]?.trim() || "",
+      filesModified: parseFileList(filesModifiedMatch?.[1]),
+      filesCreated: parseFileList(filesCreatedMatch?.[1]),
+    };
+    const result = S.decodeUnknownEither(TaskCompleteSignalSchema)(raw);
+    if (result._tag === "Right") {
+      return [result.right];
+    }
+    return [];
   },
-  keyFields: (s) => (s as Signal & { taskId: string }).taskId,
+  keyFields: (s) => s.taskId,
 };
 
 signalSpecRegistry.register(taskCompleteSpec);

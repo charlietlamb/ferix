@@ -1,14 +1,17 @@
+import type { IterationStartedEvent } from "../../../domain/index.js";
 import { MAX_OUTPUT_LINES } from "../constants.js";
+import type { StateReducer } from "./registry.js";
 import { stateReducerRegistry } from "./registry.js";
 
-// Iteration started
-stateReducerRegistry.register({
+const iterationStartedReducer: StateReducer<"IterationStarted"> = {
   tag: "IterationStarted",
-  reduce: (state, event) => ({ ...state, iteration: event.iteration }),
-});
+  reduce: (state, event: IterationStartedEvent) => ({
+    ...state,
+    iteration: event.iteration,
+  }),
+};
 
-// Iteration completed
-stateReducerRegistry.register({
+const iterationCompletedReducer: StateReducer<"IterationCompleted"> = {
   tag: "IterationCompleted",
   reduce: (state) => {
     if (state.partialLine) {
@@ -21,4 +24,7 @@ stateReducerRegistry.register({
     }
     return state;
   },
-});
+};
+
+stateReducerRegistry.register(iterationStartedReducer);
+stateReducerRegistry.register(iterationCompletedReducer);

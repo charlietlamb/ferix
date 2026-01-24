@@ -1,17 +1,23 @@
-import { type Plan, PlanId, type Task } from "../../domain/plan.js";
+import { type Plan, PlanId, type Task } from "../../domain/index.js";
 
 /**
  * Creates a Plan from tasks defined by the LLM.
+ *
+ * @param sessionId - The session ID
+ * @param originalTask - The original task description
+ * @param tasks - The tasks to create
+ * @param createdAt - ISO timestamp for when the plan was created
  */
 export function createPlanFromTasks(
   sessionId: string,
   originalTask: string,
-  tasks: readonly { id: string; title: string; description: string }[]
+  tasks: readonly { id: string; title: string; description: string }[],
+  createdAt: string
 ): Plan {
   return {
     id: PlanId(`${sessionId}-plan`),
     sessionId,
-    createdAt: new Date().toISOString(),
+    createdAt,
     originalTask,
     tasks: tasks.map(
       (t): Task => ({

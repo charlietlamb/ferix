@@ -1,4 +1,5 @@
-import type { Signal } from "../../../domain/signals.js";
+import type { Schema as S } from "effect";
+import type { Signal } from "../../../domain/index.js";
 
 /**
  * Specification for parsing a signal type.
@@ -7,6 +8,7 @@ import type { Signal } from "../../../domain/signals.js";
 export interface SignalSpec<T extends Signal = Signal> {
   readonly tag: T["_tag"];
   readonly closingTag: string;
+  readonly schema?: S.Schema<T>;
   readonly parse: (text: string) => T[];
   readonly keyFields: (signal: T) => string;
 }

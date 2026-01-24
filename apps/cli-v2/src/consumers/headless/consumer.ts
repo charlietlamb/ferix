@@ -1,6 +1,6 @@
 import { Cause, Effect, Stream } from "effect";
 import pc from "picocolors";
-import type { DomainEvent } from "../../domain/events.js";
+import type { DomainEvent } from "../../domain/index.js";
 import type { Consumer } from "../types.js";
 import { formatEvent } from "./formatters/index.js";
 

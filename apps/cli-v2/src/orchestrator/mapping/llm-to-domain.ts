@@ -3,19 +3,19 @@ import { eventMappingRegistry } from "./registry.js";
 // Text event
 eventMappingRegistry.registerLLMMapper({
   tag: "Text",
-  map: (event) => ({ _tag: "LLMText", text: event.text }),
+  map: (event, _context) => ({ _tag: "LLMText", text: event.text }),
 });
 
 // Tool start event
 eventMappingRegistry.registerLLMMapper({
   tag: "ToolStart",
-  map: (event) => ({ _tag: "LLMToolStart", tool: event.tool }),
+  map: (event, _context) => ({ _tag: "LLMToolStart", tool: event.tool }),
 });
 
 // Tool use event
 eventMappingRegistry.registerLLMMapper({
   tag: "ToolUse",
-  map: (event) => ({
+  map: (event, _context) => ({
     _tag: "LLMToolUse",
     tool: event.tool,
     input: event.input,
@@ -25,11 +25,11 @@ eventMappingRegistry.registerLLMMapper({
 // Tool end event
 eventMappingRegistry.registerLLMMapper({
   tag: "ToolEnd",
-  map: (event) => ({ _tag: "LLMToolEnd", tool: event.tool }),
+  map: (event, _context) => ({ _tag: "LLMToolEnd", tool: event.tool }),
 });
 
 // Done event
 eventMappingRegistry.registerLLMMapper({
   tag: "Done",
-  map: () => ({ _tag: "LLMText", text: "" }),
+  map: (_event, _context) => ({ _tag: "LLMText", text: "" }),
 });

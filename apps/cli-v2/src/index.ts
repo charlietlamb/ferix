@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import type { LoopConfig } from "./domain/config.js";
+import type { LoopConfig } from "./domain/index.js";
 import { main } from "./program.js";
 
 const program = new Command();

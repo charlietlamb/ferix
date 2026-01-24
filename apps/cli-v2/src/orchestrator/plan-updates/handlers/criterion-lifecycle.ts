@@ -4,7 +4,7 @@ import { planUpdateRegistry } from "../registry.js";
 // Criterion passed
 planUpdateRegistry.register({
   tag: "CriterionPassed",
-  handle: (signal, currentPlan) =>
+  handle: (signal, currentPlan, _context) =>
     currentPlan
       ? {
           plan: updateCriterionStatus(
@@ -21,7 +21,7 @@ planUpdateRegistry.register({
 // Criterion failed
 planUpdateRegistry.register({
   tag: "CriterionFailed",
-  handle: (signal, currentPlan) =>
+  handle: (signal, currentPlan, _context) =>
     currentPlan
       ? {
           plan: updateCriterionStatus(

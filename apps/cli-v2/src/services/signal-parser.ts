@@ -1,6 +1,6 @@
 import { Context, type Effect } from "effect";
 import type { ParseError } from "../domain/errors.js";
-import type { Signal } from "../domain/signals.js";
+import type { Signal } from "../domain/index.js";
 
 /**
  * Accumulator for parsing signals across multiple text chunks.

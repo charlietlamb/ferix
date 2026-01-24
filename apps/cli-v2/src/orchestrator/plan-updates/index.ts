@@ -16,6 +16,7 @@ export {
   updatePlanWithPhases,
 } from "./helpers.js";
 export type {
+  PlanUpdateContext,
   PlanUpdateHandler,
   PlanUpdateRegistry,
   PlanUpdateResult,
@@ -24,8 +25,8 @@ export type {
 export { planUpdateRegistry } from "./registry.js";
 
 // Re-export convenience function
-import type { Plan } from "../../domain/plan.js";
-import type { Signal } from "../../domain/signals.js";
+import type { Plan, Signal } from "../../domain/index.js";
+import type { PlanUpdateContext } from "./registry.js";
 import { planUpdateRegistry } from "./registry.js";
 
 /**
@@ -35,13 +36,7 @@ import { planUpdateRegistry } from "./registry.js";
 export function computePlanUpdate(
   signal: Signal,
   currentPlan: Plan | undefined,
-  sessionId: string,
-  originalTask: string
+  context: PlanUpdateContext
 ) {
-  return planUpdateRegistry.computeUpdate(
-    signal,
-    currentPlan,
-    sessionId,
-    originalTask
-  );
+  return planUpdateRegistry.computeUpdate(signal, currentPlan, context);
 }

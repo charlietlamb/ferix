@@ -3,7 +3,7 @@ import { planUpdateRegistry } from "../registry.js";
 
 planUpdateRegistry.register({
   tag: "CriteriaDefined",
-  handle: (signal, currentPlan) =>
+  handle: (signal, currentPlan, _context) =>
     currentPlan
       ? {
           plan: updatePlanWithCriteria(

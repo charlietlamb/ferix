@@ -1,5 +1,13 @@
-import type { Plan } from "../../domain/plan.js";
-import type { Signal } from "../../domain/signals.js";
+import type { Plan, Signal } from "../../domain/index.js";
+
+/**
+ * Context passed to plan update handlers.
+ */
+export interface PlanUpdateContext {
+  readonly sessionId: string;
+  readonly originalTask: string;
+  readonly timestamp: string;
+}
 
 /**
  * Result of computing a plan update from a signal.
@@ -18,8 +26,7 @@ export interface PlanUpdateHandler<T extends Signal["_tag"]> {
   readonly handle: (
     signal: Extract<Signal, { _tag: T }>,
     currentPlan: Plan | undefined,
-    sessionId: string,
-    originalTask: string
+    context: PlanUpdateContext
   ) => PlanUpdateResult | undefined;
 }
 
@@ -31,8 +38,7 @@ export interface PlanUpdateRegistry {
   computeUpdate(
     signal: Signal,
     currentPlan: Plan | undefined,
-    sessionId: string,
-    originalTask: string
+    context: PlanUpdateContext
   ): PlanUpdateResult | undefined;
 }
 
@@ -45,8 +51,7 @@ export function createPlanUpdateRegistry(): PlanUpdateRegistry {
     (
       signal: Signal,
       currentPlan: Plan | undefined,
-      sessionId: string,
-      originalTask: string
+      context: PlanUpdateContext
     ) => PlanUpdateResult | undefined
   >();
 
@@ -57,8 +62,7 @@ export function createPlanUpdateRegistry(): PlanUpdateRegistry {
         handler.handle as (
           signal: Signal,
           currentPlan: Plan | undefined,
-          sessionId: string,
-          originalTask: string
+          context: PlanUpdateContext
         ) => PlanUpdateResult | undefined
       );
     },
@@ -66,11 +70,10 @@ export function createPlanUpdateRegistry(): PlanUpdateRegistry {
     computeUpdate(
       signal: Signal,
       currentPlan: Plan | undefined,
-      sessionId: string,
-      originalTask: string
+      context: PlanUpdateContext
     ): PlanUpdateResult | undefined {
       const handler = handlers.get(signal._tag);
-      return handler?.(signal, currentPlan, sessionId, originalTask);
+      return handler?.(signal, currentPlan, context);
     },
   };
 }

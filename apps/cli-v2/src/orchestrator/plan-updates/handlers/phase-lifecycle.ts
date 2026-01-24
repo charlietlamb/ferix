@@ -4,7 +4,7 @@ import { planUpdateRegistry } from "../registry.js";
 // Phase started
 planUpdateRegistry.register({
   tag: "PhaseStarted",
-  handle: (signal, currentPlan) =>
+  handle: (signal, currentPlan, _context) =>
     currentPlan
       ? {
           plan: updatePhaseStatus(currentPlan, signal.phaseId, "in_progress"),
@@ -17,7 +17,7 @@ planUpdateRegistry.register({
 // Phase completed
 planUpdateRegistry.register({
   tag: "PhaseCompleted",
-  handle: (signal, currentPlan) =>
+  handle: (signal, currentPlan, _context) =>
     currentPlan
       ? {
           plan: updatePhaseStatus(currentPlan, signal.phaseId, "done"),
@@ -30,7 +30,7 @@ planUpdateRegistry.register({
 // Phase failed
 planUpdateRegistry.register({
   tag: "PhaseFailed",
-  handle: (signal, currentPlan) =>
+  handle: (signal, currentPlan, _context) =>
     currentPlan
       ? {
           plan: updatePhaseStatus(currentPlan, signal.phaseId, "failed"),

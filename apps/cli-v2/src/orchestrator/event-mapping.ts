@@ -3,6 +3,7 @@
 export type {
   EventMappingRegistry,
   LLMEventMapper,
+  MappingContext,
   SignalMapper,
 } from "./mapping/index.js";
 export {

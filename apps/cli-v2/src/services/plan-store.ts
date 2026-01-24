@@ -1,6 +1,6 @@
 import { Context, type Effect } from "effect";
 import type { PlanStoreError } from "../domain/errors.js";
-import type { Plan, PlanId } from "../domain/plan.js";
+import type { Plan, PlanId } from "../domain/index.js";
 
 /**
  * Service interface for plan persistence.

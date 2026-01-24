@@ -1,4 +1,4 @@
-import type { DomainEvent } from "../../../domain/events.js";
+import type { DomainEvent } from "../../../domain/index.js";
 
 /**
  * Formatter for headless output of domain events.
@@ -25,7 +25,7 @@ export function createHeadlessFormatterRegistry(): HeadlessFormatterRegistry {
   return {
     register<T extends DomainEvent["_tag"]>(formatter: EventFormatter<T>) {
       formatters.set(
-        formatter.tag,
+        formatter.tag as string,
         formatter.format as (event: DomainEvent) => string | null
       );
     },

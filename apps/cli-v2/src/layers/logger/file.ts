@@ -1,6 +1,6 @@
 import { appendFile, mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { Effect, Layer, Ref } from "effect";
+import { DateTime, Effect, Layer, Ref } from "effect";
 import {
   LOG_LEVEL_PRIORITY,
   type LogEntry,
@@ -70,10 +70,11 @@ function createFileLogger(
         return;
       }
 
+      const now = yield* DateTime.now;
       const entry: LogEntry = {
         level,
         message,
-        timestamp: new Date().toISOString(),
+        timestamp: DateTime.formatIso(now),
         context,
       };
 

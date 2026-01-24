@@ -1,4 +1,4 @@
-import type { DomainEvent } from "../../../domain/events.js";
+import type { DomainEvent } from "../../../domain/index.js";
 import type { TUIState } from "../state.js";
 
 /**
@@ -32,7 +32,7 @@ export function createStateReducerRegistry(): StateReducerRegistry {
   return {
     register<T extends DomainEvent["_tag"]>(reducer: StateReducer<T>) {
       reducers.set(
-        reducer.tag,
+        reducer.tag as string,
         reducer.reduce as (state: TUIState, event: DomainEvent) => TUIState
       );
     },

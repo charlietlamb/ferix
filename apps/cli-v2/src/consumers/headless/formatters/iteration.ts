@@ -1,12 +1,22 @@
 import pc from "picocolors";
+import type {
+  IterationCompletedEvent,
+  IterationStartedEvent,
+} from "../../../domain/index.js";
+import type { EventFormatter } from "./registry.js";
 import { headlessFormatterRegistry } from "./registry.js";
 
-headlessFormatterRegistry.register({
+const iterationStartedFormatter: EventFormatter<"IterationStarted"> = {
   tag: "IterationStarted",
-  format: (event) => pc.blue(`[ITER ${event.iteration}] Started`),
-});
+  format: (event: IterationStartedEvent) =>
+    pc.blue(`[ITER ${event.iteration}] Started`),
+};
 
-headlessFormatterRegistry.register({
+const iterationCompletedFormatter: EventFormatter<"IterationCompleted"> = {
   tag: "IterationCompleted",
-  format: (event) => pc.blue(`[ITER ${event.iteration}] Completed`),
-});
+  format: (event: IterationCompletedEvent) =>
+    pc.blue(`[ITER ${event.iteration}] Completed`),
+};
+
+headlessFormatterRegistry.register(iterationStartedFormatter);
+headlessFormatterRegistry.register(iterationCompletedFormatter);

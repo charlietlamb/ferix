@@ -1,7 +1,7 @@
-import { Effect, Layer, Ref } from "effect";
+import { DateTime, Effect, Layer, Ref } from "effect";
 import { SessionStoreError } from "../../domain/errors.js";
+import type { Session } from "../../domain/index.js";
 import {
-  type Session,
   SessionStore,
   type SessionStoreService,
 } from "../../services/session-store.js";
@@ -29,10 +29,11 @@ function createMemorySessionStore(
         const state = yield* Ref.get(stateRef);
         const counter = yield* Ref.updateAndGet(counterRef, (n) => n + 1);
         const sessionId = `test-session-${counter}`;
+        const now = yield* DateTime.now;
 
         const session: Session = {
           id: sessionId,
-          createdAt: new Date().toISOString(),
+          createdAt: DateTime.formatIso(now),
           status: "active",
           originalTask,
           completedTasks: [],

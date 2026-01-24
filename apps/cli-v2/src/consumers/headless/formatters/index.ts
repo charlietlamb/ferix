@@ -16,7 +16,7 @@ export type {
 export { headlessFormatterRegistry } from "./registry.js";
 
 // Re-export convenience function
-import type { DomainEvent } from "../../../domain/events.js";
+import type { DomainEvent } from "../../../domain/index.js";
 import { headlessFormatterRegistry } from "./registry.js";
 
 /**

@@ -1,21 +1,32 @@
 import pc from "picocolors";
+import type {
+  CriteriaDefinedEvent,
+  CriterionFailedEvent,
+  CriterionPassedEvent,
+} from "../../../domain/index.js";
+import type { EventFormatter } from "./registry.js";
 import { headlessFormatterRegistry } from "./registry.js";
 
-headlessFormatterRegistry.register({
+const criteriaDefinedFormatter: EventFormatter<"CriteriaDefined"> = {
   tag: "CriteriaDefined",
-  format: (event) =>
+  format: (event: CriteriaDefinedEvent) =>
     pc.magenta(
       `[CRITERIA] Task ${event.taskId}: ${event.criteria.length} criteria defined`
     ),
-});
+};
 
-headlessFormatterRegistry.register({
+const criterionPassedFormatter: EventFormatter<"CriterionPassed"> = {
   tag: "CriterionPassed",
-  format: (event) => pc.green(`[CHECK] Passed: ${event.criterionId}`),
-});
+  format: (event: CriterionPassedEvent) =>
+    pc.green(`[CHECK] Passed: ${event.criterionId}`),
+};
 
-headlessFormatterRegistry.register({
+const criterionFailedFormatter: EventFormatter<"CriterionFailed"> = {
   tag: "CriterionFailed",
-  format: (event) =>
+  format: (event: CriterionFailedEvent) =>
     pc.red(`[CHECK] Failed: ${event.criterionId} - ${event.reason}`),
-});
+};
+
+headlessFormatterRegistry.register(criteriaDefinedFormatter);
+headlessFormatterRegistry.register(criterionPassedFormatter);
+headlessFormatterRegistry.register(criterionFailedFormatter);

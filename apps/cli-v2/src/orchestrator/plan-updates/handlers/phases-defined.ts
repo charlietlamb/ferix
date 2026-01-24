@@ -3,7 +3,7 @@ import { planUpdateRegistry } from "../registry.js";
 
 planUpdateRegistry.register({
   tag: "PhasesDefined",
-  handle: (signal, currentPlan) =>
+  handle: (signal, currentPlan, _context) =>
     currentPlan
       ? {
           plan: updatePlanWithPhases(currentPlan, signal.taskId, signal.phases),

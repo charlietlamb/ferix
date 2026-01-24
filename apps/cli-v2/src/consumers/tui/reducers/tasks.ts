@@ -1,3 +1,14 @@
+import type {
+  CriteriaDefinedEvent,
+  CriterionFailedEvent,
+  CriterionPassedEvent,
+  PhaseCompletedEvent,
+  PhaseFailedEvent,
+  PhaseStartedEvent,
+  PhasesDefinedEvent,
+  TaskCompletedEvent,
+  TasksDefinedEvent,
+} from "../../../domain/index.js";
 import type { ExecutionMode } from "../state.js";
 import {
   setCriterionStatus,
@@ -7,36 +18,37 @@ import {
   updateTaskCriteria,
   updateTaskPhases,
 } from "./helpers.js";
+import type { StateReducer } from "./registry.js";
 import { stateReducerRegistry } from "./registry.js";
 
-// Tasks defined
-stateReducerRegistry.register({
+const tasksDefinedReducer: StateReducer<"TasksDefined"> = {
   tag: "TasksDefined",
-  reduce: (state, event) => ({
+  reduce: (state, event: TasksDefinedEvent) => ({
     ...state,
     tasks: event.tasks.map(toTUITask),
     currentTaskId: event.tasks[0]?.id,
   }),
-});
+};
 
-// Phases defined
-stateReducerRegistry.register({
+const phasesDefinedReducer: StateReducer<"PhasesDefined"> = {
   tag: "PhasesDefined",
-  reduce: (state, event) => updateTaskPhases(state, event.taskId, event.phases),
-});
+  reduce: (state, event: PhasesDefinedEvent) =>
+    updateTaskPhases(state, event.taskId, event.phases),
+};
 
-// Criteria defined
-stateReducerRegistry.register({
+const criteriaDefinedReducer: StateReducer<"CriteriaDefined"> = {
   tag: "CriteriaDefined",
-  reduce: (state, event) =>
+  reduce: (state, event: CriteriaDefinedEvent) =>
     updateTaskCriteria(state, event.taskId, event.criteria),
-});
+};
 
-// Phase started
-stateReducerRegistry.register({
+const phaseStartedReducer: StateReducer<"PhaseStarted"> = {
   tag: "PhaseStarted",
-  reduce: (state, event) => {
-    const updated = setPhaseStatus(state, event.phaseId, "in_progress");
+  reduce: (state, event: PhaseStartedEvent) => {
+    const updated = setPhaseStatus(state, "in_progress", {
+      phaseId: event.phaseId,
+      timestamp: event.timestamp,
+    });
     const phaseNum = event.phaseId.split(".")[1];
     let executionMode: ExecutionMode = "working";
     if (phaseNum === "1") {
@@ -44,39 +56,45 @@ stateReducerRegistry.register({
     }
     return { ...updated, executionMode };
   },
-});
+};
 
-// Phase completed
-stateReducerRegistry.register({
+const phaseCompletedReducer: StateReducer<"PhaseCompleted"> = {
   tag: "PhaseCompleted",
-  reduce: (state, event) => setPhaseStatus(state, event.phaseId, "done"),
-});
+  reduce: (state, event: PhaseCompletedEvent) =>
+    setPhaseStatus(state, "done", {
+      phaseId: event.phaseId,
+      timestamp: event.timestamp,
+    }),
+};
 
-// Phase failed
-stateReducerRegistry.register({
+const phaseFailedReducer: StateReducer<"PhaseFailed"> = {
   tag: "PhaseFailed",
-  reduce: (state, event) => setPhaseStatus(state, event.phaseId, "failed"),
-});
+  reduce: (state, event: PhaseFailedEvent) =>
+    setPhaseStatus(state, "failed", {
+      phaseId: event.phaseId,
+      timestamp: event.timestamp,
+    }),
+};
 
-// Criterion passed
-stateReducerRegistry.register({
+const criterionPassedReducer: StateReducer<"CriterionPassed"> = {
   tag: "CriterionPassed",
-  reduce: (state, event) =>
+  reduce: (state, event: CriterionPassedEvent) =>
     setCriterionStatus(state, event.criterionId, "passed"),
-});
+};
 
-// Criterion failed
-stateReducerRegistry.register({
+const criterionFailedReducer: StateReducer<"CriterionFailed"> = {
   tag: "CriterionFailed",
-  reduce: (state, event) =>
+  reduce: (state, event: CriterionFailedEvent) =>
     setCriterionStatus(state, event.criterionId, "failed", event.reason),
-});
+};
 
-// Task completed
-stateReducerRegistry.register({
+const taskCompletedReducer: StateReducer<"TaskCompleted"> = {
   tag: "TaskCompleted",
-  reduce: (state, event) => {
-    const updated = setTaskStatus(state, event.taskId, "done");
+  reduce: (state, event: TaskCompletedEvent) => {
+    const updated = setTaskStatus(state, "done", {
+      taskId: event.taskId,
+      timestamp: event.timestamp,
+    });
     const currentIdx = updated.tasks.findIndex((t) => t.id === event.taskId);
     const nextTask = updated.tasks[currentIdx + 1];
     return {
@@ -84,4 +102,14 @@ stateReducerRegistry.register({
       currentTaskId: nextTask?.id,
     };
   },
-});
+};
+
+stateReducerRegistry.register(tasksDefinedReducer);
+stateReducerRegistry.register(phasesDefinedReducer);
+stateReducerRegistry.register(criteriaDefinedReducer);
+stateReducerRegistry.register(phaseStartedReducer);
+stateReducerRegistry.register(phaseCompletedReducer);
+stateReducerRegistry.register(phaseFailedReducer);
+stateReducerRegistry.register(criterionPassedReducer);
+stateReducerRegistry.register(criterionFailedReducer);
+stateReducerRegistry.register(taskCompletedReducer);

@@ -5,27 +5,34 @@ import "./signal-to-domain.js";
 export type {
   EventMappingRegistry,
   LLMEventMapper,
+  MappingContext,
   SignalMapper,
 } from "./registry.js";
 // Re-export registry and types
 export { eventMappingRegistry } from "./registry.js";
 
 // Re-export convenience functions
-import type { DomainEvent } from "../../domain/events.js";
-import type { Signal } from "../../domain/signals.js";
+import type { DomainEvent, Signal } from "../../domain/index.js";
 import type { LLMEvent } from "../../services/llm.js";
+import type { MappingContext } from "./registry.js";
 import { eventMappingRegistry } from "./registry.js";
 
 /**
  * Maps an LLM event to a domain event.
  */
-export function mapLLMEventToDomain(event: LLMEvent): DomainEvent {
-  return eventMappingRegistry.mapLLMEvent(event);
+export function mapLLMEventToDomain(
+  event: LLMEvent,
+  context: MappingContext
+): DomainEvent {
+  return eventMappingRegistry.mapLLMEvent(event, context);
 }
 
 /**
  * Maps a parsed signal to a domain event.
  */
-export function mapSignalToDomain(signal: Signal): DomainEvent {
-  return eventMappingRegistry.mapSignal(signal);
+export function mapSignalToDomain(
+  signal: Signal,
+  context: MappingContext
+): DomainEvent {
+  return eventMappingRegistry.mapSignal(signal, context);
 }

@@ -1,5 +1,5 @@
 import type { Effect, Stream } from "effect";
-import type { DomainEvent } from "../domain/events.js";
+import type { DomainEvent } from "../domain/index.js";
 
 /**
  * A consumer processes a stream of domain events.

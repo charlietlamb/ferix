@@ -1,13 +1,14 @@
-import { Effect, pipe, Ref, Stream } from "effect";
-import type { LoopConfig } from "../domain/config.js";
+import { DateTime, Effect, pipe, Ref, Stream } from "effect";
 import { OrchestratorError } from "../domain/errors.js";
-import type { DomainEvent } from "../domain/events.js";
-import type { Plan } from "../domain/plan.js";
-import type { Signal } from "../domain/signals.js";
+import type { DomainEvent, LoopConfig, Plan, Signal } from "../domain/index.js";
 import type { LLMEvent } from "../services/llm.js";
 import type { PlanStoreService } from "../services/plan-store.js";
 import type { SignalParserService } from "../services/signal-parser.js";
-import { mapLLMEventToDomain, mapSignalToDomain } from "./event-mapping.js";
+import {
+  type MappingContext,
+  mapLLMEventToDomain,
+  mapSignalToDomain,
+} from "./event-mapping.js";
 import {
   flushPlanPersistence,
   type PlanPersistenceState,
@@ -20,7 +21,8 @@ import { buildPrompt } from "./prompt.js";
  */
 function processTextSignals(
   signalParser: SignalParserService,
-  text: string
+  text: string,
+  context: MappingContext
 ): Effect.Effect<
   { events: DomainEvent[]; completed: boolean; signals: Signal[] },
   never,
@@ -45,7 +47,7 @@ function processTextSignals(
     );
 
     for (const signal of signals) {
-      events.push(mapSignalToDomain(signal));
+      events.push(mapSignalToDomain(signal, context));
       parsedSignals.push(signal);
       if (signal._tag === "LoopComplete") {
         completed = true;
@@ -61,20 +63,25 @@ function processTextSignals(
  */
 function processLLMEvent(
   signalParser: SignalParserService,
-  llmEvent: LLMEvent
+  llmEvent: LLMEvent,
+  context: MappingContext
 ): Effect.Effect<
   { events: DomainEvent[]; completed: boolean; signals: Signal[] },
   never,
   never
 > {
   return Effect.gen(function* () {
-    const domainEvent = mapLLMEventToDomain(llmEvent);
+    const domainEvent = mapLLMEventToDomain(llmEvent, context);
     const events: DomainEvent[] = [domainEvent];
     let completed = false;
     const allSignals: Signal[] = [];
 
     if (llmEvent._tag === "Text" && llmEvent.text) {
-      const result = yield* processTextSignals(signalParser, llmEvent.text);
+      const result = yield* processTextSignals(
+        signalParser,
+        llmEvent.text,
+        context
+      );
       events.push(...result.events);
       allSignals.push(...result.signals);
       if (result.completed) {
@@ -83,7 +90,11 @@ function processLLMEvent(
     }
 
     if (llmEvent._tag === "Done") {
-      const result = yield* processTextSignals(signalParser, llmEvent.output);
+      const result = yield* processTextSignals(
+        signalParser,
+        llmEvent.output,
+        context
+      );
       allSignals.push(...result.signals);
       if (result.completed) {
         completed = true;
@@ -138,7 +149,15 @@ export function createIterationStream(
           Stream.flatMap((llmEvent) =>
             Stream.unwrap(
               Effect.gen(function* () {
-                const result = yield* processLLMEvent(signalParser, llmEvent);
+                const now = yield* DateTime.now;
+                const context: MappingContext = {
+                  timestamp: DateTime.toEpochMillis(now),
+                };
+                const result = yield* processLLMEvent(
+                  signalParser,
+                  llmEvent,
+                  context
+                );
                 const events = [...result.events];
 
                 // Process signals to update plan state (in-memory only)

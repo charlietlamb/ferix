@@ -1,11 +1,10 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { Effect, Layer } from "effect";
+import { DateTime, Effect, Layer } from "effect";
 import { humanId } from "human-id";
 import { SessionStoreError } from "../../domain/errors.js";
-import { decodeSession } from "../../domain/schemas.js";
+import { decodeSession, type Session } from "../../domain/index.js";
 import {
-  type Session,
   SessionStore,
   type SessionStoreService,
 } from "../../services/session-store.js";
@@ -23,11 +22,12 @@ const SESSIONS_DIR = ".ferix/sessions";
  *
  * Uses the human-id package which provides a pool of 15m+ combinations.
  * The timestamp suffix ensures uniqueness.
+ *
+ * @param timestampMs - Timestamp in milliseconds to append
  */
-function generateSessionId(): string {
+function generateSessionId(timestampMs: number): string {
   const id = humanId({ separator: "-", capitalize: false });
-  const timestamp = Date.now();
-  return `${id}-${timestamp}`;
+  return `${id}-${timestampMs}`;
 }
 
 /**
@@ -103,10 +103,12 @@ const make: SessionStoreService = {
       const sessionsDir = join(process.cwd(), SESSIONS_DIR);
       yield* ensureDir(sessionsDir);
 
-      const sessionId = generateSessionId();
+      const now = yield* DateTime.now;
+      const timestampMs = DateTime.toEpochMillis(now);
+      const sessionId = generateSessionId(timestampMs);
       const session: Session = {
         id: sessionId,
-        createdAt: new Date().toISOString(),
+        createdAt: DateTime.formatIso(now),
         status: "active",
         originalTask,
         completedTasks: [],

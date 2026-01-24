@@ -1,6 +1,6 @@
 import { Effect, Layer, Ref } from "effect";
 import { PlanStoreError } from "../../domain/errors.js";
-import { type Plan, PlanId } from "../../domain/plan.js";
+import { type Plan, PlanId } from "../../domain/index.js";
 import { PlanStore, type PlanStoreService } from "../../services/plan-store.js";
 
 /**

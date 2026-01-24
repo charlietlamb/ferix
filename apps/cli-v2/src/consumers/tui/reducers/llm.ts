@@ -1,26 +1,37 @@
+import type {
+  LLMTextEvent,
+  LLMToolStartEvent,
+  LLMToolUseEvent,
+} from "../../../domain/index.js";
 import { appendOutput, appendToolUse } from "./helpers.js";
+import type { StateReducer } from "./registry.js";
 import { stateReducerRegistry } from "./registry.js";
 
-// LLM text
-stateReducerRegistry.register({
+const llmTextReducer: StateReducer<"LLMText"> = {
   tag: "LLMText",
-  reduce: (state, event) => appendOutput(state, event.text),
-});
+  reduce: (state, event: LLMTextEvent) => appendOutput(state, event.text),
+};
 
-// LLM tool start
-stateReducerRegistry.register({
+const llmToolStartReducer: StateReducer<"LLMToolStart"> = {
   tag: "LLMToolStart",
-  reduce: (state, event) => ({ ...state, currentTool: event.tool }),
-});
+  reduce: (state, event: LLMToolStartEvent) => ({
+    ...state,
+    currentTool: event.tool,
+  }),
+};
 
-// LLM tool use
-stateReducerRegistry.register({
+const llmToolUseReducer: StateReducer<"LLMToolUse"> = {
   tag: "LLMToolUse",
-  reduce: (state, event) => appendToolUse(state, event.tool, event.input),
-});
+  reduce: (state, event: LLMToolUseEvent) =>
+    appendToolUse(state, event.tool, event.input),
+};
 
-// LLM tool end
-stateReducerRegistry.register({
+const llmToolEndReducer: StateReducer<"LLMToolEnd"> = {
   tag: "LLMToolEnd",
   reduce: (state) => ({ ...state, currentTool: undefined }),
-});
+};
+
+stateReducerRegistry.register(llmTextReducer);
+stateReducerRegistry.register(llmToolStartReducer);
+stateReducerRegistry.register(llmToolUseReducer);
+stateReducerRegistry.register(llmToolEndReducer);
