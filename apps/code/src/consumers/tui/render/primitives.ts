@@ -87,9 +87,18 @@ export function separator(width: number): string {
 }
 
 export function borderedLine(content: string, width: number): string {
-  const stripped = stripAnsi(content);
-  const padding = Math.max(0, width - stripped.length - 4);
-  return `${pc.cyan(box.vertical)} ${content}${" ".repeat(padding)} ${pc.cyan(box.vertical)}`;
+  const innerWidth = width - 4; // borders + padding on each side
+
+  // Truncate if content exceeds available width
+  const finalContent =
+    stripAnsi(content).length > innerWidth
+      ? truncate(content, innerWidth)
+      : content;
+
+  const finalStripped = stripAnsi(finalContent);
+  const padding = Math.max(0, innerWidth - finalStripped.length);
+
+  return `${pc.cyan(box.vertical)} ${finalContent}${" ".repeat(padding)} ${pc.cyan(box.vertical)}`;
 }
 
 export function emptyBorderedLine(width: number): string {
