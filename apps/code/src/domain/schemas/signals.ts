@@ -92,6 +92,36 @@ export const LoopCompleteSignalSchema = S.TaggedStruct("LoopComplete", {});
 export type LoopCompleteSignal = typeof LoopCompleteSignalSchema.Type;
 
 /**
+ * Learning category types.
+ */
+export const LearningCategorySchema = S.Literal(
+  "success",
+  "failure",
+  "optimization"
+);
+export type LearningCategory = typeof LearningCategorySchema.Type;
+
+/**
+ * Learning signal - records insights discovered during iteration.
+ */
+export const LearningSignalSchema = S.TaggedStruct("Learning", {
+  content: S.String,
+  category: S.optional(LearningCategorySchema),
+});
+export type LearningSignal = typeof LearningSignalSchema.Type;
+
+/**
+ * Guardrail signal - records failure patterns to avoid.
+ */
+export const GuardrailSignalSchema = S.TaggedStruct("Guardrail", {
+  pattern: S.String,
+  sign: S.String,
+  avoidance: S.String,
+  severity: S.Literal("warning", "critical"),
+});
+export type GuardrailSignal = typeof GuardrailSignalSchema.Type;
+
+/**
  * Union of all signals.
  */
 export const SignalSchema = S.Union(
@@ -107,7 +137,9 @@ export const SignalSchema = S.Union(
   CheckFailedSignalSchema,
   ReviewCompleteSignalSchema,
   TaskCompleteSignalSchema,
-  LoopCompleteSignalSchema
+  LoopCompleteSignalSchema,
+  LearningSignalSchema,
+  GuardrailSignalSchema
 );
 export type Signal = typeof SignalSchema.Type;
 

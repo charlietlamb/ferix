@@ -1,16 +1,24 @@
 import { Layer } from "effect";
+import { FileSystemGuardrails } from "./guardrails/file-system.js";
+import { MemoryGuardrails } from "./guardrails/memory.js";
 import { ClaudeCLI } from "./llm/claude-cli.js";
 import { Mock } from "./llm/mock.js";
 import { FileSystemPlan } from "./plan/file-system.js";
 import { MemoryPlan } from "./plan/memory.js";
+import { FileSystemProgress } from "./progress/file-system.js";
+import { MemoryProgress } from "./progress/memory.js";
 import { FileSystemSession } from "./session/file-system.js";
 import { MemorySession } from "./session/memory.js";
 import { FerixParser } from "./signal/ferix-parser.js";
 
+export { FileSystemGuardrails } from "./guardrails/file-system.js";
+export { MemoryGuardrails } from "./guardrails/memory.js";
 export { ClaudeCLI } from "./llm/claude-cli.js";
 export { Mock, Mock as MockLLM } from "./llm/mock.js";
 export { FileSystemPlan } from "./plan/file-system.js";
 export { MemoryPlan } from "./plan/memory.js";
+export { FileSystemProgress } from "./progress/file-system.js";
+export { MemoryProgress } from "./progress/memory.js";
 export { FileSystemSession } from "./session/file-system.js";
 export { MemorySession } from "./session/memory.js";
 export { FerixParser } from "./signal/ferix-parser.js";
@@ -21,7 +29,7 @@ export { FerixParser } from "./signal/ferix-parser.js";
  * Uses real implementations:
  * - Claude CLI for LLM
  * - Ferix parser for signals
- * - File system for plan and session storage
+ * - File system for plan, session, progress, and guardrails storage
  *
  * @example
  * ```typescript
@@ -39,7 +47,9 @@ export const ProductionLayers = Layer.mergeAll(
   ClaudeCLI.Live,
   FerixParser.Live,
   FileSystemPlan.Live,
-  FileSystemSession.Live
+  FileSystemSession.Live,
+  FileSystemProgress.Live,
+  FileSystemGuardrails.Live
 );
 
 /**
@@ -48,7 +58,7 @@ export const ProductionLayers = Layer.mergeAll(
  * Uses mock/in-memory implementations:
  * - Mock LLM (configurable events)
  * - Ferix parser (real implementation - pure)
- * - In-memory plan and session storage
+ * - In-memory plan, session, progress, and guardrails storage
  *
  * @example
  * ```typescript
@@ -68,7 +78,9 @@ export const TestLayers = Layer.mergeAll(
   Mock.Live,
   FerixParser.Live,
   MemoryPlan.Live,
-  MemorySession.Live
+  MemorySession.Live,
+  MemoryProgress.Live,
+  MemoryGuardrails.Live
 );
 
 /**
@@ -94,6 +106,8 @@ export function createTestLayers(
     Mock.layer({ events }),
     FerixParser.Live,
     MemoryPlan.layer(),
-    MemorySession.layer()
+    MemorySession.layer(),
+    MemoryProgress.layer(),
+    MemoryGuardrails.layer()
   );
 }

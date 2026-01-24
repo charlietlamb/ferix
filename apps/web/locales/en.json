@@ -7,19 +7,20 @@
     "placeholder": "Search for skills, repositories, subagents, rules, or tags..."
   },
   "hero": {
-    "title": "A collection of skills, subagents and rules for",
+    "title": "An ecosystem of tools for building applications with",
     "description": "Explore the latest skills, subagents and rules created by our community. Perfect for Cursor, Claude, and other AI agents."
   },
   "cli": {
-    "title": "Introducing ferix-code",
+    "title": "Introducing FerixCode",
     "description": "A powerful CLI for AI-assisted development. Write, refactor, and debug code with natural language commands.",
-    "banner": "Meet ferix-code. A powerful CLI for development with Ralph loops. Built on top of Claude, Cursor & OpenCode.",
+    "banner": "Meet FerixCode. A powerful CLI for development with Ralph loops. Built on top of Claude, Cursor & OpenCode.",
     "learnMore": "Learn More"
   },
   "code": {
-    "title": "Introducing ferix-code",
+    "title": "Introducing FerixCode",
     "description": "A powerful CLI that brings AI-assisted development to your terminal. Write, refactor, and debug code with natural language commands.",
     "install": "Install",
+    "learnMore": "Learn More",
     "feature1Title": "Natural Language",
     "feature1Description": "Describe what you want in plain English and let the AI write the code for you.",
     "feature2Title": "Context Aware",

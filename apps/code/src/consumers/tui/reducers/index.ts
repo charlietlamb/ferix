@@ -4,6 +4,7 @@ import "./discovery.js";
 import "./iteration.js";
 import "./llm.js";
 import "./loop.js";
+import "./progress.js";
 import "./tasks.js";
 
 // Re-export formatToolInput from tools

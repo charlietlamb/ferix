@@ -3,7 +3,7 @@ import { AppPage } from "@ferix/ui/components/layout/app-page";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "ferix-code - AI-Powered CLI",
+  title: "FerixCode - AI-Powered CLI",
   description: "A powerful CLI for AI-assisted development",
   alternates: {
     canonical: "/code",

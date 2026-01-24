@@ -1,6 +1,8 @@
 // Import handlers to register them
 import "./handlers/criteria-defined.js";
 import "./handlers/criterion-lifecycle.js";
+import "./handlers/guardrail.js";
+import "./handlers/learning.js";
 import "./handlers/phase-lifecycle.js";
 import "./handlers/phases-defined.js";
 import "./handlers/task-complete.js";

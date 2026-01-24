@@ -243,11 +243,11 @@ describe("FerixParser", () => {
       );
 
       expect(result).toHaveLength(3);
-      expect(result.map((s) => s._tag)).toEqual([
-        "PhaseStarted",
-        "PhaseCompleted",
-        "CriterionPassed",
-      ]);
+      // Order depends on spec registration order, not text position
+      const tags = result.map((s) => s._tag).sort();
+      expect(tags).toEqual(
+        ["CriterionPassed", "PhaseCompleted", "PhaseStarted"].sort()
+      );
     });
   });
 

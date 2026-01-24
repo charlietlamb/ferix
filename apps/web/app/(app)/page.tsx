@@ -1,6 +1,6 @@
+import { CodeHero } from "@ferix/ui/components/code/code-hero";
 import { CategoryGrid } from "@ferix/ui/components/home/categories/category-grid";
 import { CLIBanner } from "@ferix/ui/components/home/cli/cli-banner";
-import { CLISection } from "@ferix/ui/components/home/cli/cli-section";
 import { CTASection } from "@ferix/ui/components/home/cta/cta-section";
 import { Gutter } from "@ferix/ui/components/home/gutter";
 import { HeroSection } from "@ferix/ui/components/home/hero/hero-section";
@@ -25,9 +25,9 @@ export default function HomePage() {
       <CLIBanner />
       <HeroSection />
       <SearchSection />
-      <RepositoryGrid />
+      <CodeHero variant="compact" />
       <Gutter />
-      <CLISection />
+      <RepositoryGrid />
       <Gutter />
       <PopularPrompts />
       <Gutter />

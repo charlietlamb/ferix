@@ -1,30 +1,37 @@
 "use client";
 
+import { cn } from "@ferix/ui/lib/utils";
 import { useTranslations } from "next-intl";
 
-export function CodeFeatures() {
+const FEATURE_KEYS = ["feature1", "feature2", "feature3"] as const;
+
+interface CodeFeaturesProps {
+  compact?: boolean;
+}
+
+export function CodeFeatures({ compact = false }: CodeFeaturesProps) {
   const t = useTranslations("code");
 
   return (
-    <div className="grid grid-cols-1 border-border border-t md:grid-cols-3">
-      <div className="flex flex-col gap-2 border-border border-b p-6 md:border-r md:border-b-0">
-        <h3 className="font-medium">{t("feature1Title")}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t("feature1Description")}
-        </p>
-      </div>
-      <div className="flex flex-col gap-2 border-border border-b p-6 md:border-r md:border-b-0">
-        <h3 className="font-medium">{t("feature2Title")}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t("feature2Description")}
-        </p>
-      </div>
-      <div className="flex flex-col gap-2 p-6">
-        <h3 className="font-medium">{t("feature3Title")}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t("feature3Description")}
-        </p>
-      </div>
+    <div className="grid flex-1 grid-cols-1 divide-y lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+      {FEATURE_KEYS.map((key) => (
+        <div
+          className={cn("flex flex-col gap-2", compact ? "p-4" : "p-6")}
+          key={key}
+        >
+          <h3 className={cn("font-medium", compact && "text-sm")}>
+            {t(`${key}Title`)}
+          </h3>
+          <p
+            className={cn(
+              "text-muted-foreground",
+              compact ? "text-xs" : "text-sm"
+            )}
+          >
+            {t(`${key}Description`)}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }

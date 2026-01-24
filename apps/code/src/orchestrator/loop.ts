@@ -7,21 +7,29 @@ import type {
   Plan,
   Session,
 } from "../domain/index.js";
+import { GuardrailsStore } from "../services/guardrails-store.js";
 import { LLM } from "../services/llm.js";
 import { PlanStore } from "../services/plan-store.js";
+import { ProgressStore } from "../services/progress-store.js";
 import { SessionStore } from "../services/session-store.js";
 import { SignalParser } from "../services/signal-parser.js";
 import { createDiscoveryStream } from "./discovery.js";
-import { createIterationStream } from "./iteration.js";
+import {
+  createIterationStream,
+  createRalphIterationStream,
+} from "./iteration.js";
 
 /**
  * Required services for the orchestrator.
+ * Now includes ProgressStore and GuardrailsStore for RALPH pattern support.
  */
 export type OrchestratorServices =
   | LLM
   | SignalParser
   | PlanStore
-  | SessionStore;
+  | SessionStore
+  | ProgressStore
+  | GuardrailsStore;
 
 /**
  * Run the ralph loop.
@@ -156,6 +164,127 @@ export function runLoop(
       );
     }).pipe(
       // Also catch setup errors (e.g., session creation failure)
+      Effect.catchAll((error: OrchestratorError) =>
+        Effect.succeed(
+          Stream.succeed({
+            _tag: "LoopFailed",
+            error: {
+              message: error.message,
+              phase: error.phase,
+            },
+          } as DomainEvent)
+        )
+      )
+    )
+  );
+}
+
+/**
+ * Run the ralph loop with full RALPH pattern support.
+ *
+ * Key differences from runLoop:
+ * 1. Each iteration reads fresh context from files (progress, guardrails)
+ * 2. LLM prompt focuses on ONLY the current task, not all tasks
+ * 3. Learnings and guardrails are persisted to files after each iteration
+ * 4. Supports cross-iteration learning through file-based state
+ *
+ * @param config - Loop configuration
+ * @returns Stream of domain events
+ */
+export function runRalphLoop(
+  config: LoopConfig
+): Stream.Stream<DomainEvent, never, OrchestratorServices> {
+  return Stream.unwrap(
+    Effect.gen(function* () {
+      const llm = yield* LLM;
+      const signalParser = yield* SignalParser;
+      const sessionStore = yield* SessionStore;
+      const planStore = yield* PlanStore;
+      const progressStore = yield* ProgressStore;
+      const guardrailsStore = yield* GuardrailsStore;
+
+      const session = yield* sessionStore.create(config.task).pipe(
+        Effect.mapError(
+          (e) =>
+            new OrchestratorError({
+              message: `Failed to create session: ${e.message}`,
+              phase: "setup",
+              cause: e,
+            })
+        )
+      );
+
+      const startTimeUtc = yield* DateTime.now;
+      const startTime = DateTime.toEpochMillis(startTimeUtc);
+
+      // Use Effect Ref for mutable state - still needed for in-iteration updates
+      // but state is read fresh from files at the START of each iteration
+      const loopCompletedRef = yield* Ref.make(false);
+      const currentPlanRef = yield* Ref.make<Plan | undefined>(undefined);
+
+      const maxIterations =
+        config.maxIterations === 0
+          ? Number.POSITIVE_INFINITY
+          : config.maxIterations;
+
+      const loopStarted: DomainEvent = {
+        _tag: "LoopStarted",
+        config,
+        timestamp: startTime,
+      };
+
+      // Discovery phase - runs LLM to break down the task into subtasks
+      const discoveryStream = createDiscoveryStream(
+        llm,
+        signalParser,
+        planStore,
+        currentPlanRef,
+        config,
+        session.id
+      );
+
+      // RALPH iterations - each reads fresh context from files
+      const iterationsStream: Stream.Stream<DomainEvent, never, never> =
+        Stream.unfoldEffect(1, (iteration: number) =>
+          Effect.gen(function* () {
+            const completed = yield* Ref.get(loopCompletedRef);
+            if (completed || iteration > maxIterations) {
+              return Option.none<readonly [number, number]>();
+            }
+            return Option.some([iteration, iteration + 1] as const);
+          })
+        ).pipe(
+          Stream.flatMap((iteration: number) =>
+            createRalphIterationStream(
+              llm,
+              signalParser,
+              planStore,
+              progressStore,
+              guardrailsStore,
+              currentPlanRef,
+              loopCompletedRef,
+              config,
+              iteration,
+              session.id
+            )
+          )
+        );
+
+      const completionStream = createCompletionStream(
+        sessionStore,
+        session,
+        config,
+        startTime,
+        loopCompletedRef
+      );
+
+      return pipe(
+        Stream.succeed(loopStarted),
+        Stream.concat(discoveryStream),
+        Stream.concat(iterationsStream),
+        Stream.concat(completionStream)
+      );
+    }).pipe(
       Effect.catchAll((error: OrchestratorError) =>
         Effect.succeed(
           Stream.succeed({

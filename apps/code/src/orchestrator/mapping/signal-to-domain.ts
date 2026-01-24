@@ -84,3 +84,32 @@ eventMappingRegistry.registerSignalMapper({
     },
   }),
 });
+
+// Learning signal - maps to LearningRecorded event
+// Note: The actual persistence happens in iteration.ts, this is just for event emission
+eventMappingRegistry.registerSignalMapper({
+  tag: "Learning",
+  map: (signal, context) => ({
+    _tag: "LearningRecorded",
+    iteration: 0, // Will be overwritten by iteration stream
+    content: signal.content,
+    category: signal.category,
+    timestamp: context.timestamp,
+  }),
+});
+
+// Guardrail signal - maps to GuardrailAdded event
+// Note: The actual persistence happens in iteration.ts, this is just for event emission
+eventMappingRegistry.registerSignalMapper({
+  tag: "Guardrail",
+  map: (signal, context) => ({
+    _tag: "GuardrailAdded",
+    id: `gr-pending-${context.timestamp}`, // Temp ID, real one assigned in iteration
+    iteration: 0, // Will be overwritten by iteration stream
+    pattern: signal.pattern,
+    sign: signal.sign,
+    avoidance: signal.avoidance,
+    severity: signal.severity,
+    timestamp: context.timestamp,
+  }),
+});

@@ -2,7 +2,50 @@
 
 import { useCopy } from "@ferix/ui/hooks/use-copy";
 import { cn } from "@ferix/ui/lib/utils";
-import { CheckIcon, CopySimpleIcon, TerminalIcon } from "@phosphor-icons/react";
+import { CheckIcon, CopyIcon, TerminalIcon } from "@phosphor-icons/react";
+import { cva } from "class-variance-authority";
+
+const terminalCommandVariants = cva(
+  "flex cursor-pointer items-center transition-opacity hover:opacity-80",
+  {
+    variants: {
+      variant: {
+        hero: "gap-4 bg-muted/20 p-6 font-mono text-foreground",
+        compact: "group relative gap-2 overflow-x-auto bg-muted p-4",
+      },
+    },
+    defaultVariants: {
+      variant: "compact",
+    },
+  }
+);
+
+const iconVariants = cva("shrink-0 text-muted-foreground", {
+  variants: {
+    variant: {
+      hero: "size-6",
+      compact: "size-4",
+    },
+  },
+});
+
+const codeVariants = cva("flex-1 text-left", {
+  variants: {
+    variant: {
+      hero: "truncate text-lg md:text-xl",
+      compact: "font-mono text-sm",
+    },
+  },
+});
+
+const copyIconVariants = cva("ml-auto shrink-0 text-muted-foreground", {
+  variants: {
+    variant: {
+      hero: "size-6",
+      compact: "size-4",
+    },
+  },
+});
 
 interface TerminalCommandProps {
   command: string;
@@ -15,56 +58,21 @@ export function TerminalCommand({
 }: TerminalCommandProps) {
   const { copy, copied } = useCopy();
 
-  const handleCopy = () => {
-    copy(command);
-  };
-
-  if (variant === "hero") {
-    return (
-      <div className="border-border border-b bg-muted/20 p-6">
-        <button
-          className="flex w-full items-center justify-between gap-4 font-mono text-foreground transition-opacity hover:opacity-80"
-          onClick={handleCopy}
-          type="button"
-        >
-          <div className="flex items-center gap-3">
-            <TerminalIcon className="size-6 text-foreground/60" />
-            <code className="text-lg md:text-xl">{command}</code>
-          </div>
-          <span className="flex size-6 shrink-0 items-center justify-center">
-            {copied ? (
-              <CheckIcon className="size-6 text-green-400" />
-            ) : (
-              <CopySimpleIcon className="size-6 text-foreground/60" />
-            )}
-          </span>
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="group relative">
-      <pre className="flex items-center gap-2 overflow-x-auto bg-muted p-4">
-        <TerminalIcon className="size-4 shrink-0" />
-        <code className="font-mono text-sm">{command}</code>
-      </pre>
-      <button
-        className={cn(
-          "absolute top-2 right-2 rounded-md p-2 opacity-0 transition-opacity group-hover:opacity-100",
-          "hover:bg-muted-foreground/10"
-        )}
-        onClick={handleCopy}
-        type="button"
-      >
-        <span className="flex size-4 items-center justify-center">
-          {copied ? (
-            <CheckIcon className="size-4 text-green-500" />
-          ) : (
-            <CopySimpleIcon className="size-4 text-muted-foreground" />
-          )}
-        </span>
-      </button>
-    </div>
+    <button
+      className={cn(terminalCommandVariants({ variant }))}
+      onClick={() => copy(command)}
+      type="button"
+    >
+      <TerminalIcon className={cn(iconVariants({ variant }))} />
+      <code className={cn(codeVariants({ variant }))}>{command}</code>
+      {copied ? (
+        <CheckIcon
+          className={cn(copyIconVariants({ variant }), "text-green-500")}
+        />
+      ) : (
+        <CopyIcon className={cn(copyIconVariants({ variant }))} />
+      )}
+    </button>
   );
 }

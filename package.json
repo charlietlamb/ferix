@@ -12,7 +12,8 @@
     "format": "bunx biome format --write",
     "check-types": "turbo run check-types",
     "prepare": "husky",
-    "test": "echo 'No tests yet'"
+    "test": "echo 'No tests yet'",
+    "bump": "bun build:code && cd apps/code && npm publish --tag beta"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",

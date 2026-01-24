@@ -35,6 +35,26 @@ export class SessionStoreError extends Data.TaggedError("SessionStoreError")<{
 }> {}
 
 /**
+ * Error that occurs during progress storage operations.
+ */
+export class ProgressStoreError extends Data.TaggedError("ProgressStoreError")<{
+  readonly message: string;
+  readonly operation: "append" | "load" | "getRecent";
+  readonly cause?: unknown;
+}> {}
+
+/**
+ * Error that occurs during guardrails storage operations.
+ */
+export class GuardrailsStoreError extends Data.TaggedError(
+  "GuardrailsStoreError"
+)<{
+  readonly message: string;
+  readonly operation: "add" | "load" | "getActive";
+  readonly cause?: unknown;
+}> {}
+
+/**
  * Error that occurs during orchestrator execution.
  */
 export class OrchestratorError extends Data.TaggedError("OrchestratorError")<{
@@ -51,4 +71,6 @@ export type FerixError =
   | ParseError
   | PlanStoreError
   | SessionStoreError
+  | ProgressStoreError
+  | GuardrailsStoreError
   | OrchestratorError;

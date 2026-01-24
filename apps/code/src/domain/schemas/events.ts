@@ -212,6 +212,43 @@ export const PlanUpdateFailedEventSchema = taggedEvent("PlanUpdateFailed", {
 export type PlanUpdateFailedEvent = typeof PlanUpdateFailedEventSchema.Type;
 
 /**
+ * Learning recorded event - captures insights discovered during iteration.
+ */
+export const LearningRecordedEventSchema = taggedEvent("LearningRecorded", {
+  iteration: S.Number,
+  content: S.String,
+  category: S.optional(S.Literal("success", "failure", "optimization")),
+  timestamp: S.Number,
+});
+export type LearningRecordedEvent = typeof LearningRecordedEventSchema.Type;
+
+/**
+ * Guardrail added event - captures failure patterns to avoid.
+ */
+export const GuardrailAddedEventSchema = taggedEvent("GuardrailAdded", {
+  id: S.String,
+  iteration: S.Number,
+  pattern: S.String,
+  sign: S.String,
+  avoidance: S.String,
+  severity: S.Literal("warning", "critical"),
+  timestamp: S.Number,
+});
+export type GuardrailAddedEvent = typeof GuardrailAddedEventSchema.Type;
+
+/**
+ * Progress updated event - signals that progress file was updated.
+ */
+export const ProgressUpdatedEventSchema = taggedEvent("ProgressUpdated", {
+  sessionId: S.String,
+  iteration: S.Number,
+  taskId: S.String,
+  action: S.Literal("started", "completed", "failed", "learning"),
+  timestamp: S.Number,
+});
+export type ProgressUpdatedEvent = typeof ProgressUpdatedEventSchema.Type;
+
+/**
  * Union of all domain events.
  */
 export const DomainEventSchema = S.Union(
@@ -240,7 +277,10 @@ export const DomainEventSchema = S.Union(
   TaskCompletedEventSchema,
   PlanCreatedEventSchema,
   PlanUpdatedEventSchema,
-  PlanUpdateFailedEventSchema
+  PlanUpdateFailedEventSchema,
+  LearningRecordedEventSchema,
+  GuardrailAddedEventSchema,
+  ProgressUpdatedEventSchema
 );
 
 /**
@@ -272,7 +312,10 @@ export type DomainEvent =
   | TaskCompletedEvent
   | PlanCreatedEvent
   | PlanUpdatedEvent
-  | PlanUpdateFailedEvent;
+  | PlanUpdateFailedEvent
+  | LearningRecordedEvent
+  | GuardrailAddedEvent
+  | ProgressUpdatedEvent;
 
 /**
  * Type guard utilities for domain events.

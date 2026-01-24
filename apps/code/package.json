@@ -1,9 +1,10 @@
 {
   "name": "ferix-code",
-  "version": "0.0.2-beta.3",
+  "version": "0.0.2-beta.5",
   "description": "Composable RALPH loops for AI coding agents - v2 with Effect",
   "type": "module",
   "bin": {
+    "ferix": "dist/index.js",
     "ferix-code": "dist/index.js"
   },
   "files": [
