@@ -13,12 +13,12 @@
   "cli": {
     "title": "Introducing FerixCode",
     "description": "A powerful CLI for AI-assisted development. Write, refactor, and debug code with natural language commands.",
-    "banner": "Meet FerixCode. A powerful CLI for development with Ralph loops. Built on top of Claude, Cursor & OpenCode.",
+    "banner": "Introducing FerixCode. A powerful CLI for development with Ralph loops. Built on top of Claude, Cursor & OpenCode.",
     "learnMore": "Learn More"
   },
   "code": {
     "title": "Introducing FerixCode",
-    "description": "A powerful CLI that brings AI-assisted development to your terminal. Write, refactor, and debug code with natural language commands.",
+    "description": "A powerful CLI for development with Ralph loops. Built on top of Claude, Cursor & OpenCode.",
     "install": "Install",
     "learnMore": "Learn More",
     "feature1Title": "Natural Language",

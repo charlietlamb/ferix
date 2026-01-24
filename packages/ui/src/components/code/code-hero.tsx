@@ -70,7 +70,7 @@ export function CodeHero({ variant = "default" }: CodeHeroProps) {
       >
         <Ralph
           className={cn(
-            "h-auto w-full text-foreground",
+            "h-auto w-full text-foreground transition-colors duration-500 hover:text-primary",
             isCompact
               ? "max-w-[150px] md:max-w-[200px]"
               : "max-w-[200px] md:max-w-[280px]"

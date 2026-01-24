@@ -1,6 +1,6 @@
 import { exec } from "node:child_process";
-import { access, mkdir, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { access, copyFile, mkdir, rm } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { Effect, Layer } from "effect";
 import { GitError } from "../../domain/errors.js";
@@ -75,6 +75,47 @@ function directoryExists(dirPath: string): Effect.Effect<boolean, never> {
 }
 
 /**
+ * Copy untracked files from the main working directory to the worktree.
+ * This ensures user-created files (like cleanup.md, prd.md) are available in the worktree.
+ * Respects .gitignore via --exclude-standard flag.
+ */
+function copyUntrackedFiles(
+  worktreeDir: string
+): Effect.Effect<void, GitError> {
+  return Effect.gen(function* () {
+    // Get list of untracked files (respects .gitignore via --exclude-standard)
+    const untrackedOutput = yield* gitExec(
+      "git ls-files --others --exclude-standard"
+    ).pipe(Effect.catchAll(() => Effect.succeed("")));
+
+    const untrackedFiles = untrackedOutput
+      .split("\n")
+      .filter((f) => f.length > 0)
+      .filter((f) => !f.startsWith(".ferix/")); // Exclude internal ferix files
+
+    // Copy each untracked file to the worktree
+    for (const file of untrackedFiles) {
+      const srcPath = join(process.cwd(), file);
+      const destPath = join(worktreeDir, file);
+
+      yield* Effect.tryPromise({
+        try: async () => {
+          // Ensure destination directory exists
+          await mkdir(dirname(destPath), { recursive: true });
+          // Copy file
+          await copyFile(srcPath, destPath);
+        },
+        catch: () =>
+          new GitError({
+            message: `Failed to copy untracked file: ${file}`,
+            operation: "createWorktree",
+          }),
+      }).pipe(Effect.catchAll(() => Effect.succeed(undefined)));
+    }
+  });
+}
+
+/**
  * File system git service implementation.
  *
  * Uses git CLI for worktree operations.
@@ -120,6 +161,9 @@ const make: GitService = {
             })
         )
       );
+
+      // Copy untracked files to the worktree
+      yield* copyUntrackedFiles(worktreeDir);
 
       return worktreeDir as WorktreePath;
     }),
