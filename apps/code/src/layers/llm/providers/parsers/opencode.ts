@@ -77,6 +77,44 @@ export function isStepFinish(json: unknown): json is {
 }
 
 /**
+ * Checks if the parsed JSON represents a tool_use event.
+ *
+ * OpenCode tool_use events arrive as complete events (not streamed like Claude/Cursor).
+ * They contain the full tool input and output in a single event.
+ */
+export function isToolUse(json: unknown): json is {
+  type: "tool_use";
+  part: {
+    tool: string;
+    callID: string;
+    state: {
+      status: string;
+      input: unknown;
+      output?: string;
+    };
+  };
+} {
+  if (typeof json !== "object" || json === null) {
+    return false;
+  }
+  const obj = json as Record<string, unknown>;
+  if (obj.type !== "tool_use") {
+    return false;
+  }
+  if (typeof obj.part !== "object" || obj.part === null) {
+    return false;
+  }
+  const part = obj.part as Record<string, unknown>;
+  if (typeof part.tool !== "string") {
+    return false;
+  }
+  if (typeof part.state !== "object" || part.state === null) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * Extracts text from OpenCode CLI text events.
  */
 export function extractText(json: unknown): string | null {
@@ -88,23 +126,22 @@ export function extractText(json: unknown): string | null {
 
 /**
  * Extracts tool information from stream events.
- * Tool support is minimal for initial implementation.
+ *
+ * OpenCode sends complete tool events (not streamed like Claude/Cursor),
+ * so we return a "complete" type that signals all tool info is available at once.
  */
 export function extractToolInfo(json: unknown): {
-  type: "start" | "input_delta" | "end";
+  type: "start" | "input_delta" | "end" | "complete";
   name: string;
   partialJson?: string;
 } | null {
-  // Tool support will be added when we can test against actual OpenCode output
-  // For now, return null to ignore tool events
-  if (isStepStart(json) && json.part) {
-    // Future: parse tool info from part field
-    return null;
-  }
-
-  if (isStepFinish(json)) {
-    // Future: could signal tool end
-    return null;
+  // Handle complete tool_use events from OpenCode
+  if (isToolUse(json)) {
+    return {
+      type: "complete",
+      name: json.part.tool,
+      partialJson: JSON.stringify(json.part.state.input),
+    };
   }
 
   return null;

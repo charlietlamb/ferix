@@ -4,9 +4,11 @@ import type { LLMError } from "../../domain/errors.js";
 import type { LLMEvent } from "../../domain/schemas/llm.js";
 import {
   extractText,
+  extractToolInfo,
   isStepFinish,
   parseJsonLine,
 } from "./providers/parsers/opencode.js";
+import { safeParseJson } from "./providers/parsers/stream-json.js";
 import {
   createLLMEventStream,
   type StreamEmit,
@@ -31,6 +33,21 @@ function processOpenCodeEvent(
     return;
   }
 
+  // Handle tool events
+  // OpenCode sends complete tool events (not streamed), so we emit the full sequence
+  const toolInfo = extractToolInfo(json);
+  if (toolInfo && toolInfo.type === "complete") {
+    emit.single({ _tag: "ToolStart", tool: toolInfo.name });
+    if (toolInfo.partialJson) {
+      const input = safeParseJson(toolInfo.partialJson);
+      if (input !== null) {
+        emit.single({ _tag: "ToolUse", tool: toolInfo.name, input });
+      }
+    }
+    emit.single({ _tag: "ToolEnd", tool: toolInfo.name });
+    return;
+  }
+
   // step_finish is informational - we don't need to act on it
   // The process close event will handle completion
   if (isStepFinish(json)) {
@@ -52,6 +69,7 @@ const openCodeParser: StreamParser = {
  *
  * OpenCode uses a different JSON format than Claude/Cursor:
  * - `type: "text"` events contain text directly in `text` field
+ * - `type: "tool_use"` events contain complete tool call info
  * - `type: "step_finish"` events signal completion
  *
  * @param child - The spawned child process

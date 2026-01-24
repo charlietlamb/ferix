@@ -5,6 +5,38 @@ import { MAX_TOOL_INPUT_LENGTH } from "../constants.js";
 const brightWhite = (s: string) => pc.bold(pc.white(s));
 
 /**
+ * Normalize tool name for case-insensitive lookup.
+ */
+function normalizeToolName(tool: string): string {
+  return tool.toLowerCase();
+}
+
+/**
+ * Get value from input object trying multiple key formats.
+ * Handles both snake_case (file_path) and camelCase (filePath) variants.
+ */
+function getInputValue(obj: Record<string, unknown>, key: string): unknown {
+  // Try exact key first
+  if (obj[key] !== undefined) {
+    return obj[key];
+  }
+
+  // Try camelCase version (file_path -> filePath)
+  const camelKey = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+  if (obj[camelKey] !== undefined) {
+    return obj[camelKey];
+  }
+
+  // Try snake_case version (filePath -> file_path)
+  const snakeKey = key.replace(/([A-Z])/g, "_$1").toLowerCase();
+  if (obj[snakeKey] !== undefined) {
+    return obj[snakeKey];
+  }
+
+  return undefined;
+}
+
+/**
  * Configuration for how a tool is displayed.
  */
 export interface ToolDisplayConfig {
@@ -34,19 +66,22 @@ export function createToolDisplayRegistry(): ToolDisplayRegistry {
 
   return {
     register(config) {
-      configs.set(config.tool, config);
+      // Normalize tool name on registration for case-insensitive lookup
+      configs.set(normalizeToolName(config.tool), config);
     },
 
     getInputKey(tool: string): string | undefined {
-      return configs.get(tool)?.inputKey;
+      return configs.get(normalizeToolName(tool))?.inputKey;
     },
 
     getColor(tool: string): (s: string) => string {
-      return configs.get(tool)?.color ?? defaultColor;
+      return configs.get(normalizeToolName(tool))?.color ?? defaultColor;
     },
 
     getMaxLength(tool: string): number {
-      return configs.get(tool)?.maxLength ?? MAX_TOOL_INPUT_LENGTH;
+      return (
+        configs.get(normalizeToolName(tool))?.maxLength ?? MAX_TOOL_INPUT_LENGTH
+      );
     },
 
     formatInput(tool: string, input: unknown): string {
@@ -54,13 +89,14 @@ export function createToolDisplayRegistry(): ToolDisplayRegistry {
         return "";
       }
 
-      const config = configs.get(tool);
+      const config = configs.get(normalizeToolName(tool));
       if (!config) {
         return "";
       }
 
       const obj = input as Record<string, unknown>;
-      const value = obj[config.inputKey];
+      // Try multiple key formats (snake_case and camelCase)
+      const value = getInputValue(obj, config.inputKey);
       if (!value) {
         return "";
       }
