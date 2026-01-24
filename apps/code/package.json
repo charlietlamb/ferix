@@ -1,10 +1,10 @@
 {
-  "name": "@ferix/cli-v2",
-  "version": "0.0.1",
+  "name": "ferix-code",
+  "version": "0.0.2-beta.3",
   "description": "Composable RALPH loops for AI coding agents - v2 with Effect",
   "type": "module",
   "bin": {
-    "ferix-v2": "./dist/index.js"
+    "ferix-code": "dist/index.js"
   },
   "files": [
     "dist"
@@ -17,19 +17,16 @@
     "test:watch": "bun test --watch"
   },
   "dependencies": {
-    "@effect/platform": "^0.72.0",
-    "@effect/platform-node": "^0.66.0",
-    "commander": "catalog:",
-    "effect": "^3.12.0",
+    "commander": "^14.0.0",
+    "effect": "^3.19.15",
     "human-id": "^4.1.3",
-    "picocolors": "catalog:"
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "@ferix/typescript-config": "*",
     "@types/bun": "latest",
-    "@types/node": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:"
+    "@types/node": "^22.15.3",
+    "tsup": "^8.4.0",
+    "typescript": "5.9.2"
   },
   "publishConfig": {
     "access": "public"

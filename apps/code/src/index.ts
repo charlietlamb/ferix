@@ -1,17 +1,14 @@
 import { Command } from "commander";
+import packageJson from "../package.json" with { type: "json" };
 import type { LoopConfig } from "./domain/index.js";
 import { main } from "./program.js";
 
 const program = new Command();
 
 program
-  .name("ferix-v2")
+  .name("ferix-code")
   .description("Composable RALPH loops for AI coding agents")
-  .version("0.1.0");
-
-program
-  .command("run")
-  .description("Run a ralph loop")
+  .version(packageJson.version)
   .argument("<task>", "Task description or path to PRD file")
   .option("-i, --iterations <n>", "Maximum iterations", "1")
   .option("-v, --verify <commands...>", "Verification commands")

@@ -10,6 +10,23 @@
     "title": "A collection of skills, subagents and rules for",
     "description": "Explore the latest skills, subagents and rules created by our community. Perfect for Cursor, Claude, and other AI agents."
   },
+  "cli": {
+    "title": "Introducing ferix-code",
+    "description": "A powerful CLI for AI-assisted development. Write, refactor, and debug code with natural language commands.",
+    "banner": "Meet ferix-code. A powerful CLI for development with Ralph loops. Built on top of Claude, Cursor & OpenCode.",
+    "learnMore": "Learn More"
+  },
+  "code": {
+    "title": "Introducing ferix-code",
+    "description": "A powerful CLI that brings AI-assisted development to your terminal. Write, refactor, and debug code with natural language commands.",
+    "install": "Install",
+    "feature1Title": "Natural Language",
+    "feature1Description": "Describe what you want in plain English and let the AI write the code for you.",
+    "feature2Title": "Context Aware",
+    "feature2Description": "Understands your codebase structure and follows your existing patterns.",
+    "feature3Title": "Terminal Native",
+    "feature3Description": "Works directly in your terminal with full shell integration."
+  },
   "stats": {
     "prompts": "prompts",
     "downloads": "downloads",
@@ -22,7 +39,7 @@
     "promptCount": "{count} prompts"
   },
   "repositories": {
-    "title": "Top Repositories",
+    "title": "Top Skills Repositories",
     "viewAll": "View All",
     "promptCount": "{count} prompts"
   },
@@ -41,6 +58,7 @@
   "sidebar": {
     "browse": "Browse",
     "home": "Home",
+    "code": "Code",
     "popular": "Popular",
     "recent": "Recent",
     "tags": "All Tags",
@@ -51,7 +69,8 @@
     "myProfile": "My Profile",
     "saved": "Saved",
     "admin": "Admin",
-    "adminDashboard": "Dashboard"
+    "adminDashboard": "Dashboard",
+    "new": "New"
   },
   "pages": {
     "popular": {

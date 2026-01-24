@@ -1,4 +1,6 @@
 import { CategoryGrid } from "@ferix/ui/components/home/categories/category-grid";
+import { CLIBanner } from "@ferix/ui/components/home/cli/cli-banner";
+import { CLISection } from "@ferix/ui/components/home/cli/cli-section";
 import { CTASection } from "@ferix/ui/components/home/cta/cta-section";
 import { Gutter } from "@ferix/ui/components/home/gutter";
 import { HeroSection } from "@ferix/ui/components/home/hero/hero-section";
@@ -20,9 +22,12 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <AppPage className="scrollbar-none h-auto overflow-visible">
+      <CLIBanner />
       <HeroSection />
       <SearchSection />
       <RepositoryGrid />
+      <Gutter />
+      <CLISection />
       <Gutter />
       <PopularPrompts />
       <Gutter />
