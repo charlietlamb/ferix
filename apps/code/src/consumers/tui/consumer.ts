@@ -6,6 +6,9 @@ import { ANSIOutput } from "./output/index.js";
 import { appendError, createInitialState, reduce } from "./state.js";
 import { safeRender } from "./utils.js";
 
+/** Interval for periodic clock refresh (1 second) */
+const CLOCK_REFRESH_INTERVAL_MS = 1000;
+
 /**
  * Format an error (Error object or unknown) into lines for display.
  */
@@ -111,6 +114,20 @@ export function createTUIConsumer(): Consumer {
           runInputLoop(stateRef, output)
         );
 
+        // Fork clock refresh timer (updates elapsed time display every second)
+        const clockFiber = yield* Effect.forkDaemon(
+          Effect.forever(
+            Effect.gen(function* () {
+              yield* Effect.sleep(CLOCK_REFRESH_INTERVAL_MS);
+              const state = yield* Ref.get(stateRef);
+              // Only refresh if still running (clock is visible)
+              if (state.status === "running") {
+                yield* Effect.sync(() => safeRender(state, output));
+              }
+            })
+          )
+        );
+
         // Process events stream
         const processEvents = events.pipe(
           Stream.runForEach((event) =>
@@ -178,7 +195,8 @@ export function createTUIConsumer(): Consumer {
           );
         }
 
-        // Cleanup terminal state
+        // Cleanup: interrupt clock fiber and restore terminal state
+        yield* Fiber.interrupt(clockFiber);
         unsubscribeResize();
         cleanup();
       }),

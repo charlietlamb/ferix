@@ -1,6 +1,6 @@
 {
   "name": "ferix-code",
-  "version": "0.0.2-beta.5",
+  "version": "0.0.2-beta.6",
   "description": "Composable RALPH loops for AI coding agents - v2 with Effect",
   "type": "module",
   "bin": {
@@ -15,7 +15,8 @@
     "dev": "tsup --watch",
     "check-types": "tsc --noEmit",
     "test": "bun test",
-    "test:watch": "bun test --watch"
+    "test:watch": "bun test --watch",
+    "bump": "npm version prerelease --preid=beta --workspaces=false && bun run build && bun publish --tag beta"
   },
   "dependencies": {
     "commander": "^14.0.0",

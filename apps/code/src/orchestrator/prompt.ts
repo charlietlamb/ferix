@@ -70,8 +70,11 @@ Use these XML-like tags to communicate structured information:
   <files-created>new-file.ts</files-created>
 </ferix:task-complete>
 
-### Loop Completion
+### Loop Completion (use ONLY when ALL tasks are done)
 <ferix:complete>
+
+⚠️ IMPORTANT: Only emit <ferix:complete> after ALL tasks in the plan are complete.
+After completing a single task, emit <ferix:task-complete> and continue to the next task.
 
 IMPORTANT: Always emit signals on their own lines, never inside markdown code blocks.`;
 
@@ -125,14 +128,17 @@ Review the code for quality:
 
 const DEFAULT_COMPLETION_PROMPT = `## Completion
 
-When the task is complete, emit:
+When you finish the CURRENT task, emit:
 <ferix:task-complete id="N">
   <summary>What was accomplished</summary>
   <files-modified>list of modified files</files-modified>
   <files-created>list of new files</files-created>
 </ferix:task-complete>
 
-When ALL tasks are complete, emit <ferix:complete>`;
+After emitting task-complete, CONTINUE working on the next pending task.
+
+⚠️ ONLY emit <ferix:complete> when ALL tasks in the plan are done.
+Do NOT emit <ferix:complete> after completing just one task - continue to the next task instead.`;
 
 /**
  * Learning and guardrail signal instructions.
