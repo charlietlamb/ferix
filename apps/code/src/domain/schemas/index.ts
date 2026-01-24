@@ -7,4 +7,5 @@ export * from "./program.js";
 export * from "./session.js";
 export * from "./shared.js";
 export * from "./signals.js";
+export * from "./task-generation.js";
 export * from "./tui.js";

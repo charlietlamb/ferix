@@ -1,4 +1,4 @@
-import type { LoopConfig, Plan, PromptConfig } from "../domain/index.js";
+import type { LoopConfig, Plan, PromptConfig, Task } from "../domain/index.js";
 
 /**
  * Default system prompt for the ralph loop.
@@ -12,7 +12,7 @@ These signals MUST appear on their own lines, not inside code blocks.
 
 Use these XML-like tags to communicate structured information:
 
-### Task Breakdown (first iteration only)
+### Task Breakdown (discovery phase only)
 <ferix:tasks>
   <task id="1">Brief description of first task</task>
   <task id="2">Brief description of second task</task>
@@ -58,19 +58,27 @@ Use these XML-like tags to communicate structured information:
 IMPORTANT: Always emit signals on their own lines, never inside markdown code blocks.`;
 
 /**
+ * Discovery phase system prompt (focused on task breakdown only).
+ */
+const DISCOVERY_SYSTEM_PROMPT = `You are in the DISCOVERY phase of a ralph loop - an iterative AI coding workflow.
+
+Your goal is to analyze the task and break it into logical subtasks.
+
+Your output must include a <ferix:tasks> signal that the orchestrator will parse.
+This signal MUST appear on its own line, not inside code blocks.
+
+## Signal Format
+
+<ferix:tasks>
+  <task id="1">Brief description of first task</task>
+  <task id="2">Brief description of second task</task>
+</ferix:tasks>
+
+IMPORTANT: Always emit the <ferix:tasks> signal on its own line, never inside markdown code blocks.`;
+
+/**
  * Default phase prompts.
  */
-const DEFAULT_BREAKDOWN_PROMPT = `## Phase 1: BREAKDOWN
-
-This is the first iteration. Analyze the task and break it into subtasks.
-
-1. Read and understand the codebase structure
-2. Identify the files that need to be modified
-3. Break the work into logical tasks
-
-Emit a <ferix:tasks> block with your task breakdown.
-For each task, also emit a <ferix:criteria> block with success criteria.`;
-
 const DEFAULT_PLANNING_PROMPT = `## Phase 2: PLANNING
 
 If no phases are defined for the current task, define them now.
@@ -144,6 +152,52 @@ If any fail, fix the issues and re-verify.`;
 }
 
 /**
+ * Status icon mapping for task list display.
+ */
+const TASK_STATUS_ICONS: Record<Task["status"], string> = {
+  done: "[x]",
+  in_progress: "[~]",
+  pending: "[ ]",
+  planning: "[~]",
+  failed: "[!]",
+  skipped: "[-]",
+};
+
+/**
+ * Builds a full task list section showing all tasks and their status.
+ * This gives the LLM context about overall progress.
+ */
+function buildTaskListSection(plan: Plan): string {
+  if (plan.tasks.length === 0) {
+    return "";
+  }
+
+  const completedCount = plan.tasks.filter((t) => t.status === "done").length;
+  const totalCount = plan.tasks.length;
+
+  const lines: string[] = [
+    "## Task Progress",
+    "",
+    `Status: ${completedCount}/${totalCount} complete`,
+    "",
+  ];
+
+  const currentTaskId = plan.tasks.find(
+    (t) => t.status === "in_progress" || t.status === "pending"
+  )?.id;
+
+  for (const task of plan.tasks) {
+    const icon = TASK_STATUS_ICONS[task.status];
+    const currentMarker = task.id === currentTaskId ? " ← current" : "";
+    lines.push(
+      `- ${icon} Task ${task.id}: ${task.title} (${task.status})${currentMarker}`
+    );
+  }
+
+  return lines.join("\n");
+}
+
+/**
  * Builds the current task context section.
  */
 function buildCurrentTaskSection(plan: Plan): string | undefined {
@@ -177,6 +231,48 @@ ${criteriaSection}`;
 }
 
 /**
+ * Builds the discovery phase prompt for initial task breakdown.
+ *
+ * @param config - Loop configuration
+ * @returns The complete prompt for the discovery phase
+ */
+export function buildDiscoveryPrompt(config: LoopConfig): string {
+  const sections: string[] = [];
+
+  // Discovery-specific system prompt
+  sections.push(DISCOVERY_SYSTEM_PROMPT);
+
+  // Additional context if provided
+  if (config.prompts?.additionalContext) {
+    sections.push(
+      `## Additional Context\n\n${config.prompts.additionalContext}`
+    );
+  }
+
+  // Task description
+  sections.push(`## Task\n\n${config.task}`);
+
+  // Discovery instructions
+  sections.push(`## Instructions
+
+Analyze the task above and break it into logical subtasks.
+
+1. Read and understand what needs to be done
+2. Identify the main components or steps
+3. Break the work into 2-6 discrete tasks
+
+Emit a <ferix:tasks> block with your task breakdown.
+Each task should be:
+- Self-contained and independently verifiable
+- Clear and specific
+- Ordered logically (dependencies first)
+
+Begin your analysis now.`);
+
+  return sections.join("\n\n");
+}
+
+/**
  * Builds the iteration prompt with context and instructions.
  *
  * @param config - Loop configuration
@@ -203,15 +299,14 @@ export function buildPrompt(
   // Task description
   sections.push(`## Task\n\n${config.task}`);
 
-  // Breakdown phase (first iteration only)
-  if (iteration === 1) {
-    sections.push(
-      getPhasePrompt("breakdown", prompts, DEFAULT_BREAKDOWN_PROMPT)
-    );
-  }
-
-  // Current task context
+  // Full task list (shows overall progress)
   if (plan && plan.tasks.length > 0) {
+    const taskListSection = buildTaskListSection(plan);
+    if (taskListSection) {
+      sections.push(taskListSection);
+    }
+
+    // Current task details
     const taskSection = buildCurrentTaskSection(plan);
     if (taskSection) {
       sections.push(taskSection);

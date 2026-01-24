@@ -11,6 +11,7 @@ import { LLM } from "../services/llm.js";
 import { PlanStore } from "../services/plan-store.js";
 import { SessionStore } from "../services/session-store.js";
 import { SignalParser } from "../services/signal-parser.js";
+import { createDiscoveryStream } from "./discovery.js";
 import { createIterationStream } from "./iteration.js";
 
 /**
@@ -101,6 +102,17 @@ export function runLoop(
         timestamp: startTime,
       };
 
+      // Discovery phase - runs LLM to break down the task into subtasks
+      // and writes tasks.md before iterations begin
+      const discoveryStream = createDiscoveryStream(
+        llm,
+        signalParser,
+        planStore,
+        currentPlanRef,
+        config,
+        session.id
+      );
+
       // Use unfoldEffect to create iterations with effectful termination condition
       const iterationsStream: Stream.Stream<DomainEvent, never, never> =
         Stream.unfoldEffect(1, (iteration: number) =>
@@ -138,6 +150,7 @@ export function runLoop(
 
       return pipe(
         Stream.succeed(loopStarted),
+        Stream.concat(discoveryStream),
         Stream.concat(iterationsStream),
         Stream.concat(completionStream)
       );

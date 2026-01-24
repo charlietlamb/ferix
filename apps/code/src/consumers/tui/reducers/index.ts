@@ -1,5 +1,6 @@
 // Import reducers to register them
 import "./check-review.js";
+import "./discovery.js";
 import "./iteration.js";
 import "./llm.js";
 import "./loop.js";

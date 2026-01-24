@@ -1,6 +1,6 @@
 {
   "name": "@ferix/cli-v2",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Composable RALPH loops for AI coding agents - v2 with Effect",
   "type": "module",
   "bin": {

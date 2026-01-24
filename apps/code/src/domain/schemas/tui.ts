@@ -14,6 +14,7 @@ export type LoopStatus = typeof LoopStatusSchema.Type;
 
 export const ExecutionModeSchema = S.Literal(
   "idle",
+  "discovery",
   "breakdown",
   "planning",
   "working",
@@ -83,6 +84,10 @@ export const TUIStateSchema = S.Struct({
   maxIterations: S.Number,
   status: LoopStatusSchema,
   startTime: S.Number,
+
+  // Discovery phase
+  discoveryInProgress: S.Boolean,
+  discoveryCompleted: S.Boolean,
 
   // Current activity
   executionMode: ExecutionModeSchema,

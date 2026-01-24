@@ -7,6 +7,8 @@ export function createInitialState(): TUIState {
     maxIterations: 0,
     status: "idle",
     startTime: 0, // Will be set when LoopStarted event is received
+    discoveryInProgress: false,
+    discoveryCompleted: false,
     executionMode: "idle",
     outputLines: [],
     partialLine: "",

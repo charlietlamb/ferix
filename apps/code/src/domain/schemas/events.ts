@@ -51,6 +51,20 @@ export const LoopFailedEventSchema = taggedEvent("LoopFailed", {
 export type LoopFailedEvent = typeof LoopFailedEventSchema.Type;
 
 /**
+ * Discovery phase events.
+ */
+export const DiscoveryStartedEventSchema = taggedEvent("DiscoveryStarted", {
+  timestamp: S.Number,
+});
+export type DiscoveryStartedEvent = typeof DiscoveryStartedEventSchema.Type;
+
+export const DiscoveryCompletedEventSchema = taggedEvent("DiscoveryCompleted", {
+  taskCount: S.Number,
+  timestamp: S.Number,
+});
+export type DiscoveryCompletedEvent = typeof DiscoveryCompletedEventSchema.Type;
+
+/**
  * Iteration events.
  */
 export const IterationStartedEventSchema = taggedEvent("IterationStarted", {
@@ -204,6 +218,8 @@ export const DomainEventSchema = S.Union(
   LoopStartedEventSchema,
   LoopCompletedEventSchema,
   LoopFailedEventSchema,
+  DiscoveryStartedEventSchema,
+  DiscoveryCompletedEventSchema,
   IterationStartedEventSchema,
   IterationCompletedEventSchema,
   LLMTextEventSchema,
@@ -234,6 +250,8 @@ export type DomainEvent =
   | LoopStartedEvent
   | LoopCompletedEvent
   | LoopFailedEvent
+  | DiscoveryStartedEvent
+  | DiscoveryCompletedEvent
   | IterationStartedEvent
   | IterationCompletedEvent
   | LLMTextEvent
@@ -282,4 +300,9 @@ export const DomainEventUtils = {
     e: DomainEvent
   ): e is LoopStartedEvent | LoopCompletedEvent | LoopFailedEvent =>
     e._tag.startsWith("Loop"),
+
+  isDiscoveryEvent: (
+    e: DomainEvent
+  ): e is DiscoveryStartedEvent | DiscoveryCompletedEvent =>
+    e._tag.startsWith("Discovery"),
 } as const;

@@ -39,7 +39,7 @@ export class SessionStoreError extends Data.TaggedError("SessionStoreError")<{
  */
 export class OrchestratorError extends Data.TaggedError("OrchestratorError")<{
   readonly message: string;
-  readonly phase: "setup" | "iteration" | "cleanup";
+  readonly phase: "setup" | "discovery" | "iteration" | "cleanup";
   readonly cause?: unknown;
 }> {}
 
