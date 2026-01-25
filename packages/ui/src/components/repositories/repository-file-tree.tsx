@@ -10,9 +10,7 @@ import {
 } from "@ferix/ui/components/ui/collapsible";
 import { Skeleton } from "@ferix/ui/components/ui/skeleton";
 import { extractDescription } from "@ferix/ui/lib/markdown";
-import { getPromptTypeConfig } from "@ferix/ui/lib/prompt-types";
 import { formatTitle } from "@ferix/ui/lib/repositories";
-import { getTagById } from "@ferix/ui/lib/tags";
 import { cn } from "@ferix/ui/lib/utils";
 import {
   ArrowRight,
@@ -24,7 +22,6 @@ import {
 } from "@phosphor-icons/react";
 import type { PaginationStatus } from "convex/browser";
 import { useTranslations } from "next-intl";
-import type { ComponentType } from "react";
 import { useState } from "react";
 
 interface FileTreeNode {
@@ -97,21 +94,6 @@ function buildFileTree(prompts: Prompt[]): FileTreeNode[] {
   return sortNodes(root);
 }
 
-function getPromptIcon(
-  prompt: Prompt
-): ComponentType<{ size?: number; className?: string }> {
-  const firstTagId = prompt.tags?.[0];
-  if (firstTagId) {
-    const firstTag = getTagById(firstTagId);
-    if (firstTag?.icon) {
-      return firstTag.icon;
-    }
-  }
-
-  const typeConfig = getPromptTypeConfig(prompt.type);
-  return typeConfig.icon;
-}
-
 interface FileRowProps {
   node: FileTreeNode;
   depth: number;
@@ -129,25 +111,23 @@ function FileRow({ node, depth, isLast }: FileRowProps) {
     ? prompt.title.split(" - ").slice(1).join(" - ")
     : prompt.title;
   const description = extractDescription(prompt.content);
-  const Icon = getPromptIcon(prompt);
 
   return (
     <div className={cn("border-border", !isLast && "border-b")}>
       <Link
-        className="group flex items-center gap-2 px-4 py-2 transition-colors hover:bg-muted/50"
+        className="group flex items-center gap-2 px-4 py-1.5 transition-colors hover:bg-muted/50"
         href={`/prompt/${prompt.slug}`}
         style={{ paddingLeft: `${depth * 24 + 16}px` }}
       >
-        <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2">
             <span className="truncate font-medium text-sm">{title}</span>
-            <span className="shrink-0 font-mono text-muted-foreground text-xs">
+            <span className="shrink-0 font-mono text-muted-foreground/60 text-xs">
               {fileName}
             </span>
           </div>
           {description && (
-            <span className="truncate text-muted-foreground text-xs">
+            <span className="max-w-full truncate text-muted-foreground text-xs">
               {description}
             </span>
           )}
@@ -180,7 +160,7 @@ function FolderRow({ node, depth, isLast }: FolderRowProps) {
     <Collapsible onOpenChange={setIsOpen} open={isOpen}>
       <div className={cn("border-border", (isOpen || !isLast) && "border-b")}>
         <CollapsibleTrigger
-          className="flex h-12 w-full cursor-pointer items-center gap-2 px-4 transition-colors hover:bg-muted/50"
+          className="flex h-12 w-full cursor-pointer items-center gap-2 bg-muted/30 px-4 transition-colors hover:bg-muted/50"
           style={{ paddingLeft: `${depth * 24 + 16}px` }}
         >
           <CaretRight
@@ -285,7 +265,7 @@ function FolderRowSkeleton({ depth }: { depth: number }) {
   return (
     <div className="border-border border-b">
       <div
-        className="flex h-12 items-center gap-2 px-4"
+        className="flex h-12 items-center gap-2 bg-muted/30 px-4"
         style={{ paddingLeft: `${depth * 24 + 16}px` }}
       >
         <Skeleton className="size-4" />
@@ -301,10 +281,9 @@ function FileRowSkeleton({ depth }: { depth: number }) {
   return (
     <div className="border-border border-b">
       <div
-        className="flex items-center gap-2 px-4 py-2"
+        className="flex items-center gap-2 px-4 py-1.5"
         style={{ paddingLeft: `${depth * 24 + 16}px` }}
       >
-        <Skeleton className="size-4 shrink-0" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-center gap-2">
             <Skeleton className="h-4 w-32" />
