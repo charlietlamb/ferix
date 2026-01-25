@@ -3,6 +3,7 @@ import "./handlers/completion.js";
 import "./handlers/criteria.js";
 import "./handlers/phases.js";
 import "./handlers/review.js";
+import "./handlers/session-name.js";
 import "./handlers/tasks.js";
 import "./handlers/tools.js";
 
