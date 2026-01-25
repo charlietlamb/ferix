@@ -45,6 +45,8 @@ export const LoopSummarySchema = S.Struct({
   sessionId: S.String,
   completedTasks: S.Array(S.String),
   durationMs: S.Number,
+  branchPushed: S.optional(S.Boolean),
+  prUrl: S.optional(S.String),
 });
 export type LoopSummary = typeof LoopSummarySchema.Type;
 
