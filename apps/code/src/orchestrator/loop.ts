@@ -226,7 +226,7 @@ export function runLoop(
           createPR: git.createPR,
           getBranchName: git.getBranchName,
         },
-        session,
+        sessionRef,
         config,
         startTime,
         loopCompletedRef,
@@ -425,7 +425,7 @@ export function runRalphLoop(
           createPR: git.createPR,
           getBranchName: git.getBranchName,
         },
-        session,
+        sessionRef,
         config,
         startTime,
         loopCompletedRef,
@@ -499,7 +499,7 @@ function createCompletionStream(
     ) => Effect.Effect<string, unknown>;
     getBranchName: (sessionId: string) => string;
   },
-  session: Session,
+  sessionRef: Ref.Ref<Session>,
   config: LoopConfig,
   startTime: number,
   loopCompletedRef: Ref.Ref<boolean>,
@@ -507,6 +507,9 @@ function createCompletionStream(
 ): Stream.Stream<DomainEvent, never, never> {
   return Stream.unwrap(
     Effect.gen(function* () {
+      // Get the current session state (may have been updated during discovery with renamed branch)
+      const session = yield* Ref.get(sessionRef);
+
       const endTimeUtc = yield* DateTime.now;
       const endTime = DateTime.toEpochMillis(endTimeUtc);
       const durationMs = endTime - startTime;
@@ -544,7 +547,7 @@ function createCompletionStream(
       // Create PR if config.pr is true (requires push first)
       let prUrl: string | undefined;
       if (config.pr === true && branchPushed) {
-        const title = `feat: ${session.task.slice(0, 50)}`;
+        const title = `feat: ${session.originalTask.slice(0, 50)}`;
         const body = buildPRBody(session, config);
 
         const prResult = yield* git.createPR(session.id, title, body).pipe(
@@ -610,10 +613,12 @@ function createCompletionStream(
       const events: DomainEvent[] = [worktreeRemoved];
 
       if (branchPushed) {
+        // Use session.branchName which reflects the renamed branch (if any),
+        // falling back to the computed name if branchName wasn't set
         events.push({
           _tag: "BranchPushed",
           sessionId: session.id,
-          branchName: git.getBranchName(session.id),
+          branchName: session.branchName ?? git.getBranchName(session.id),
           timestamp: endTime,
         });
       }
@@ -623,7 +628,7 @@ function createCompletionStream(
           _tag: "PRCreated",
           sessionId: session.id,
           prUrl,
-          title: `feat: ${session.task.slice(0, 50)}`,
+          title: `feat: ${session.originalTask.slice(0, 50)}`,
           timestamp: endTime,
         });
       }
