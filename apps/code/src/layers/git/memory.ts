@@ -82,6 +82,17 @@ function createMemoryGitService(
         yield* Ref.set(stateRef, state);
       }),
 
+    removeWorktreeKeepBranch: (
+      sessionId: string
+    ): Effect.Effect<void, GitError> =>
+      Effect.gen(function* () {
+        const state = yield* Ref.get(stateRef);
+        // Remove worktree entry but simulate keeping branch
+        // (In memory, we just remove the worktree state)
+        state.delete(sessionId);
+        yield* Ref.set(stateRef, state);
+      }),
+
     getWorktreePath: (
       sessionId: string
     ): Effect.Effect<WorktreePath | undefined, GitError> =>

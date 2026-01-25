@@ -394,8 +394,8 @@ export function runRalphLoop(
 
 /**
  * Creates the completion stream that finalizes the loop.
- * Handles session update and emits completion event.
- * Note: Worktree is intentionally kept for user review/merge.
+ * Handles session update, worktree cleanup, and emits completion events.
+ * Worktree is removed but branch is preserved for user review/merge.
  */
 function createCompletionStream(
   sessionStore: {
@@ -406,6 +406,9 @@ function createCompletionStream(
       sessionId: string,
       message: string
     ) => Effect.Effect<unknown, unknown>;
+    removeWorktreeKeepBranch: (
+      sessionId: string
+    ) => Effect.Effect<void, unknown>;
   },
   session: Session,
   config: LoopConfig,
@@ -416,7 +419,8 @@ function createCompletionStream(
   return Stream.unwrap(
     Effect.gen(function* () {
       const endTimeUtc = yield* DateTime.now;
-      const durationMs = DateTime.toEpochMillis(endTimeUtc) - startTime;
+      const endTime = DateTime.toEpochMillis(endTimeUtc);
+      const durationMs = endTime - startTime;
       const completed = yield* Ref.get(loopCompletedRef);
 
       // Final commit before completion
@@ -432,6 +436,23 @@ function createCompletionStream(
           Effect.orElseSucceed(() => undefined)
         );
 
+      // Remove worktree but keep branch for user review
+      yield* git.removeWorktreeKeepBranch(session.id).pipe(
+        Effect.tapError((error) =>
+          Effect.logDebug("Worktree cleanup failed, continuing", {
+            sessionId: session.id,
+            error: String(error),
+          })
+        ),
+        Effect.orElseSucceed(() => undefined)
+      );
+
+      const worktreeRemoved: DomainEvent = {
+        _tag: "WorktreeRemoved",
+        sessionId: session.id,
+        timestamp: endTime,
+      };
+
       const summary: LoopSummary = {
         iterations: config.maxIterations,
         success: completed,
@@ -442,10 +463,12 @@ function createCompletionStream(
 
       // Session update is best-effort - log failures but don't fail the loop
       // since the loop has already completed successfully
+      // Clear worktree path since it's removed
       yield* sessionStore
         .update(session.id, {
           ...session,
           status: completed ? "completed" : "paused",
+          worktreePath: undefined,
         })
         .pipe(
           Effect.tapError((error) =>
@@ -458,7 +481,11 @@ function createCompletionStream(
         );
 
       const loopCompleted: DomainEvent = { _tag: "LoopCompleted", summary };
-      return Stream.succeed(loopCompleted);
+
+      return pipe(
+        Stream.succeed(worktreeRemoved),
+        Stream.concat(Stream.succeed(loopCompleted))
+      );
     })
   );
 }

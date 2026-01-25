@@ -214,6 +214,50 @@ const make: GitService = {
       );
     }),
 
+  removeWorktreeKeepBranch: (
+    sessionId: string
+  ): Effect.Effect<void, GitError> =>
+    Effect.gen(function* () {
+      const worktreeDir = getWorktreeDir(sessionId);
+
+      // Check if worktree exists
+      const exists = yield* directoryExists(worktreeDir);
+      if (!exists) {
+        return; // Already removed, nothing to do
+      }
+
+      // Remove worktree using git (keeps the branch)
+      yield* gitExec(`git worktree remove "${worktreeDir}" --force`).pipe(
+        Effect.mapError(
+          (error) =>
+            new GitError({
+              message: `Failed to remove worktree: ${error.message}`,
+              operation: "removeWorktreeKeepBranch",
+              cause: error,
+            })
+        ),
+        // If git worktree remove fails, try manual cleanup
+        Effect.catchAll(() =>
+          Effect.tryPromise({
+            try: () => rm(worktreeDir, { recursive: true, force: true }),
+            catch: (error) =>
+              new GitError({
+                message: `Failed to remove worktree directory: ${String(error)}`,
+                operation: "removeWorktreeKeepBranch",
+                cause: error,
+              }),
+          })
+        )
+      );
+
+      // Prune worktree references
+      yield* gitExec("git worktree prune").pipe(
+        Effect.catchAll(() => Effect.succeed(undefined))
+      );
+
+      // NOTE: Branch is intentionally NOT deleted
+    }),
+
   getWorktreePath: (
     sessionId: string
   ): Effect.Effect<WorktreePath | undefined, GitError> =>

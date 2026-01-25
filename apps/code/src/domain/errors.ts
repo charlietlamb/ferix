@@ -71,6 +71,7 @@ export class GitError extends Data.TaggedError("GitError")<{
   readonly operation:
     | "createWorktree"
     | "removeWorktree"
+    | "removeWorktreeKeepBranch"
     | "commit"
     | "push"
     | "createPR"

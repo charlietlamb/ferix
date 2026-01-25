@@ -126,6 +126,18 @@ export interface GitService {
    * @returns Branch name (e.g., "ferix/calm-snails-dream-123")
    */
   readonly getBranchName: (sessionId: string) => string;
+
+  /**
+   * Remove a worktree but keep its branch.
+   *
+   * Removes the worktree directory and cleans up git worktree references,
+   * but preserves the branch for user review and merge.
+   *
+   * @param sessionId - Session ID whose worktree to remove
+   */
+  readonly removeWorktreeKeepBranch: (
+    sessionId: string
+  ) => Effect.Effect<void, GitError>;
 }
 
 /**
