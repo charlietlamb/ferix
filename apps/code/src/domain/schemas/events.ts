@@ -269,6 +269,27 @@ export const WorktreeRemovedEventSchema = taggedEvent("WorktreeRemoved", {
 export type WorktreeRemovedEvent = typeof WorktreeRemovedEventSchema.Type;
 
 /**
+ * Branch pushed event - signals that a branch was pushed to origin.
+ */
+export const BranchPushedEventSchema = taggedEvent("BranchPushed", {
+  sessionId: S.String,
+  branchName: S.String,
+  timestamp: S.Number,
+});
+export type BranchPushedEvent = typeof BranchPushedEventSchema.Type;
+
+/**
+ * PR created event - signals that a pull request was created.
+ */
+export const PRCreatedEventSchema = taggedEvent("PRCreated", {
+  sessionId: S.String,
+  prUrl: S.String,
+  title: S.String,
+  timestamp: S.Number,
+});
+export type PRCreatedEvent = typeof PRCreatedEventSchema.Type;
+
+/**
  * Session name generated event - signals that the LLM generated a descriptive name for the session.
  * Emitted during the discovery phase after the session name signal is parsed.
  */
@@ -319,6 +340,8 @@ export const DomainEventSchema = S.Union(
   ProgressUpdatedEventSchema,
   WorktreeCreatedEventSchema,
   WorktreeRemovedEventSchema,
+  BranchPushedEventSchema,
+  PRCreatedEventSchema,
   SessionNameGeneratedEventSchema
 );
 
@@ -357,6 +380,8 @@ export type DomainEvent =
   | ProgressUpdatedEvent
   | WorktreeCreatedEvent
   | WorktreeRemovedEvent
+  | BranchPushedEvent
+  | PRCreatedEvent
   | SessionNameGeneratedEvent;
 
 /**
