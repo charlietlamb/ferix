@@ -140,6 +140,8 @@ export function runLoop(
       // Use Effect Ref for mutable state instead of closure mutation
       const loopCompletedRef = yield* Ref.make(false);
       const currentPlanRef = yield* Ref.make<Plan | undefined>(undefined);
+      // Track session state for updates during discovery
+      const sessionRef = yield* Ref.make(session);
 
       const maxIterations =
         config.maxIterations === 0
@@ -152,8 +154,30 @@ export function runLoop(
         timestamp: startTime,
       };
 
-      // Discovery phase - runs LLM to break down the task into subtasks
-      // and writes tasks.md before iterations begin
+      // Callback to handle session name generated during discovery
+      const handleSessionName = (displayName: string) =>
+        Effect.gen(function* () {
+          const currentSession = yield* Ref.get(sessionRef);
+
+          // Rename the branch to use the descriptive name
+          const newBranchName = yield* git.renameBranch(
+            session.id,
+            displayName
+          );
+
+          // Update session with display name and new branch name
+          const updatedSession = {
+            ...currentSession,
+            displayName,
+            branchName: newBranchName,
+          };
+
+          yield* sessionStore.update(session.id, updatedSession);
+          yield* Ref.set(sessionRef, updatedSession);
+        });
+
+      // Discovery phase - runs LLM to break down the task into subtasks,
+      // generates a descriptive session name, and writes tasks.md before iterations begin
       const discoveryStream = createDiscoveryStream(
         llm,
         signalParser,
@@ -161,7 +185,8 @@ export function runLoop(
         currentPlanRef,
         config,
         session.id,
-        worktreePath
+        worktreePath,
+        handleSessionName
       );
 
       // Use unfoldEffect to create iterations with effectful termination condition
@@ -308,6 +333,8 @@ export function runRalphLoop(
       // but state is read fresh from files at the START of each iteration
       const loopCompletedRef = yield* Ref.make(false);
       const currentPlanRef = yield* Ref.make<Plan | undefined>(undefined);
+      // Track session state for updates during discovery
+      const sessionRef = yield* Ref.make(session);
 
       const maxIterations =
         config.maxIterations === 0
@@ -320,7 +347,30 @@ export function runRalphLoop(
         timestamp: startTime,
       };
 
+      // Callback to handle session name generated during discovery
+      const handleSessionName = (displayName: string) =>
+        Effect.gen(function* () {
+          const currentSession = yield* Ref.get(sessionRef);
+
+          // Rename the branch to use the descriptive name
+          const newBranchName = yield* git.renameBranch(
+            session.id,
+            displayName
+          );
+
+          // Update session with display name and new branch name
+          const updatedSession = {
+            ...currentSession,
+            displayName,
+            branchName: newBranchName,
+          };
+
+          yield* sessionStore.update(session.id, updatedSession);
+          yield* Ref.set(sessionRef, updatedSession);
+        });
+
       // Discovery phase - runs LLM to break down the task into subtasks
+      // and generates a descriptive session name
       const discoveryStream = createDiscoveryStream(
         llm,
         signalParser,
@@ -328,7 +378,8 @@ export function runRalphLoop(
         currentPlanRef,
         config,
         session.id,
-        worktreePath
+        worktreePath,
+        handleSessionName
       );
 
       // RALPH iterations - each reads fresh context from files

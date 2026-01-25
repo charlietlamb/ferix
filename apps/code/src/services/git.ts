@@ -138,6 +138,21 @@ export interface GitService {
   readonly removeWorktreeKeepBranch: (
     sessionId: string
   ) => Effect.Effect<void, GitError>;
+
+  /**
+   * Rename a session's branch to use a descriptive display name.
+   *
+   * This is called after discovery phase when the LLM generates a
+   * task-based name for the session.
+   *
+   * @param sessionId - Session ID whose branch to rename
+   * @param displayName - New display name for the branch (kebab-case)
+   * @returns The new branch name (e.g., "ferix/add-dark-mode")
+   */
+  readonly renameBranch: (
+    sessionId: string,
+    displayName: string
+  ) => Effect.Effect<string, GitError>;
 }
 
 /**

@@ -417,6 +417,44 @@ const make: GitService = {
       return prUrl as PrUrl;
     }),
 
+  renameBranch: (
+    sessionId: string,
+    displayName: string
+  ): Effect.Effect<string, GitError> =>
+    Effect.gen(function* () {
+      const worktreeDir = getWorktreeDir(sessionId);
+      const oldBranchName = getBranchName(sessionId);
+      const newBranchName = `${BRANCH_PREFIX}/${displayName}`;
+
+      // Check if worktree exists
+      const exists = yield* directoryExists(worktreeDir);
+      if (!exists) {
+        return yield* Effect.fail(
+          new GitError({
+            message: `Worktree not found for session: ${sessionId}`,
+            operation: "renameBranch",
+          })
+        );
+      }
+
+      // Rename the branch (from within the worktree)
+      yield* gitExec(
+        `git branch -m "${oldBranchName}" "${newBranchName}"`,
+        worktreeDir
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new GitError({
+              message: `Failed to rename branch: ${error.message}`,
+              operation: "renameBranch",
+              cause: error,
+            })
+        )
+      );
+
+      return newBranchName;
+    }),
+
   getBranchName,
 };
 

@@ -6,6 +6,7 @@ import "./learning.js";
 import "./loop-complete.js";
 import "./phases.js";
 import "./review.js";
+import "./session-name.js";
 import "./task-complete.js";
 import "./tasks.js";
 

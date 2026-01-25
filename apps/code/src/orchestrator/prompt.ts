@@ -79,23 +79,35 @@ After completing a single task, emit <ferix:task-complete> and continue to the n
 IMPORTANT: Always emit signals on their own lines, never inside markdown code blocks.`;
 
 /**
- * Discovery phase system prompt (focused on task breakdown only).
+ * Discovery phase system prompt (focused on task breakdown and session naming).
  */
 const DISCOVERY_SYSTEM_PROMPT = `You are in the DISCOVERY phase of a ralph loop - an iterative AI coding workflow.
 
-Your goal is to analyze the task and break it into logical subtasks.
+Your goal is to:
+1. Generate a short, descriptive name for this session
+2. Analyze the task and break it into logical subtasks
 
-Your output must include a <ferix:tasks> signal that the orchestrator will parse.
-This signal MUST appear on its own line, not inside code blocks.
+Your output must include these signals that the orchestrator will parse.
+These signals MUST appear on their own lines, not inside code blocks.
 
 ## Signal Format
 
+### Session Name (REQUIRED - emit first)
+<ferix:session-name>short-descriptive-name</ferix:session-name>
+
+Guidelines for session name:
+- Use 2-5 words in kebab-case (lowercase with hyphens)
+- Describe the main purpose/feature being worked on
+- Keep it concise but meaningful
+- Examples: "add-dark-mode", "fix-auth-flow", "refactor-api-endpoints", "update-user-profile-ui"
+
+### Task Breakdown (REQUIRED)
 <ferix:tasks>
   <task id="1">Brief description of first task</task>
   <task id="2">Brief description of second task</task>
 </ferix:tasks>
 
-IMPORTANT: Always emit the <ferix:tasks> signal on its own line, never inside markdown code blocks.`;
+IMPORTANT: Always emit signals on their own lines, never inside markdown code blocks.`;
 
 /**
  * Default phase prompts.
@@ -308,13 +320,17 @@ export function buildDiscoveryPrompt(config: LoopConfig): string {
   // Discovery instructions
   sections.push(`## Instructions
 
-Analyze the task above and break it into logical subtasks.
+Analyze the task above and:
 
-1. Read and understand what needs to be done
-2. Identify the main components or steps
-3. Break the work into 2-6 discrete tasks
+1. **Generate a session name** (2-5 words, kebab-case)
+   - Should describe the main purpose of this work
+   - Emit: <ferix:session-name>your-descriptive-name</ferix:session-name>
 
-Emit a <ferix:tasks> block with your task breakdown.
+2. **Break the task into logical subtasks** (2-6 tasks)
+   - Read and understand what needs to be done
+   - Identify the main components or steps
+   - Emit: <ferix:tasks>...</ferix:tasks>
+
 Each task should be:
 - Self-contained and independently verifiable
 - Clear and specific

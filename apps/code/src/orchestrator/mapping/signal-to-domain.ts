@@ -113,3 +113,15 @@ eventMappingRegistry.registerSignalMapper({
     timestamp: context.timestamp,
   }),
 });
+
+// SessionNameDefined signal - maps to SessionNameGenerated event
+// Note: sessionId will be filled in by the discovery stream
+eventMappingRegistry.registerSignalMapper({
+  tag: "SessionNameDefined",
+  map: (signal, context) => ({
+    _tag: "SessionNameGenerated",
+    sessionId: "", // Will be overwritten by discovery stream
+    displayName: signal.name,
+    timestamp: context.timestamp,
+  }),
+});

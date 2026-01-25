@@ -269,6 +269,22 @@ export const WorktreeRemovedEventSchema = taggedEvent("WorktreeRemoved", {
 export type WorktreeRemovedEvent = typeof WorktreeRemovedEventSchema.Type;
 
 /**
+ * Session name generated event - signals that the LLM generated a descriptive name for the session.
+ * Emitted during the discovery phase after the session name signal is parsed.
+ */
+export const SessionNameGeneratedEventSchema = taggedEvent(
+  "SessionNameGenerated",
+  {
+    sessionId: S.String,
+    /** Task-based descriptive name (kebab-case slug, e.g., "add-dark-mode-toggle") */
+    displayName: S.String,
+    timestamp: S.Number,
+  }
+);
+export type SessionNameGeneratedEvent =
+  typeof SessionNameGeneratedEventSchema.Type;
+
+/**
  * Union of all domain events.
  */
 export const DomainEventSchema = S.Union(
@@ -302,7 +318,8 @@ export const DomainEventSchema = S.Union(
   GuardrailAddedEventSchema,
   ProgressUpdatedEventSchema,
   WorktreeCreatedEventSchema,
-  WorktreeRemovedEventSchema
+  WorktreeRemovedEventSchema,
+  SessionNameGeneratedEventSchema
 );
 
 /**
@@ -339,7 +356,8 @@ export type DomainEvent =
   | GuardrailAddedEvent
   | ProgressUpdatedEvent
   | WorktreeCreatedEvent
-  | WorktreeRemovedEvent;
+  | WorktreeRemovedEvent
+  | SessionNameGeneratedEvent;
 
 /**
  * Type guard utilities for domain events.

@@ -118,9 +118,17 @@ function planTasksToGeneratedTasks(plan: Plan): GeneratedTask[] {
 }
 
 /**
+ * Callback invoked when a session name is generated during discovery.
+ * This allows the orchestrator to update the session and rename the branch.
+ */
+export type SessionNameCallback = (
+  displayName: string
+) => Effect.Effect<void, unknown>;
+
+/**
  * Creates a stream for the discovery phase.
  * This phase runs the LLM to break down the task into subtasks,
- * then writes tasks.md and initializes the plan.
+ * generates a descriptive session name, then writes tasks.md and initializes the plan.
  *
  * @param llm - LLM service for executing prompts
  * @param signalParser - Signal parser service
@@ -129,6 +137,7 @@ function planTasksToGeneratedTasks(plan: Plan): GeneratedTask[] {
  * @param config - Loop configuration
  * @param sessionId - Session identifier
  * @param worktreePath - Optional worktree path for isolated execution
+ * @param onSessionName - Optional callback invoked when session name is generated
  */
 export function createDiscoveryStream(
   llm: {
@@ -142,7 +151,8 @@ export function createDiscoveryStream(
   currentPlanRef: Ref.Ref<Plan | undefined>,
   config: LoopConfig,
   sessionId: string,
-  worktreePath?: string
+  worktreePath?: string,
+  onSessionName?: SessionNameCallback
 ): Stream.Stream<DomainEvent, never, never> {
   return Stream.unwrap(
     Effect.gen(function* () {
@@ -154,6 +164,9 @@ export function createDiscoveryStream(
         dirty: false,
         pendingOperation: null,
       });
+
+      // Track captured session name from signals
+      const sessionNameRef = yield* Ref.make<string | undefined>(undefined);
 
       const discoveryStarted: DomainEvent = {
         _tag: "DiscoveryStarted",
@@ -197,6 +210,11 @@ export function createDiscoveryStream(
 
                 // Process signals to update plan state (in-memory only)
                 for (const signal of result.signals) {
+                  // Capture session name signal
+                  if (signal._tag === "SessionNameDefined") {
+                    yield* Ref.set(sessionNameRef, signal.name);
+                  }
+
                   const planEvents = yield* updatePlanFromSignal(
                     currentPlanRef,
                     persistenceStateRef,
@@ -254,13 +272,45 @@ export function createDiscoveryStream(
             const endTimeUtc = yield* DateTime.now;
             const endTime = DateTime.toEpochMillis(endTimeUtc);
 
+            const events: DomainEvent[] = [...persistEvents];
+
+            // Handle session name if captured
+            const capturedName = yield* Ref.get(sessionNameRef);
+            if (capturedName) {
+              // Call the callback to update session and rename branch
+              if (onSessionName) {
+                yield* onSessionName(capturedName).pipe(
+                  Effect.tapError((error) =>
+                    Effect.logDebug(
+                      "Failed to handle session name, continuing",
+                      {
+                        error: String(error),
+                        displayName: capturedName,
+                      }
+                    )
+                  ),
+                  Effect.orElseSucceed(() => undefined)
+                );
+              }
+
+              // Emit SessionNameGenerated event
+              const sessionNameEvent: DomainEvent = {
+                _tag: "SessionNameGenerated",
+                sessionId,
+                displayName: capturedName,
+                timestamp: endTime,
+              };
+              events.push(sessionNameEvent);
+            }
+
             const discoveryCompleted: DomainEvent = {
               _tag: "DiscoveryCompleted",
               taskCount,
               timestamp: endTime,
             };
+            events.push(discoveryCompleted);
 
-            return [...persistEvents, discoveryCompleted];
+            return events;
           })
         ).pipe(Stream.flatMap((events) => Stream.fromIterable(events)));
 

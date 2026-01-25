@@ -173,6 +173,37 @@ function createMemoryGitService(
         return `https://github.com/test/repo/pull/${slug}` as PrUrl;
       }),
 
+    renameBranch: (
+      sessionId: string,
+      displayName: string
+    ): Effect.Effect<string, GitError> =>
+      Effect.gen(function* () {
+        const state = yield* Ref.get(stateRef);
+        const worktree = state.get(sessionId);
+
+        if (!worktree) {
+          return yield* Effect.fail(
+            new GitError({
+              message: `Worktree not found for session: ${sessionId}`,
+              operation: "renameBranch",
+            })
+          );
+        }
+
+        const newBranchName = `${BRANCH_PREFIX}/${displayName}`;
+
+        // Update the worktree state with new branch name
+        const updatedWorktree: WorktreeState = {
+          ...worktree,
+          branch: newBranchName,
+        };
+
+        state.set(sessionId, updatedWorktree);
+        yield* Ref.set(stateRef, state);
+
+        return newBranchName;
+      }),
+
     getBranchName,
   };
 }

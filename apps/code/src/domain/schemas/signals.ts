@@ -92,6 +92,20 @@ export const LoopCompleteSignalSchema = S.TaggedStruct("LoopComplete", {});
 export type LoopCompleteSignal = typeof LoopCompleteSignalSchema.Type;
 
 /**
+ * Session name signal - defines a task-based descriptive name for the session.
+ * Generated during discovery phase.
+ */
+export const SessionNameDefinedSignalSchema = S.TaggedStruct(
+  "SessionNameDefined",
+  {
+    /** Kebab-case slug, e.g., "add-dark-mode-toggle" */
+    name: S.String,
+  }
+);
+export type SessionNameDefinedSignal =
+  typeof SessionNameDefinedSignalSchema.Type;
+
+/**
  * Learning category types.
  */
 export const LearningCategorySchema = S.Literal(
@@ -139,7 +153,8 @@ export const SignalSchema = S.Union(
   TaskCompleteSignalSchema,
   LoopCompleteSignalSchema,
   LearningSignalSchema,
-  GuardrailSignalSchema
+  GuardrailSignalSchema,
+  SessionNameDefinedSignalSchema
 );
 export type Signal = typeof SignalSchema.Type;
 

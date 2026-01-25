@@ -38,6 +38,8 @@ import {
   PhasesDefinedSignalSchema,
   type ReviewCompleteSignal,
   ReviewCompleteSignalSchema,
+  type SessionNameDefinedSignal,
+  SessionNameDefinedSignalSchema,
   type TaskCompleteSignal,
   TaskCompleteSignalSchema,
   type TasksDefinedSignal,
@@ -240,5 +242,17 @@ export function createGuardrailSignal(input: {
     sign: input.sign,
     avoidance: input.avoidance,
     severity: input.severity,
+  });
+}
+
+/**
+ * Create a SessionNameDefinedSignal.
+ */
+export function createSessionNameDefinedSignal(input: {
+  name: string;
+}): Either.Either<SessionNameDefinedSignal, ParseResult.ParseError> {
+  return S.decodeUnknownEither(SessionNameDefinedSignalSchema)({
+    _tag: "SessionNameDefined",
+    name: input.name,
   });
 }
