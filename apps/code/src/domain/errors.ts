@@ -77,6 +77,7 @@ export class GitError extends Data.TaggedError("GitError")<{
     | "createPR"
     | "renameBranch"
     | "branchLookup"
+    | "getCurrentBranch"
     | "status";
   readonly cause?: unknown;
 }> {}

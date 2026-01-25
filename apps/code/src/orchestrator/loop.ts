@@ -95,6 +95,16 @@ export function runLoop(
         )
       );
 
+      // Capture the current branch as the base branch for PR creation
+      const baseBranch = yield* git.getCurrentBranch().pipe(
+        Effect.tapError((error) =>
+          Effect.logDebug("Failed to get current branch", {
+            error: String(error),
+          })
+        ),
+        Effect.orElseSucceed(() => undefined)
+      );
+
       // Create worktree for isolated execution
       const worktreePath = yield* git.createWorktree(session.id).pipe(
         Effect.mapError(
@@ -109,12 +119,13 @@ export function runLoop(
 
       const branchName = git.getBranchName(session.id);
 
-      // Update session with worktree info
+      // Update session with worktree info and base branch
       yield* sessionStore
         .update(session.id, {
           ...session,
           worktreePath,
           branchName,
+          baseBranch,
         })
         .pipe(
           Effect.tapError((error) =>
@@ -140,8 +151,9 @@ export function runLoop(
       // Use Effect Ref for mutable state instead of closure mutation
       const loopCompletedRef = yield* Ref.make(false);
       const currentPlanRef = yield* Ref.make<Plan | undefined>(undefined);
-      // Track session state for updates during discovery
-      const sessionRef = yield* Ref.make(session);
+      // Track session state for updates during discovery (includes baseBranch)
+      const initialSession: Session = { ...session, baseBranch };
+      const sessionRef = yield* Ref.make(initialSession);
 
       const maxIterations =
         config.maxIterations === 0
@@ -293,6 +305,16 @@ export function runRalphLoop(
         )
       );
 
+      // Capture the current branch as the base branch for PR creation
+      const baseBranch = yield* git.getCurrentBranch().pipe(
+        Effect.tapError((error) =>
+          Effect.logDebug("Failed to get current branch", {
+            error: String(error),
+          })
+        ),
+        Effect.orElseSucceed(() => undefined)
+      );
+
       // Create worktree for isolated execution
       const worktreePath = yield* git.createWorktree(session.id).pipe(
         Effect.mapError(
@@ -307,12 +329,13 @@ export function runRalphLoop(
 
       const branchName = git.getBranchName(session.id);
 
-      // Update session with worktree info
+      // Update session with worktree info and base branch
       yield* sessionStore
         .update(session.id, {
           ...session,
           worktreePath,
           branchName,
+          baseBranch,
         })
         .pipe(
           Effect.tapError((error) =>
@@ -339,8 +362,9 @@ export function runRalphLoop(
       // but state is read fresh from files at the START of each iteration
       const loopCompletedRef = yield* Ref.make(false);
       const currentPlanRef = yield* Ref.make<Plan | undefined>(undefined);
-      // Track session state for updates during discovery
-      const sessionRef = yield* Ref.make(session);
+      // Track session state for updates during discovery (includes baseBranch)
+      const initialSession: Session = { ...session, baseBranch };
+      const sessionRef = yield* Ref.make(initialSession);
 
       const maxIterations =
         config.maxIterations === 0
@@ -495,7 +519,8 @@ function createCompletionStream(
     createPR: (
       sessionId: string,
       title: string,
-      body: string
+      body: string,
+      baseBranch?: string
     ) => Effect.Effect<string, unknown>;
     getBranchName: (sessionId: string) => string;
   },
@@ -550,16 +575,18 @@ function createCompletionStream(
         const title = `feat: ${session.originalTask.slice(0, 50)}`;
         const body = buildPRBody(session, config);
 
-        const prResult = yield* git.createPR(session.id, title, body).pipe(
-          Effect.map((url) => url),
-          Effect.tapError((error) =>
-            Effect.logDebug("PR creation failed, continuing", {
-              sessionId: session.id,
-              error: String(error),
-            })
-          ),
-          Effect.orElseSucceed(() => undefined)
-        );
+        const prResult = yield* git
+          .createPR(session.id, title, body, session.baseBranch)
+          .pipe(
+            Effect.map((url) => url),
+            Effect.tapError((error) =>
+              Effect.logDebug("PR creation failed, continuing", {
+                sessionId: session.id,
+                error: String(error),
+              })
+            ),
+            Effect.orElseSucceed(() => undefined)
+          );
         prUrl = prResult;
       }
 

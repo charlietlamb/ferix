@@ -25,6 +25,8 @@ export const SessionSchema = S.Struct({
   branchName: S.optional(S.String),
   /** Task-based descriptive name (kebab-case slug, e.g., "add-dark-mode-toggle") */
   displayName: S.optional(S.String),
+  /** The branch ferix was started from - used as PR base branch */
+  baseBranch: S.optional(S.String),
 });
 export type Session = typeof SessionSchema.Type;
 

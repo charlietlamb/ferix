@@ -111,13 +111,24 @@ export interface GitService {
    * @param sessionId - Session ID whose branch to create PR for
    * @param title - PR title
    * @param body - PR body/description
+   * @param baseBranch - Optional base branch for the PR (defaults to repo default)
    * @returns URL of the created PR
    */
   readonly createPR: (
     sessionId: string,
     title: string,
-    body: string
+    body: string,
+    baseBranch?: string
   ) => Effect.Effect<PrUrl, GitError>;
+
+  /**
+   * Get the current branch name of the main repository.
+   *
+   * Used to capture the base branch when starting a session.
+   *
+   * @returns The current branch name
+   */
+  readonly getCurrentBranch: () => Effect.Effect<string, GitError>;
 
   /**
    * Get the branch name for a session.

@@ -153,7 +153,8 @@ function createMemoryGitService(
     createPR: (
       sessionId: string,
       title: string,
-      _body: string
+      _body: string,
+      _baseBranch?: string
     ): Effect.Effect<PrUrl, GitError> =>
       Effect.gen(function* () {
         const state = yield* Ref.get(stateRef);
@@ -172,6 +173,9 @@ function createMemoryGitService(
         const slug = title.toLowerCase().replace(/\s+/g, "-").slice(0, 30);
         return `https://github.com/test/repo/pull/${slug}` as PrUrl;
       }),
+
+    getCurrentBranch: (): Effect.Effect<string, GitError> =>
+      Effect.succeed("main"), // Default to main for tests
 
     renameBranch: (
       sessionId: string,

@@ -472,7 +472,8 @@ const make: GitService = {
   createPR: (
     sessionId: string,
     title: string,
-    body: string
+    body: string,
+    baseBranch?: string
   ): Effect.Effect<PrUrl, GitError> =>
     Effect.gen(function* () {
       const worktreeDir = getWorktreeDir(sessionId);
@@ -492,9 +493,12 @@ const make: GitService = {
       const escapedTitle = title.replace(/"/g, '\\"');
       const escapedBody = body.replace(/"/g, '\\"');
 
+      // Build command with optional --base flag
+      const baseFlag = baseBranch ? ` --base "${baseBranch}"` : "";
+
       // Create PR using gh CLI
       const prUrl = yield* gitExec(
-        `gh pr create --title "${escapedTitle}" --body "${escapedBody}"`,
+        `gh pr create --title "${escapedTitle}" --body "${escapedBody}"${baseFlag}`,
         worktreeDir
       ).pipe(
         Effect.mapError(
@@ -509,6 +513,18 @@ const make: GitService = {
 
       return prUrl as PrUrl;
     }),
+
+  getCurrentBranch: (): Effect.Effect<string, GitError> =>
+    gitExec("git branch --show-current").pipe(
+      Effect.mapError(
+        (error) =>
+          new GitError({
+            message: `Failed to get current branch: ${error.message}`,
+            operation: "getCurrentBranch",
+            cause: error,
+          })
+      )
+    ),
 
   renameBranch: (
     sessionId: string,
