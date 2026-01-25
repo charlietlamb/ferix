@@ -107,6 +107,19 @@ Guidelines for session name:
   <task id="2">Brief description of second task</task>
 </ferix:tasks>
 
+## CRITICAL: Task Exclusions
+
+Do NOT create tasks for any of the following - these are handled automatically by the orchestrator:
+- Running verification commands (bun lint, bun format, eslint, prettier, etc.)
+- Running tests (bun test, jest, vitest, etc.)
+- Running build commands (bun build, tsc, etc.)
+- Any "Verification", "Testing", or "Testing Plan" sections from PRDs
+- Final cleanup, validation, or quality check steps
+- Commands that just run and check output without changing code
+
+Tasks should ONLY be for implementation work that creates or modifies source code files.
+Verification commands are run automatically after each task completes - do not create tasks for them.
+
 IMPORTANT: Always emit signals on their own lines, never inside markdown code blocks.`;
 
 /**
@@ -335,6 +348,11 @@ Each task should be:
 - Self-contained and independently verifiable
 - Clear and specific
 - Ordered logically (dependencies first)
+- ONLY for code implementation (NOT for running lint/test/build commands)
+
+REMINDER: Do NOT create tasks for verification steps like "Run lint", "Run tests", "Verify changes", etc.
+The orchestrator handles verification automatically after each task completes.
+If the PRD has a "Verification" or "Testing" section, IGNORE it when creating tasks.
 
 Begin your analysis now.`);
 

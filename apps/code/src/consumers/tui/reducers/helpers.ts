@@ -11,6 +11,62 @@ import { MAX_OUTPUT_LINES } from "../constants.js";
 import { formatToolInput } from "../tools/index.js";
 
 /**
+ * Patterns to match ferix signal tags that should be hidden from TUI output.
+ * These signals are parsed by the signal parser and displayed via proper UI elements.
+ *
+ * Signals come in several forms:
+ * 1. Self-closing: <ferix:check-passed/>
+ * 2. With content: <ferix:session-name>value</ferix:session-name>
+ * 3. Block with nested elements: <ferix:tasks>...<task>...</task>...</ferix:tasks>
+ * 4. With attributes: <ferix:phase-start id="1.1"/>
+ */
+
+// Block tags with content (can be multi-line)
+const FERIX_BLOCK_PATTERNS = [
+  /<ferix:session-name>[\s\S]*?<\/ferix:session-name>/g,
+  /<ferix:tasks>[\s\S]*?<\/ferix:tasks>/g,
+  /<ferix:phases[^>]*>[\s\S]*?<\/ferix:phases>/g,
+  /<ferix:criteria[^>]*>[\s\S]*?<\/ferix:criteria>/g,
+  /<ferix:task-complete[^>]*>[\s\S]*?<\/ferix:task-complete>/g,
+  /<ferix:phase-failed[^>]*>[\s\S]*?<\/ferix:phase-failed>/g,
+  /<ferix:learning[^>]*>[\s\S]*?<\/ferix:learning>/g,
+  /<ferix:guardrail[^>]*>[\s\S]*?<\/ferix:guardrail>/g,
+];
+
+// Self-closing tags (single line)
+const FERIX_SELF_CLOSING_PATTERNS = [
+  /<ferix:phase-start[^>]*\/>/g,
+  /<ferix:phase-done[^>]*\/>/g,
+  /<ferix:criterion-passed[^>]*\/>/g,
+  /<ferix:criterion-failed[^>]*\/>/g,
+  /<ferix:check-passed\s*\/>/g,
+  /<ferix:check-failed\s*\/>/g,
+  /<ferix:review-complete\s*\/>/g,
+  /<ferix:review-changes-made\s*\/>/g,
+  /<ferix:complete\s*>/g, // Note: complete is not self-closing, just <ferix:complete>
+];
+
+/**
+ * Strip ferix signal tags from text for display.
+ * These signals are parsed separately and should not appear in the UI output.
+ */
+function stripFerixSignals(text: string): string {
+  let result = text;
+
+  // Remove block patterns first (they can be multi-line)
+  for (const pattern of FERIX_BLOCK_PATTERNS) {
+    result = result.replace(pattern, "");
+  }
+
+  // Remove self-closing patterns
+  for (const pattern of FERIX_SELF_CLOSING_PATTERNS) {
+    result = result.replace(pattern, "");
+  }
+
+  return result;
+}
+
+/**
  * Append output lines to state.
  */
 export function appendOutput(state: TUIState, text: string): TUIState {
@@ -18,7 +74,13 @@ export function appendOutput(state: TUIState, text: string): TUIState {
     return state;
   }
 
-  const fullText = state.partialLine + text;
+  // Strip ferix signals from the text before displaying
+  const cleanedText = stripFerixSignals(text);
+  if (!cleanedText) {
+    return state;
+  }
+
+  const fullText = state.partialLine + cleanedText;
   const parts = fullText.split("\n");
   const partialLine = parts.pop() ?? "";
   const newLines = parts.filter((line) => line.length > 0);
