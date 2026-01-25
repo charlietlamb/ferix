@@ -25,6 +25,7 @@ import {
   RepositoryFileTreeSkeleton,
 } from "./repository-file-tree";
 import { RepositoryName } from "./repository-name";
+import { RepositorySidebar } from "./repository-sidebar";
 import { RepositoryTags } from "./repository-tags";
 
 interface RepositoryContentProps {
@@ -171,11 +172,16 @@ export function RepositoryContent({ repositoryId }: RepositoryContentProps) {
           tags={repository.tags ?? []}
         />
       )}
-      <RepositoryFileTree
-        loadMore={() => loadMore(50)}
-        prompts={prompts}
-        status={promptsStatus}
-      />
+      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+        <div className="flex-1 overflow-y-auto">
+          <RepositoryFileTree
+            loadMore={() => loadMore(50)}
+            prompts={prompts}
+            status={promptsStatus}
+          />
+        </div>
+        <RepositorySidebar repository={repository} />
+      </div>
     </div>
   );
 }

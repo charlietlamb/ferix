@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@ferix/i18n/navigation";
+import { Link, usePathname } from "@ferix/i18n/navigation";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -33,6 +33,7 @@ const navItems: NavItem[] = [
 
 export function NavMain() {
   const t = useTranslations("sidebar");
+  const pathname = usePathname();
 
   return (
     <SidebarGroup>
@@ -41,7 +42,10 @@ export function NavMain() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.titleKey}>
-              <SidebarMenuButton render={<Link href={item.href} />}>
+              <SidebarMenuButton
+                isActive={pathname === item.href}
+                render={<Link href={item.href} />}
+              >
                 <item.icon className="size-4" />
                 <span>{t(item.titleKey)}</span>
               </SidebarMenuButton>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@ferix/i18n/navigation";
+import { Link, usePathname } from "@ferix/i18n/navigation";
 import {
   Collapsible,
   CollapsibleContent,
@@ -31,6 +31,7 @@ const TOP_CATEGORY_IDS = [
 
 export function NavCategories() {
   const t = useTranslations("sidebar");
+  const pathname = usePathname();
   const categories = getTagsByIds(TOP_CATEGORY_IDS);
 
   return (
@@ -52,6 +53,7 @@ export function NavCategories() {
                 return (
                   <SidebarMenuItem key={tag.id}>
                     <SidebarMenuButton
+                      isActive={pathname === `/tag/${tag.id}`}
                       render={<Link href={`/tag/${tag.id}`} />}
                     >
                       <Icon size={16} />

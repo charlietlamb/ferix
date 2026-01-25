@@ -9,6 +9,7 @@ import { TypeBadge } from "@ferix/ui/components/prompts/shared/type-badge";
 import { SaveButton } from "@ferix/ui/components/utils/save-button";
 import { useCopy } from "@ferix/ui/hooks/use-copy";
 import { useOptimisticState } from "@ferix/ui/hooks/use-optimistic-state";
+import { stripFrontmatter } from "@ferix/ui/lib/markdown";
 import { type PromptType, promptTypeConfigs } from "@ferix/ui/lib/prompt-types";
 import { getTagById } from "@ferix/ui/lib/tags";
 import { CheckIcon, CopyIcon, DownloadIcon } from "@phosphor-icons/react";
@@ -81,7 +82,7 @@ export function PromptCell({ prompt }: PromptCellProps) {
         </div>
         <pre className="h-20 overflow-hidden p-2 font-mono text-xs">
           <code className="line-clamp-4 whitespace-pre-wrap text-muted-foreground">
-            {prompt.content}
+            {stripFrontmatter(prompt.content)}
           </code>
         </pre>
       </div>

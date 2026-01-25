@@ -1,5 +1,6 @@
 "use client";
 
+import { stripFrontmatter } from "@ferix/ui/lib/markdown";
 import { cn } from "@ferix/ui/lib/utils";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
@@ -135,7 +136,7 @@ export function PromptDetailMarkdown({
         }}
         remarkPlugins={[remarkGfm]}
       >
-        {content}
+        {stripFrontmatter(content)}
       </Markdown>
     </div>
   );
