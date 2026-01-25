@@ -1,4 +1,12 @@
-import { Schema as S } from "effect";
+import { Either, Schema as S } from "effect";
+import {
+  type AnyToolInput,
+  AnyToolInputSchema,
+  validateToolInput,
+} from "./tool-inputs.js";
+
+// Re-export tool input validation helper
+export { validateToolInput } from "./tool-inputs.js";
 
 // Individual LLM event schemas
 export const TextEventSchema = S.TaggedStruct("Text", {
@@ -9,9 +17,25 @@ export const ToolStartEventSchema = S.TaggedStruct("ToolStart", {
   tool: S.String,
 });
 
+/**
+ * Tool use event schema.
+ *
+ * The input field uses AnyToolInputSchema for known tools,
+ * but falls back to S.Unknown for forward compatibility with
+ * unknown tools or new tool versions.
+ */
 export const ToolUseEventSchema = S.TaggedStruct("ToolUse", {
   tool: S.String,
   input: S.Unknown,
+});
+
+/**
+ * Validated tool use event schema - validates input against known tool schemas.
+ * Use this when you want strict validation of tool inputs.
+ */
+export const ValidatedToolUseEventSchema = S.TaggedStruct("ToolUse", {
+  tool: S.String,
+  input: AnyToolInputSchema,
 });
 
 export const ToolEndEventSchema = S.TaggedStruct("ToolEnd", {
@@ -45,4 +69,29 @@ export type LLMEvent =
   | ToolEndEvent
   | DoneEvent;
 
+/**
+ * Validated tool use event type with typed input.
+ */
+export interface ValidatedToolUseEvent {
+  readonly _tag: "ToolUse";
+  readonly tool: string;
+  readonly input: AnyToolInput;
+}
+
 export const decodeLLMEvent = S.decodeUnknown(LLMEventSchema);
+
+/**
+ * Create a validated ToolUseEvent by validating the input against the tool's schema.
+ *
+ * @param event - ToolUseEvent with unknown input
+ * @returns Either with validated event or parse error
+ */
+export function validateToolUseEvent(
+  event: ToolUseEvent
+): Either.Either<ToolUseEvent, unknown> {
+  const validatedInput = validateToolInput(event.tool, event.input);
+  return Either.map(validatedInput, (input) => ({
+    ...event,
+    input,
+  }));
+}

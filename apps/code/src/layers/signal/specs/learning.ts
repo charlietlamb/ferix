@@ -1,8 +1,9 @@
-import { Schema as S } from "effect";
+import { Either } from "effect";
 import {
   type LearningSignal,
   LearningSignalSchema,
 } from "../../../domain/index.js";
+import { createLearningSignal } from "../../../domain/schemas/signal-factories.js";
 import { type SignalSpec, signalSpecRegistry } from "./registry.js";
 
 /**
@@ -33,17 +34,8 @@ const learningSpec: SignalSpec<LearningSignal> = {
         continue;
       }
 
-      const raw: Record<string, unknown> = {
-        _tag: "Learning" as const,
-        content,
-      };
-
-      if (category) {
-        raw.category = category;
-      }
-
-      const result = S.decodeUnknownEither(LearningSignalSchema)(raw);
-      if (result._tag === "Right") {
+      const result = createLearningSignal({ content, category });
+      if (Either.isRight(result)) {
         signals.push(result.right);
       }
     }

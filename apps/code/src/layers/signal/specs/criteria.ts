@@ -1,4 +1,4 @@
-import { Schema as S } from "effect";
+import { Either } from "effect";
 import {
   type CriteriaDefinedSignal,
   CriteriaDefinedSignalSchema,
@@ -7,6 +7,11 @@ import {
   type CriterionPassedSignal,
   CriterionPassedSignalSchema,
 } from "../../../domain/index.js";
+import {
+  createCriteriaDefinedSignal,
+  createCriterionFailedSignal,
+  createCriterionPassedSignal,
+} from "../../../domain/schemas/signal-factories.js";
 import { type SignalSpec, signalSpecRegistry } from "./registry.js";
 
 const CRITERIA_BLOCK =
@@ -38,13 +43,11 @@ const criteriaDefinedSpec: SignalSpec<CriteriaDefinedSignal> = {
         }
       }
       if (criteria.length > 0) {
-        const raw = {
-          _tag: "CriteriaDefined" as const,
+        const result = createCriteriaDefinedSignal({
           taskId: match[1],
           criteria,
-        };
-        const result = S.decodeUnknownEither(CriteriaDefinedSignalSchema)(raw);
-        if (result._tag === "Right") {
+        });
+        if (Either.isRight(result)) {
           signals.push(result.right);
         }
       }
@@ -62,9 +65,8 @@ const criterionPassedSpec: SignalSpec<CriterionPassedSignal> = {
     const signals: CriterionPassedSignal[] = [];
     for (const m of text.matchAll(resetRegex(CRITERION_PASSED))) {
       if (m[1]) {
-        const raw = { _tag: "CriterionPassed" as const, criterionId: m[1] };
-        const result = S.decodeUnknownEither(CriterionPassedSignalSchema)(raw);
-        if (result._tag === "Right") {
+        const result = createCriterionPassedSignal({ criterionId: m[1] });
+        if (Either.isRight(result)) {
           signals.push(result.right);
         }
       }
@@ -82,13 +84,11 @@ const criterionFailedSpec: SignalSpec<CriterionFailedSignal> = {
     const signals: CriterionFailedSignal[] = [];
     for (const m of text.matchAll(resetRegex(CRITERION_FAILED))) {
       if (m[1]) {
-        const raw = {
-          _tag: "CriterionFailed" as const,
+        const result = createCriterionFailedSignal({
           criterionId: m[1],
           reason: m[2] || "Unknown reason",
-        };
-        const result = S.decodeUnknownEither(CriterionFailedSignalSchema)(raw);
-        if (result._tag === "Right") {
+        });
+        if (Either.isRight(result)) {
           signals.push(result.right);
         }
       }

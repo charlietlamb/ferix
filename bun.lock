@@ -14,8 +14,9 @@
     },
     "apps/code": {
       "name": "ferix-code",
-      "version": "0.0.2-beta.3",
+      "version": "0.0.2-beta.16",
       "bin": {
+        "ferix": "dist/index.js",
         "ferix-code": "dist/index.js",
       },
       "dependencies": {
@@ -70,7 +71,7 @@
       },
     },
     "apps/web": {
-      "name": "web",
+      "name": "@ferix/web",
       "version": "0.1.0",
       "dependencies": {
         "@base-ui/react": "catalog:",
@@ -430,6 +431,8 @@
     "@ferix/typescript-config": ["@ferix/typescript-config@workspace:packages/typescript-config"],
 
     "@ferix/ui": ["@ferix/ui@workspace:packages/ui"],
+
+    "@ferix/web": ["@ferix/web@workspace:apps/web"],
 
     "@floating-ui/core": ["@floating-ui/core@1.7.3", "", { "dependencies": { "@floating-ui/utils": "^0.2.10" } }, "sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w=="],
 
@@ -1558,8 +1561,6 @@
     "vfile-message": ["vfile-message@4.0.3", "", { "dependencies": { "@types/unist": "^3.0.0", "unist-util-stringify-position": "^4.0.0" } }, "sha512-QTHzsGd1EhbZs4AsQ20JX1rC3cOlt/IWJruk893DfLRr57lcnOeMaWG4K0JrRta4mIJZKth2Au3mM3u03/JWKw=="],
 
     "victory-vendor": ["victory-vendor@36.9.2", "", { "dependencies": { "@types/d3-array": "^3.0.3", "@types/d3-ease": "^3.0.0", "@types/d3-interpolate": "^3.0.1", "@types/d3-scale": "^4.0.2", "@types/d3-shape": "^3.1.0", "@types/d3-time": "^3.0.0", "@types/d3-timer": "^3.0.0", "d3-array": "^3.1.6", "d3-ease": "^3.0.1", "d3-interpolate": "^3.0.1", "d3-scale": "^4.0.2", "d3-shape": "^3.1.0", "d3-time": "^3.0.0", "d3-timer": "^3.0.1" } }, "sha512-PnpQQMuxlwYdocC8fIJqVXvkeViHYzotI+NJrCuav0ZYFoq912ZHBk3mCeuj+5/VpodOjPe1z0Fk2ihgzlXqjQ=="],
-
-    "web": ["web@workspace:apps/web"],
 
     "web-vitals": ["web-vitals@4.2.4", "", {}, "sha512-r4DIlprAGwJ7YM11VZp4R884m0Vmgr6EAKe3P+kO0PPj3Unqyvv59rczf6UiGcb9Z8QxZVcqKNwv/g0WNdWwsw=="],
 

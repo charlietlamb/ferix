@@ -1,4 +1,4 @@
-import { Schema as S } from "effect";
+import { Either } from "effect";
 import {
   type PhaseCompletedSignal,
   PhaseCompletedSignalSchema,
@@ -9,6 +9,12 @@ import {
   type PhasesDefinedSignal,
   PhasesDefinedSignalSchema,
 } from "../../../domain/index.js";
+import {
+  createPhaseCompletedSignal,
+  createPhaseFailedSignal,
+  createPhaseStartedSignal,
+  createPhasesDefinedSignal,
+} from "../../../domain/schemas/signal-factories.js";
 import { type SignalSpec, signalSpecRegistry } from "./registry.js";
 
 const PHASES_BLOCK = /<ferix:phases task="(\d+)">([\s\S]*?)<\/ferix:phases>/;
@@ -41,16 +47,11 @@ const phasesDefinedSpec: SignalSpec<PhasesDefinedSignal> = {
     if (phases.length === 0) {
       return [];
     }
-    const raw = {
-      _tag: "PhasesDefined" as const,
-      taskId: match[1],
-      phases,
-    };
-    const result = S.decodeUnknownEither(PhasesDefinedSignalSchema)(raw);
-    if (result._tag === "Left") {
-      return [];
+    const result = createPhasesDefinedSignal({ taskId: match[1], phases });
+    if (Either.isRight(result)) {
+      return [result.right];
     }
-    return [result.right];
+    return [];
   },
   keyFields: (s) => `${s.taskId}:${s.phases.map((p) => p.id).join(",")}`,
 };
@@ -63,9 +64,8 @@ const phaseStartedSpec: SignalSpec<PhaseStartedSignal> = {
     const signals: PhaseStartedSignal[] = [];
     for (const m of text.matchAll(resetRegex(PHASE_START))) {
       if (m[1]) {
-        const raw = { _tag: "PhaseStarted" as const, phaseId: m[1] };
-        const result = S.decodeUnknownEither(PhaseStartedSignalSchema)(raw);
-        if (result._tag === "Right") {
+        const result = createPhaseStartedSignal({ phaseId: m[1] });
+        if (Either.isRight(result)) {
           signals.push(result.right);
         }
       }
@@ -83,9 +83,8 @@ const phaseCompletedSpec: SignalSpec<PhaseCompletedSignal> = {
     const signals: PhaseCompletedSignal[] = [];
     for (const m of text.matchAll(resetRegex(PHASE_DONE))) {
       if (m[1]) {
-        const raw = { _tag: "PhaseCompleted" as const, phaseId: m[1] };
-        const result = S.decodeUnknownEither(PhaseCompletedSignalSchema)(raw);
-        if (result._tag === "Right") {
+        const result = createPhaseCompletedSignal({ phaseId: m[1] });
+        if (Either.isRight(result)) {
           signals.push(result.right);
         }
       }
@@ -103,13 +102,11 @@ const phaseFailedSpec: SignalSpec<PhaseFailedSignal> = {
     const signals: PhaseFailedSignal[] = [];
     for (const m of text.matchAll(resetRegex(PHASE_FAILED))) {
       if (m[1]) {
-        const raw = {
-          _tag: "PhaseFailed" as const,
+        const result = createPhaseFailedSignal({
           phaseId: m[1],
           reason: m[2] || "Unknown reason",
-        };
-        const result = S.decodeUnknownEither(PhaseFailedSignalSchema)(raw);
-        if (result._tag === "Right") {
+        });
+        if (Either.isRight(result)) {
           signals.push(result.right);
         }
       }

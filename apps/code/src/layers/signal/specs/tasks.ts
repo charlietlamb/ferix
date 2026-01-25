@@ -1,8 +1,9 @@
-import { Schema as S } from "effect";
+import { Either } from "effect";
 import {
   type TasksDefinedSignal,
   TasksDefinedSignalSchema,
 } from "../../../domain/index.js";
+import { createTasksDefinedSignal } from "../../../domain/schemas/signal-factories.js";
 import { type SignalSpec, signalSpecRegistry } from "./registry.js";
 
 const TASKS_BLOCK = /<ferix:tasks>([\s\S]*?)<\/ferix:tasks>/;
@@ -35,12 +36,11 @@ const tasksDefinedSpec: SignalSpec<TasksDefinedSignal> = {
     if (tasks.length === 0) {
       return [];
     }
-    const raw = { _tag: "TasksDefined" as const, tasks };
-    const result = S.decodeUnknownEither(TasksDefinedSignalSchema)(raw);
-    if (result._tag === "Left") {
-      return [];
+    const result = createTasksDefinedSignal({ tasks });
+    if (Either.isRight(result)) {
+      return [result.right];
     }
-    return [result.right];
+    return [];
   },
   keyFields: (s) => s.tasks.map((t) => t.id).join(","),
 };

@@ -1,8 +1,20 @@
+import { Either } from "effect";
 import pc from "picocolors";
+import {
+  type AnyToolInput,
+  validateToolInput,
+} from "../../../domain/schemas/tool-inputs.js";
 import { MAX_TOOL_INPUT_LENGTH } from "../constants.js";
 
 // Define brightWhite locally to avoid circular dependency with primitives
 const brightWhite = (s: string) => pc.bold(pc.white(s));
+
+/**
+ * Represents a validated tool input or a raw object for unknown tools.
+ * AnyToolInput provides typed access to known tool fields,
+ * while the fallback allows forward compatibility with unknown tools.
+ */
+type ValidatedToolInput = AnyToolInput | Record<string, unknown>;
 
 /**
  * Normalize tool name for case-insensitive lookup.
@@ -12,28 +24,56 @@ function normalizeToolName(tool: string): string {
 }
 
 /**
- * Get value from input object trying multiple key formats.
+ * Extract a string value from input object, trying multiple key formats.
  * Handles both snake_case (file_path) and camelCase (filePath) variants.
+ * Returns the string value if found, undefined otherwise.
  */
-function getInputValue(obj: Record<string, unknown>, key: string): unknown {
+function extractStringValue(
+  obj: ValidatedToolInput,
+  key: string
+): string | undefined {
+  const getValue = (k: string): string | undefined => {
+    const val = obj[k];
+    return typeof val === "string" ? val : undefined;
+  };
+
   // Try exact key first
-  if (obj[key] !== undefined) {
-    return obj[key];
+  const exact = getValue(key);
+  if (exact !== undefined) {
+    return exact;
   }
 
   // Try camelCase version (file_path -> filePath)
   const camelKey = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-  if (obj[camelKey] !== undefined) {
-    return obj[camelKey];
+  const camel = getValue(camelKey);
+  if (camel !== undefined) {
+    return camel;
   }
 
   // Try snake_case version (filePath -> file_path)
   const snakeKey = key.replace(/([A-Z])/g, "_$1").toLowerCase();
-  if (obj[snakeKey] !== undefined) {
-    return obj[snakeKey];
+  return getValue(snakeKey);
+}
+
+/**
+ * Safely extract validated input object from unknown input using schema validation.
+ * Returns AnyToolInput for known tools, or raw object for unknown tools (forward compatibility).
+ */
+function getValidatedInput(
+  tool: string,
+  input: unknown
+): ValidatedToolInput | null {
+  if (!input || typeof input !== "object") {
+    return null;
   }
 
-  return undefined;
+  const result = validateToolInput(tool, input);
+  if (Either.isRight(result)) {
+    return result.right;
+  }
+
+  // Fall back to raw input for forward compatibility with unknown tools
+  return input as Record<string, unknown>;
 }
 
 /**
@@ -85,25 +125,24 @@ export function createToolDisplayRegistry(): ToolDisplayRegistry {
     },
 
     formatInput(tool: string, input: unknown): string {
-      if (!input || typeof input !== "object") {
-        return "";
-      }
-
       const config = configs.get(normalizeToolName(tool));
       if (!config) {
         return "";
       }
 
-      const obj = input as Record<string, unknown>;
-      // Try multiple key formats (snake_case and camelCase)
-      const value = getInputValue(obj, config.inputKey);
-      if (!value) {
+      // Use schema-validated input extraction
+      const obj = getValidatedInput(tool, input);
+      if (!obj) {
         return "";
       }
 
-      const str = String(value);
+      // Try multiple key formats (snake_case and camelCase)
+      const value = extractStringValue(obj, config.inputKey);
+      if (!value) {
+        return "";
+      }
       const maxLen = config.maxLength ?? MAX_TOOL_INPUT_LENGTH;
-      return str.length > maxLen ? `${str.slice(0, maxLen)}...` : str;
+      return value.length > maxLen ? `${value.slice(0, maxLen)}...` : value;
     },
   };
 }

@@ -7,7 +7,7 @@
     "cli": "bun build:cli && node apps/legacy-test-cli/dist/index.js",
     "build:code": "bun run --filter=ferix-code build",
     "code": "bun build:code && node apps/code/dist/index.js",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=@ferix/web --filter=@ferix/server",
     "lint": "bunx biome lint",
     "format": "bunx biome format --write",
     "check-types": "turbo run check-types",

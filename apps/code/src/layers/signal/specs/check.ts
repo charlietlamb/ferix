@@ -1,10 +1,14 @@
-import { Schema as S } from "effect";
+import { Either } from "effect";
 import {
   type CheckFailedSignal,
   CheckFailedSignalSchema,
   type CheckPassedSignal,
   CheckPassedSignalSchema,
 } from "../../../domain/index.js";
+import {
+  createCheckFailedSignal,
+  createCheckPassedSignal,
+} from "../../../domain/schemas/signal-factories.js";
 import { type SignalSpec, signalSpecRegistry } from "./registry.js";
 
 const CHECK_PASSED = /<ferix:check-passed\/>/;
@@ -16,9 +20,8 @@ const checkPassedSpec: SignalSpec<CheckPassedSignal> = {
   schema: CheckPassedSignalSchema,
   parse: (text) => {
     if (CHECK_PASSED.test(text)) {
-      const raw = { _tag: "CheckPassed" as const };
-      const result = S.decodeUnknownEither(CheckPassedSignalSchema)(raw);
-      if (result._tag === "Right") {
+      const result = createCheckPassedSignal({});
+      if (Either.isRight(result)) {
         return [result.right];
       }
     }
@@ -33,9 +36,8 @@ const checkFailedSpec: SignalSpec<CheckFailedSignal> = {
   schema: CheckFailedSignalSchema,
   parse: (text) => {
     if (CHECK_FAILED.test(text)) {
-      const raw = { _tag: "CheckFailed" as const };
-      const result = S.decodeUnknownEither(CheckFailedSignalSchema)(raw);
-      if (result._tag === "Right") {
+      const result = createCheckFailedSignal({});
+      if (Either.isRight(result)) {
         return [result.right];
       }
     }

@@ -1,8 +1,9 @@
-import { Schema as S } from "effect";
+import { Either } from "effect";
 import {
   type GuardrailSignal,
   GuardrailSignalSchema,
 } from "../../../domain/index.js";
+import { createGuardrailSignal } from "../../../domain/schemas/signal-factories.js";
 import { type SignalSpec, signalSpecRegistry } from "./registry.js";
 
 /**
@@ -46,16 +47,13 @@ const guardrailSpec: SignalSpec<GuardrailSignal> = {
         continue;
       }
 
-      const raw = {
-        _tag: "Guardrail" as const,
+      const result = createGuardrailSignal({
         pattern,
         sign,
         avoidance,
         severity,
-      };
-
-      const result = S.decodeUnknownEither(GuardrailSignalSchema)(raw);
-      if (result._tag === "Right") {
+      });
+      if (Either.isRight(result)) {
         signals.push(result.right);
       }
     }

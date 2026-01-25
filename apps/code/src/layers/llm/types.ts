@@ -1,6 +1,7 @@
-import type { Stream } from "effect";
+import { Schema as S, type Stream } from "effect";
 import type { LLMError } from "../../domain/errors.js";
 import type { ProviderName } from "../../domain/schemas/config.js";
+import { ProviderNameSchema } from "../../domain/schemas/config.js";
 import type { LLMEvent } from "../../domain/schemas/llm.js";
 import type { LLMExecuteOptions } from "../../services/llm.js";
 
@@ -8,22 +9,33 @@ import type { LLMExecuteOptions } from "../../services/llm.js";
 export type { ProviderName } from "../../domain/schemas/config.js";
 
 /**
+ * Permission mode schema for CLI permission levels.
+ */
+export const PermissionModeSchema = S.Literal("acceptEdits", "yolo", "prompt");
+export type PermissionMode = typeof PermissionModeSchema.Type;
+
+/**
+ * Provider configuration schema with runtime validation.
+ */
+export const ProviderConfigSchema = S.Struct({
+  /** Provider name */
+  name: ProviderNameSchema,
+  /** CLI command to execute */
+  cliCommand: S.String,
+  /** Default arguments for the CLI */
+  args: S.Array(S.String),
+  /** Environment variables to pass */
+  env: S.optional(S.Record({ key: S.String, value: S.String })),
+  /** Permission mode for the CLI */
+  permissions: S.optional(PermissionModeSchema),
+  /** URL for installation instructions */
+  installUrl: S.String,
+});
+
+/**
  * Configuration for a provider.
  */
-export interface ProviderConfig {
-  /** Provider name */
-  readonly name: ProviderName;
-  /** CLI command to execute */
-  readonly cliCommand: string;
-  /** Default arguments for the CLI */
-  readonly args: readonly string[];
-  /** Environment variables to pass */
-  readonly env?: Readonly<Record<string, string>>;
-  /** Permission mode for the CLI */
-  readonly permissions?: "acceptEdits" | "yolo" | "prompt";
-  /** URL for installation instructions */
-  readonly installUrl: string;
-}
+export type ProviderConfig = typeof ProviderConfigSchema.Type;
 
 /**
  * Provider interface that all LLM implementations must satisfy.
@@ -49,35 +61,60 @@ export interface Provider {
 }
 
 /**
+ * Raw provider configurations (validated at module load time).
+ */
+const RAW_PROVIDER_CONFIGS = {
+  claude: {
+    name: "claude",
+    cliCommand: "claude",
+    args: [
+      "--permission-mode",
+      "acceptEdits",
+      "--output-format",
+      "stream-json",
+      "--verbose",
+      "--include-partial-messages",
+    ],
+    permissions: "acceptEdits",
+    installUrl: "https://docs.anthropic.com/claude-code",
+  },
+  cursor: {
+    name: "cursor",
+    cliCommand: "cursor-agent",
+    args: ["--print", "--force", "--output-format", "stream-json"],
+    permissions: "acceptEdits",
+    installUrl: "https://cursor.sh/agent",
+  },
+  opencode: {
+    name: "opencode",
+    cliCommand: "opencode",
+    args: ["run", "--format", "json"],
+    installUrl: "https://opencode.ai/docs/",
+  },
+} as const;
+
+/**
+ * Provider configs record schema for validating the entire config object.
+ */
+const ProviderConfigsSchema = S.Record({
+  key: ProviderNameSchema,
+  value: ProviderConfigSchema,
+});
+
+/**
+ * Validate provider configs at module load time.
+ * This ensures all configs are valid and catches configuration errors early.
+ */
+const validateProviderConfigs = (): Record<ProviderName, ProviderConfig> => {
+  const decoded = S.decodeUnknownSync(ProviderConfigsSchema)(
+    RAW_PROVIDER_CONFIGS
+  );
+  return decoded as Record<ProviderName, ProviderConfig>;
+};
+
+/**
  * Default provider configurations.
+ * Validated at module load time using Effect Schema.
  */
 export const PROVIDER_CONFIGS: Readonly<Record<ProviderName, ProviderConfig>> =
-  {
-    claude: {
-      name: "claude",
-      cliCommand: "claude",
-      args: [
-        "--permission-mode",
-        "acceptEdits",
-        "--output-format",
-        "stream-json",
-        "--verbose",
-        "--include-partial-messages",
-      ],
-      permissions: "acceptEdits",
-      installUrl: "https://docs.anthropic.com/claude-code",
-    },
-    cursor: {
-      name: "cursor",
-      cliCommand: "cursor-agent",
-      args: ["--print", "--force", "--output-format", "stream-json"],
-      permissions: "acceptEdits",
-      installUrl: "https://cursor.sh/agent",
-    },
-    opencode: {
-      name: "opencode",
-      cliCommand: "opencode",
-      args: ["run", "--format", "json"],
-      installUrl: "https://opencode.ai/docs/",
-    },
-  } as const;
+  validateProviderConfigs();
