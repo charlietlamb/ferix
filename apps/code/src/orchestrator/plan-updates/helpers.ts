@@ -1,6 +1,26 @@
 import { type Plan, PlanId, type Task } from "../../domain/index.js";
 
 /**
+ * Patterns that identify verification tasks which should not be created.
+ * These tasks are handled automatically by the orchestrator.
+ */
+const VERIFICATION_PATTERNS: readonly RegExp[] = [
+  /\b(lint|linting|format|formatting)\b/i,
+  /\b(run\s+tests?|testing)\b/i,
+  /\b(verify|verification|validate|validation)\b/i,
+  /^run\s+(bun|npm|yarn|pnpm)\s+(lint|test|format|build)/i,
+];
+
+/**
+ * Checks if a task title indicates a verification task.
+ * Verification tasks are handled automatically by the orchestrator
+ * and should not be created as explicit tasks.
+ */
+export function isVerificationTask(title: string): boolean {
+  return VERIFICATION_PATTERNS.some((pattern) => pattern.test(title));
+}
+
+/**
  * Creates a Plan from tasks defined by the LLM.
  *
  * @param sessionId - The session ID

@@ -83,6 +83,43 @@ export class GitError extends Data.TaggedError("GitError")<{
 }> {}
 
 /**
+ * Error that occurs when token budget is exceeded.
+ */
+export class TokenBudgetError extends Data.TaggedError("TokenBudgetError")<{
+  readonly message: string;
+  /** Total tokens used */
+  readonly budgetUsed: number;
+  /** Maximum tokens available */
+  readonly budgetMax: number;
+  /** Sections that couldn't fit */
+  readonly overflowSections: readonly string[];
+}> {}
+
+/**
+ * Error that occurs when all retry attempts are exhausted.
+ */
+export class RetryExhaustedError extends Data.TaggedError(
+  "RetryExhaustedError"
+)<{
+  readonly message: string;
+  /** Number of attempts made */
+  readonly attempts: number;
+  /** The final error that caused failure */
+  readonly finalError: string;
+  /** Iteration where retries were exhausted */
+  readonly iteration: number;
+}> {}
+
+/**
+ * Error that occurs during metrics operations.
+ */
+export class MetricsError extends Data.TaggedError("MetricsError")<{
+  readonly message: string;
+  readonly operation: "record" | "get" | "clear";
+  readonly cause?: unknown;
+}> {}
+
+/**
  * Union of all possible errors in the system.
  */
 export type FerixError =
@@ -93,4 +130,7 @@ export type FerixError =
   | ProgressStoreError
   | GuardrailsStoreError
   | OrchestratorError
-  | GitError;
+  | GitError
+  | TokenBudgetError
+  | RetryExhaustedError
+  | MetricsError;
