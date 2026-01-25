@@ -19,6 +19,7 @@
         "ferix": "./dist/index.js",
       },
       "dependencies": {
+        "better-result": "catalog:",
         "commander": "catalog:",
         "execa": "catalog:",
         "picocolors": "catalog:",
@@ -220,6 +221,7 @@
         "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
+        "next": "catalog:",
         "tailwindcss": "catalog:",
         "tw-animate-css": "catalog:",
         "typescript": "catalog:",
