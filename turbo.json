@@ -1,11 +1,26 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
+  "globalEnv": ["CONVEX_DEPLOY_KEY", "NODE_ENV"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": [
+        "NEXT_PUBLIC_CONVEX_URL",
+        "NEXT_PUBLIC_CONVEX_SITE_URL",
+        "NEXT_PUBLIC_SITE_URL",
+        "NEXT_PUBLIC_POSTHOG_KEY",
+        "CONVEX_CLOUD_URL",
+        "CONVEX_SITE_URL",
+        "FRONTEND_URL",
+        "BETTER_AUTH_SECRET",
+        "GITHUB_CLIENT_ID",
+        "GITHUB_CLIENT_SECRET",
+        "GITHUB_TOKEN",
+        "RESEND_API_KEY"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
