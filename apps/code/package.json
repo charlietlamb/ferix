@@ -1,6 +1,6 @@
 {
   "name": "ferix-code",
-  "version": "0.0.2-beta.16",
+  "version": "0.0.2-beta.18",
   "description": "Composable RALPH loops for AI coding agents - v2 with Effect",
   "type": "module",
   "bin": {

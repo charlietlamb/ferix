@@ -75,6 +75,47 @@ function directoryExists(dirPath: string): Effect.Effect<boolean, never> {
 }
 
 /**
+ * Check if a branch exists.
+ */
+function branchExists(branchName: string): Effect.Effect<boolean, never> {
+  return gitExec(`git rev-parse --verify refs/heads/${branchName}`).pipe(
+    Effect.map(() => true),
+    Effect.orElseSucceed(() => false)
+  );
+}
+
+/**
+ * Find an available branch name by appending a counter if needed.
+ * Returns the first available name: baseName, baseName-2, baseName-3, etc.
+ */
+function findAvailableBranchName(
+  baseName: string,
+  maxAttempts = 100
+): Effect.Effect<string, GitError> {
+  const tryName = (
+    name: string,
+    attempt: number
+  ): Effect.Effect<string, GitError> =>
+    Effect.gen(function* () {
+      const exists = yield* branchExists(name);
+      if (!exists) {
+        return name;
+      }
+      if (attempt >= maxAttempts) {
+        return yield* Effect.fail(
+          new GitError({
+            message: `Could not find available branch name after ${maxAttempts} attempts`,
+            operation: "branchLookup",
+          })
+        );
+      }
+      return yield* tryName(`${baseName}-${attempt + 1}`, attempt + 1);
+    });
+
+  return tryName(baseName, 1);
+}
+
+/**
  * Copy untracked files from the main working directory to the worktree.
  * This ensures user-created files (like cleanup.md, prd.md) are available in the worktree.
  * Respects .gitignore via --exclude-standard flag.
@@ -424,7 +465,6 @@ const make: GitService = {
     Effect.gen(function* () {
       const worktreeDir = getWorktreeDir(sessionId);
       const oldBranchName = getBranchName(sessionId);
-      const newBranchName = `${BRANCH_PREFIX}/${displayName}`;
 
       // Check if worktree exists
       const exists = yield* directoryExists(worktreeDir);
@@ -436,6 +476,10 @@ const make: GitService = {
           })
         );
       }
+
+      // Find an available branch name (handles collisions)
+      const desiredName = `${BRANCH_PREFIX}/${displayName}`;
+      const newBranchName = yield* findAvailableBranchName(desiredName);
 
       // Rename the branch (from within the worktree)
       yield* gitExec(
