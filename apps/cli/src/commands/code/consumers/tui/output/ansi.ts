@@ -103,4 +103,11 @@ export class ANSIOutput implements TerminalOutput {
   disableMouse(): void {
     process.stdout.write(ANSI.MOUSE_OFF);
   }
+
+  /** Full terminal cleanup in a single write for signal handlers */
+  fullCleanup(): void {
+    process.stdout.write(
+      ANSI.MOUSE_OFF + ANSI.CURSOR_SHOW + ANSI.ALTERNATE_BUFFER_OFF
+    );
+  }
 }

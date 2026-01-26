@@ -6,6 +6,30 @@ import { ANSIOutput } from "./output/index.js";
 import { appendError, createInitialState, reduce } from "./state.js";
 import { safeRender } from "./utils.js";
 
+/** Global reference for emergency cleanup on SIGINT */
+let activeOutput: ANSIOutput | null = null;
+
+function setupSignalHandlers(): () => void {
+  const handler = () => {
+    if (activeOutput) {
+      activeOutput.fullCleanup();
+      if (process.stdin.isTTY) {
+        try {
+          process.stdin.setRawMode(false);
+        } catch {
+          // stdin may already be closed
+        }
+      }
+      activeOutput = null;
+    }
+    process.removeListener("SIGINT", handler);
+    process.kill(process.pid, "SIGINT");
+  };
+
+  process.on("SIGINT", handler);
+  return () => process.removeListener("SIGINT", handler);
+}
+
 /** Interval for periodic clock refresh (1 second) */
 const CLOCK_REFRESH_INTERVAL_MS = 1000;
 
@@ -91,11 +115,17 @@ export function createTUIConsumer(): Consumer {
         const stateRef = yield* Ref.make(createInitialState());
         const output = new ANSIOutput();
 
+        // Register output for emergency cleanup by signal handlers
+        activeOutput = output;
+
+        // Setup signal handlers for emergency cleanup
+        const removeSignalHandlers = setupSignalHandlers();
+
         // Cleanup function to restore terminal state
         const cleanup = () => {
-          output.disableMouse();
-          output.showCursor();
-          output.exitAlternateBuffer();
+          output.fullCleanup();
+          activeOutput = null;
+          removeSignalHandlers();
         };
 
         // Setup terminal

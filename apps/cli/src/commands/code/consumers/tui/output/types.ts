@@ -78,4 +78,7 @@ export interface TerminalOutput {
    * Disable mouse tracking.
    */
   readonly disableMouse: () => void;
+
+  /** Full terminal cleanup for signal handlers */
+  readonly fullCleanup: () => void;
 }

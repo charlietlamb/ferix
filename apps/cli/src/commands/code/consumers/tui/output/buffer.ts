@@ -87,6 +87,12 @@ export class BufferOutput implements TerminalOutput {
     this.buffer.push("[DISABLE_MOUSE]");
   }
 
+  fullCleanup(): void {
+    this.buffer.push("[FULL_CLEANUP]");
+    this.cursorHidden = false;
+    this.inAlternateBuffer = false;
+  }
+
   /**
    * Get all captured output.
    */
