@@ -1,4 +1,6 @@
-export function Ralph({ className }: { className?: string }) {
+import { memo } from "react";
+
+function RalphComponent({ className }: { className?: string }) {
   return (
     <svg className={className} width="311" height="332" viewBox="0 0 311 332" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M95.7318 3.48672V2.66688H96.7897V3.48672H95.7318ZM98.4234 3.48672V2.66688H99.4812V3.48672H98.4234ZM101.115 3.48672V2.66688H102.173V3.48672H101.115Z" fill="currentColor"/>
@@ -3658,3 +3660,5 @@ export function Ralph({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export const Ralph = memo(RalphComponent);

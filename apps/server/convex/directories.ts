@@ -148,6 +148,38 @@ export const getByOwnerRepo = query({
   },
 });
 
+/**
+ * Gets all skill repositories owned by any of the specified GitHub orgs/users.
+ * Used by the sync feature to find skills for resolved package organizations.
+ */
+export const getByOwners = query({
+  args: { owners: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    const results: Array<{
+      owner: string;
+      repo: string;
+      githubUrl: string;
+    }> = [];
+
+    for (const owner of args.owners) {
+      const dirs = await ctx.db
+        .query("directories")
+        .withIndex("by_owner", (q) => q.eq("owner", owner))
+        .collect();
+
+      for (const dir of dirs) {
+        results.push({
+          owner: dir.owner,
+          repo: dir.repo,
+          githubUrl: dir.githubUrl,
+        });
+      }
+    }
+
+    return results;
+  },
+});
+
 export const updateTags = mutation({
   args: {
     directoryId: v.id("directories"),

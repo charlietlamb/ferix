@@ -14,5 +14,17 @@
         "noBarrelFile": "off"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/server/convex/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": "off"
+          }
+        }
+      }
+    }
+  ]
 }

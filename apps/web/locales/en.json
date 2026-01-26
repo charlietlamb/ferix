@@ -13,8 +13,28 @@
   "cli": {
     "title": "Introducing FerixCode",
     "description": "A powerful CLI for AI-assisted development. Write, refactor, and debug code with natural language commands.",
-    "banner": "Introducing FerixCode. A powerful CLI for development with Ralph loops. Built on top of Claude, Cursor & OpenCode.",
+    "banner": "Introducing the Ferix CLI. AI-powered development with autonomous coding and dependency skills sync.",
     "learnMore": "Learn More"
+  },
+  "cliHero": {
+    "title": "Introducing the Ferix CLI",
+    "description": "AI-powered development tools for autonomous coding and intelligent dependency management.",
+    "learnMore": "Learn More",
+    "install": "Install:",
+    "tab_code": "Code",
+    "tab_sync": "Sync",
+    "code_feature1Title": "Run Autonomously",
+    "code_feature1Description": "Start a task and step away. Perfect for long-running jobs.",
+    "code_feature2Title": "Provider Agnostic",
+    "code_feature2Description": "Works with Claude, Cursor, and OpenCode.",
+    "code_feature3Title": "End-to-End Workflows",
+    "code_feature3Description": "From task to PR in one command.",
+    "sync_feature1Title": "Auto-Discovery",
+    "sync_feature1Description": "Scans package.json to find relevant skill repositories.",
+    "sync_feature2Title": "Smart Caching",
+    "sync_feature2Description": "Fast lookups via intelligent npm registry caching.",
+    "sync_feature3Title": "One-Command Install",
+    "sync_feature3Description": "Install all discovered skills with a single command."
   },
   "code": {
     "title": "Introducing FerixCode",
@@ -54,6 +74,35 @@
       "example_prd_desc": "Complete tasks from a specification file"
     }
   },
+  "sync": {
+    "title": "Ferix Sync",
+    "description": "Auto-discover and install skills from your project dependencies.",
+    "feature1Title": "Auto-Discovery",
+    "feature1Description": "Scans your package.json and automatically finds relevant skill repositories for your dependencies.",
+    "feature2Title": "Smart Caching",
+    "feature2Description": "Resolves package organizations via npm registry with intelligent caching for fast lookups.",
+    "feature3Title": "One-Command Install",
+    "feature3Description": "Installs all discovered skills with a single command. Works locally or globally.",
+    "docs": {
+      "installation": "Installation",
+      "installationDesc": "Install ferix-code globally with npm",
+      "quickStart": "Quick Start",
+      "quickStartDesc": "Sync skills based on your project dependencies",
+      "options": "CLI Options",
+      "optionsDesc": "Available flags for the sync command",
+      "option_path": "Path to package.json (default: ./package.json)",
+      "option_dryRun": "Preview discovered skills without installing",
+      "option_global": "Install skills globally instead of project-level",
+      "example_basic": "Basic Sync",
+      "example_basic_desc": "Discover and install skills for your project",
+      "example_dryRun": "Dry Run",
+      "example_dryRun_desc": "Preview which skills would be installed",
+      "example_customPath": "Custom Path",
+      "example_customPath_desc": "Sync from a specific package.json location",
+      "example_global": "Global Install",
+      "example_global_desc": "Install skills globally for all projects"
+    }
+  },
   "stats": {
     "prompts": "prompts",
     "downloads": "downloads",
@@ -86,6 +135,7 @@
     "browse": "Browse",
     "home": "Home",
     "code": "Code",
+    "sync": "Sync",
     "popular": "Popular",
     "recent": "Recent",
     "tags": "All Tags",

@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
 } from "@ferix/ui/components/ui/sidebar";
 import {
+  ArrowsClockwiseIcon,
   ClockIcon,
   FireIcon,
   FolderIcon,
@@ -21,7 +22,7 @@ import { useTranslations } from "next-intl";
 import type { ComponentType } from "react";
 
 interface NavItem {
-  titleKey: "popular" | "recent" | "tags" | "repositories" | "code";
+  titleKey: "popular" | "recent" | "tags" | "repositories" | "code" | "sync";
   href: string;
   icon: ComponentType<{ className?: string }>;
   badge?: "new";
@@ -29,6 +30,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { titleKey: "code", href: "/code", icon: TerminalIcon, badge: "new" },
+  { titleKey: "sync", href: "/sync", icon: ArrowsClockwiseIcon, badge: "new" },
   { titleKey: "popular", href: "/popular", icon: FireIcon },
   { titleKey: "recent", href: "/recent", icon: ClockIcon },
   { titleKey: "tags", href: "/tags", icon: TagIcon },

@@ -15,6 +15,19 @@ export const syncStatusTypes = v.union(
 );
 
 export default defineSchema({
+  /**
+   * Cache for npm package name to GitHub organization mapping.
+   * Used by the sync feature to avoid repeated npm registry lookups.
+   */
+  packageOrgCache: defineTable({
+    packageName: v.string(),
+    githubOrg: v.union(v.string(), v.null()),
+    repositoryUrl: v.union(v.string(), v.null()),
+    updatedAt: v.number(),
+  })
+    .index("by_packageName", ["packageName"])
+    .index("by_updatedAt", ["updatedAt"]),
+
   stats: defineTable({
     key: v.string(),
     totalPrompts: v.number(),
@@ -72,6 +85,7 @@ export default defineSchema({
     totalDownloads: v.optional(v.number()),
   })
     .index("by_githubUrl", ["githubUrl"])
+    .index("by_owner", ["owner"])
     .index("by_totalDownloads", ["totalDownloads"])
     .index("by_createdAt", ["createdAt"]),
 

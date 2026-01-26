@@ -13,7 +13,7 @@ export function DashboardHeader() {
   useCommandK();
 
   return (
-    <header className="flex h-12 items-center justify-between gap-2 border-b px-4 md:rounded-t-2xl">
+    <header className="flex h-12 items-center justify-between gap-2 border-b px-2 md:rounded-t-2xl">
       <motion.div layout transition={layoutTransition}>
         <SidebarTrigger />
       </motion.div>

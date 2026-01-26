@@ -5,12 +5,16 @@ import { useTranslations } from "next-intl";
 
 const FEATURE_KEYS = ["feature1", "feature2", "feature3"] as const;
 
-interface CodeFeaturesProps {
+interface FeaturesProps {
+  translationNamespace: string;
   compact?: boolean;
 }
 
-export function CodeFeatures({ compact = false }: CodeFeaturesProps) {
-  const t = useTranslations("code");
+export function Features({
+  translationNamespace,
+  compact = false,
+}: FeaturesProps) {
+  const t = useTranslations(translationNamespace);
 
   return (
     <div className="grid flex-1 grid-cols-1 divide-y lg:grid-cols-3 lg:divide-x lg:divide-y-0">
