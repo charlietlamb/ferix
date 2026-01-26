@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { Effect } from "effect";
-import { FerixParser } from "../layers/signal/ferix-parser.js";
-import { SignalParser } from "../services/signal-parser.js";
+import { FerixParser } from "../../../src/commands/code/layers/signal/ferix-parser.js";
+import { SignalParser } from "../../../src/commands/code/services/signal-parser.js";
 
 const TestLayer = FerixParser.Live;
 

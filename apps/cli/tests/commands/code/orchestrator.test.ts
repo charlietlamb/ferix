@@ -1,14 +1,14 @@
 import { describe, expect, it } from "bun:test";
 import { Chunk, Effect, Layer, Stream } from "effect";
-import type { LLMEvent } from "../domain/schemas/llm.js";
-import { MemoryGit } from "../layers/git/memory.js";
-import { MemoryGuardrails } from "../layers/guardrails/memory.js";
-import { Mock } from "../layers/llm/mock.js";
-import { MemoryPlan } from "../layers/plan/memory.js";
-import { MemoryProgress } from "../layers/progress/memory.js";
-import { MemorySession } from "../layers/session/memory.js";
-import { FerixParser } from "../layers/signal/ferix-parser.js";
-import { runLoop } from "../orchestrator/loop.js";
+import type { LLMEvent } from "../../../src/commands/code/domain/schemas/llm.js";
+import { MemoryGit } from "../../../src/commands/code/layers/git/memory.js";
+import { MemoryGuardrails } from "../../../src/commands/code/layers/guardrails/memory.js";
+import { Mock } from "../../../src/commands/code/layers/llm/mock.js";
+import { MemoryPlan } from "../../../src/commands/code/layers/plan/memory.js";
+import { MemoryProgress } from "../../../src/commands/code/layers/progress/memory.js";
+import { MemorySession } from "../../../src/commands/code/layers/session/memory.js";
+import { FerixParser } from "../../../src/commands/code/layers/signal/ferix-parser.js";
+import { runLoop } from "../../../src/commands/code/orchestrator/loop.js";
 
 /**
  * Creates a test layer with the specified LLM events.
