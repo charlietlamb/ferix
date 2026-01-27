@@ -26,7 +26,12 @@ import {
 } from "./helpers.js";
 import { installSkills } from "./install-skills.js";
 import { resolvePackageOrgs } from "./resolve-orgs.js";
-import { type SkillRepoItem, selectRepositories } from "./selection.js";
+import {
+  confirmInstallation,
+  type SkillRepoItem,
+  selectAgents,
+  selectRepositories,
+} from "./selection.js";
 import type { AgentName } from "./types.js";
 
 // ============================================================================
@@ -186,27 +191,19 @@ const findRepositories = async (
 const detectProjectAgents = async (
   state: SyncState,
   projectDir: string
-): Promise<boolean> => {
+): Promise<void> => {
   state.spinner = createSpinner("Detecting coding agents...").start();
 
   try {
     state.detectedAgents = await Effect.runPromise(detectAgents(projectDir));
 
     if (state.detectedAgents.length === 0) {
-      state.spinner.warn("No coding agents detected");
-      printHint(
-        `No agent directories found (${pc.dim(".cursor/, .claude/, .opencode/, etc.")})`
+      state.spinner.info("No coding agents detected");
+    } else {
+      state.spinner.succeed(
+        `Detected agents: ${pc.cyan(state.detectedAgents.join(", "))}`
       );
-      printHint(
-        `Use ${pc.cyan("--agents")} to specify agents manually, e.g. ${pc.cyan("--agents cursor claude-code")}`
-      );
-      return false;
     }
-
-    state.spinner.succeed(
-      `Detected agents: ${pc.cyan(state.detectedAgents.join(", "))}`
-    );
-    return true;
   } catch (error) {
     state.spinner.fail("Failed to detect coding agents");
     throw error;
@@ -220,8 +217,10 @@ const detectProjectAgents = async (
 const determineAgents = async (
   state: SyncState,
   packagePath: string,
-  manualAgents: string[] | undefined
+  manualAgents: string[] | undefined,
+  skipSelection: boolean
 ): Promise<readonly AgentName[] | null> => {
+  // Manual agents via --agents flag - use directly
   if (manualAgents && manualAgents.length > 0) {
     if (!isValidAgentNames(manualAgents)) {
       const invalid = manualAgents.filter(
@@ -233,13 +232,44 @@ const determineAgents = async (
       return null;
     }
     printSuccess(`Using specified agents: ${pc.cyan(manualAgents.join(", "))}`);
-    // Type guard validates these are all valid AgentNames
     return manualAgents as AgentName[];
   }
 
+  // Detect agents in project
   const projectDir = dirname(resolve(packagePath));
-  const hasAgents = await detectProjectAgents(state, projectDir);
-  return hasAgents ? state.detectedAgents : null;
+  await detectProjectAgents(state, projectDir);
+
+  // --yes flag: auto-select detected agents
+  if (skipSelection) {
+    if (state.detectedAgents.length === 0) {
+      printHint("No agents detected. Use --agents to specify agents manually.");
+      return null;
+    }
+    printSuccess(
+      `Auto-selecting detected agents: ${pc.cyan(state.detectedAgents.join(", "))}`
+    );
+    return state.detectedAgents;
+  }
+
+  // Interactive selection
+  const selection = await selectAgents(state.detectedAgents, SUPPORTED_AGENTS);
+
+  if (selection.type === "cancelled") {
+    cancel("Operation cancelled.");
+    process.exit(0);
+  }
+
+  if (selection.type === "none") {
+    console.log();
+    printHint("No agents selected. Skills won't be installed to any agent.");
+    console.log();
+    return null;
+  }
+
+  printSuccess(
+    `Selected ${selection.agents.length} agents: ${pc.cyan(selection.agents.join(", "))}`
+  );
+  return selection.agents;
 };
 
 // ============================================================================
@@ -412,7 +442,12 @@ export const runSyncCommand = async (options: SyncOptions): Promise<void> => {
   await discoverPackages(state, packagePath);
 
   // Step 2: Determine which agents to install to
-  const agentsToUse = await determineAgents(state, packagePath, manualAgents);
+  const agentsToUse = await determineAgents(
+    state,
+    packagePath,
+    manualAgents,
+    skipSelection
+  );
   if (!agentsToUse) {
     return;
   }
@@ -450,7 +485,20 @@ export const runSyncCommand = async (options: SyncOptions): Promise<void> => {
     return;
   }
 
-  // Step 8: Install selected skills
+  // Step 8: Confirm installation (skip if --yes flag is used)
+  if (!skipSelection) {
+    const confirmation = await confirmInstallation(
+      reposToInstall,
+      agentsToUse,
+      isGlobal
+    );
+    if (confirmation.type === "cancelled") {
+      cancel("Installation cancelled.");
+      process.exit(0);
+    }
+  }
+
+  // Step 9: Install selected skills
   const { installed, failed } = await installRepositories(
     state,
     reposToInstall,
