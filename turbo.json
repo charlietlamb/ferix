@@ -26,6 +26,11 @@
     "check-types": {
       "dependsOn": ["^check-types"]
     },
+    "test": {
+      "dependsOn": ["^test"],
+      "cache": false,
+      "inputs": ["src/**/*.ts", "tests/**/*.ts"]
+    },
     "dev": {
       "cache": false,
       "persistent": true

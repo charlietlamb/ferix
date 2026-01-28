@@ -128,7 +128,18 @@ export function CLIHero() {
         <div className="flex items-center justify-between gap-4 p-4">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg md:text-xl">{t("title")}</h2>
-            <p className="text-muted-foreground text-sm">{t("description")}</p>
+            <AnimatePresence mode="wait">
+              <motion.p
+                animate={{ opacity: 1, y: 0 }}
+                className="text-muted-foreground text-sm"
+                exit={{ opacity: 0, y: -4 }}
+                initial={{ opacity: 0, y: 4 }}
+                key={activeTab}
+                transition={{ duration: 0.15 }}
+              >
+                {t(`description_${activeTab}`)}
+              </motion.p>
+            </AnimatePresence>
           </div>
           <Link
             className="flex shrink-0 items-center gap-1 text-muted-foreground text-xs hover:text-foreground"

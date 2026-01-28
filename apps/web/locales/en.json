@@ -51,12 +51,13 @@
   "cli": {
     "title": "Introducing FerixCode",
     "description": "A powerful CLI for AI-assisted development. Write, refactor, and debug code with natural language commands.",
-    "banner": "Introducing the Ferix CLI. AI-powered development with autonomous coding and dependency skills sync.",
+    "banner": "Introducing the Ferix CLI. Ralph automation and dependency skills sync.",
     "learnMore": "Learn More"
   },
   "cliHero": {
     "title": "Introducing the Ferix CLI",
-    "description": "AI-powered development tools for autonomous coding and intelligent dependency management.",
+    "description_code": "Purpose built ralph loops for Claude, Cursor & OpenCode.",
+    "description_sync": "Easily sync the skills from dependencies included in your package.json.",
     "learnMore": "Learn More",
     "install": "Install:",
     "tab_code": "Code",

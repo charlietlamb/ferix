@@ -25,6 +25,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["**/tests/utils/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noMisplacedAssertion": "off"
+          }
+        }
+      }
     }
   ]
 }
