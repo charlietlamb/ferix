@@ -11,7 +11,8 @@
     "check-types": "turbo run check-types",
     "prepare": "husky",
     "test": "echo 'No tests yet'",
-    "bump": "cd apps/cli && bun bump"
+    "bump": "cd apps/cli && bun bump",
+    "patch": "cd apps/cli && bun patch"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
