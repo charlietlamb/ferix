@@ -2,13 +2,13 @@
 
 import { Link } from "@ferix/i18n/navigation";
 import type { Prompt } from "@ferix/server/types";
-import { Button } from "@ferix/ui/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@ferix/ui/components/ui/collapsible";
 import { Skeleton } from "@ferix/ui/components/ui/skeleton";
+import { useInfiniteScroll } from "@ferix/ui/hooks/use-infinite-scroll";
 import { extractDescription } from "@ferix/ui/lib/markdown";
 import { formatTitle } from "@ferix/ui/lib/repositories";
 import { cn } from "@ferix/ui/lib/utils";
@@ -18,11 +18,11 @@ import {
   DownloadSimple,
   FolderOpen,
   FolderSimple,
-  SpinnerGap,
 } from "@phosphor-icons/react";
 import type { PaginationStatus } from "convex/browser";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { Spinner } from "../ui/spinner";
 
 interface FileTreeNode {
   name: string;
@@ -217,8 +217,15 @@ export function RepositoryFileTree({
   const t = useTranslations("components.repositoryFileTree");
   const tree = buildFileTree(prompts);
 
-  const canLoadMore = status === "CanLoadMore";
-  const isLoadingMore = status === "LoadingMore";
+  const hasMore = status === "CanLoadMore";
+  const isLoading = status === "LoadingMore";
+
+  const loaderRef = useInfiniteScroll({
+    hasMore,
+    isLoading,
+    onLoadMore: loadMore,
+    rootMargin: "200px",
+  });
 
   if (tree.length === 0 && status === "Exhausted") {
     return (
@@ -233,30 +240,24 @@ export function RepositoryFileTree({
       {tree.map((node, i) => (
         <TreeNode
           depth={0}
-          isLast={i === tree.length - 1 && !canLoadMore}
+          isLast={i === tree.length - 1 && !hasMore && !isLoading}
           key={node.path}
           node={node}
         />
       ))}
-      {canLoadMore && (
-        <div className="flex justify-center border-border border-t py-4">
-          <Button
-            disabled={isLoadingMore}
-            onClick={loadMore}
-            size="sm"
-            variant="outline"
-          >
-            {isLoadingMore ? (
-              <>
-                <SpinnerGap className="size-4 animate-spin" />
-                <span className="ml-2">{t("loading")}</span>
-              </>
-            ) : (
-              t("loadMore")
-            )}
-          </Button>
+      {(hasMore || isLoading) && (
+        <div ref={loaderRef}>
+          {isLoading ? <LoadingIndicator /> : <div className="h-px" />}
         </div>
       )}
+    </div>
+  );
+}
+
+function LoadingIndicator() {
+  return (
+    <div className="flex items-center justify-center py-6">
+      <Spinner />
     </div>
   );
 }

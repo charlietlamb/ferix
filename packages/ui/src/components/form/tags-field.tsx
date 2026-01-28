@@ -1,16 +1,19 @@
 "use client";
 
+import { Label } from "@ferix/ui/components/ui/label";
 import { MultiSelect } from "@ferix/ui/components/ui/multi-select";
 import { useFieldContext } from "@ferix/ui/hooks/form-context";
 import { getTagsByIds, tagsToOptions } from "@ferix/ui/lib/tags";
 import { useMemo } from "react";
 
 interface TagsFieldProps {
+  label?: string;
   placeholder?: string;
   dropdownPosition?: "top" | "bottom";
 }
 
 export function TagsField({
+  label,
   placeholder,
   dropdownPosition,
 }: TagsFieldProps = {}) {
@@ -32,7 +35,7 @@ export function TagsField({
     field.handleChange(newTags.map((tag) => tag.value));
   };
 
-  return (
+  const multiSelect = (
     <MultiSelect
       dropdownPosition={dropdownPosition}
       groupBy
@@ -42,4 +45,15 @@ export function TagsField({
       value={selectedTags}
     />
   );
+
+  if (label) {
+    return (
+      <div className="grid gap-2">
+        <Label>{label}</Label>
+        {multiSelect}
+      </div>
+    );
+  }
+
+  return multiSelect;
 }

@@ -15,8 +15,10 @@
   "dependencies": {
     "@convex-dev/better-auth": "catalog:",
     "@convex-dev/migrations": "catalog:",
+    "@convex-dev/workpool": "catalog:",
     "@ferix/env": "*",
     "@ferix/notifications": "*",
+    "@mendable/firecrawl-js": "catalog:",
     "better-auth": "catalog:",
     "convex": "catalog:",
     "slugify": "catalog:",

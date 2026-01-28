@@ -54,6 +54,7 @@ const NAVIGATION_ROUTES: Record<string, string> = {
 const ADMIN_NAVIGATION_ROUTES: Record<string, string> = {
   navigateAdmin: "/admin",
   navigateFeaturedRepositories: "/admin/featured-repositories",
+  navigateBulkImports: "/admin/bulk-imports",
 };
 
 const getUserRoutes = (username: string | null): Record<string, string> =>

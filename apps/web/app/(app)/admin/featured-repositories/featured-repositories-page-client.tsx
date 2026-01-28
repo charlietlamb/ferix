@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "@ferix/i18n/navigation";
 import { AdminBreadcrumbs } from "@ferix/ui/components/admin/admin-breadcrumbs";
 import {
   FeaturedRepositoriesManager,
@@ -12,12 +11,8 @@ import {
   PageHeaderTitle,
 } from "@ferix/ui/components/layout/page-header";
 import { Button } from "@ferix/ui/components/ui/button";
-import { useAuthenticated } from "@ferix/ui/hooks/use-authenticated";
-import { useEffect } from "react";
 
 export function FeaturedRepositoriesPageClient() {
-  const { isAdmin, isPending } = useAuthenticated();
-  const router = useRouter();
   const {
     setFeaturedIds,
     currentIds,
@@ -26,24 +21,6 @@ export function FeaturedRepositoriesPageClient() {
     isSaving,
     handleSave,
   } = useFeaturedRepositories();
-
-  useEffect(() => {
-    if (!(isPending || isAdmin)) {
-      router.replace("/");
-    }
-  }, [isAdmin, isPending, router]);
-
-  if (isPending) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return null;
-  }
 
   return (
     <AppPage>

@@ -10,13 +10,20 @@
 
 import type * as auth from "../auth.js";
 import type * as authmin from "../authmin.js";
+import type * as bulkImport from "../bulkImport.js";
 import type * as crons from "../crons.js";
 import type * as directories from "../directories.js";
 import type * as http from "../http.js";
 import type * as lib_denormalized from "../lib/denormalized.js";
-import type * as lib_github from "../lib/github.js";
+import type * as lib_github_client from "../lib/github/client.js";
+import type * as lib_github_content from "../lib/github/content.js";
+import type * as lib_github_index from "../lib/github/index.js";
+import type * as lib_github_repoInfo from "../lib/github/repoInfo.js";
+import type * as lib_github_title from "../lib/github/title.js";
+import type * as lib_github_tree from "../lib/github/tree.js";
 import type * as lib_npm from "../lib/npm.js";
 import type * as lib_pagination from "../lib/pagination.js";
+import type * as lib_regex from "../lib/regex.js";
 import type * as lib_slug from "../lib/slug.js";
 import type * as migrations from "../migrations.js";
 import type * as packageOrg from "../packageOrg.js";
@@ -37,13 +44,20 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authmin: typeof authmin;
+  bulkImport: typeof bulkImport;
   crons: typeof crons;
   directories: typeof directories;
   http: typeof http;
   "lib/denormalized": typeof lib_denormalized;
-  "lib/github": typeof lib_github;
+  "lib/github/client": typeof lib_github_client;
+  "lib/github/content": typeof lib_github_content;
+  "lib/github/index": typeof lib_github_index;
+  "lib/github/repoInfo": typeof lib_github_repoInfo;
+  "lib/github/title": typeof lib_github_title;
+  "lib/github/tree": typeof lib_github_tree;
   "lib/npm": typeof lib_npm;
   "lib/pagination": typeof lib_pagination;
+  "lib/regex": typeof lib_regex;
   "lib/slug": typeof lib_slug;
   migrations: typeof migrations;
   packageOrg: typeof packageOrg;
@@ -1192,6 +1206,104 @@ export declare const components: {
             | "failed"
             | "canceled";
         }
+      >;
+    };
+  };
+  directorySync: {
+    config: {
+      update: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+          maxParallelism?: number;
+        },
+        any
+      >;
+    };
+    lib: {
+      cancel: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          id: string;
+          logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      cancelAll: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          before?: number;
+          limit?: number;
+          logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      enqueue: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism?: number;
+          };
+          fnArgs: any;
+          fnHandle: string;
+          fnName: string;
+          fnType: "action" | "mutation" | "query";
+          onComplete?: { context?: any; fnHandle: string };
+          retryBehavior?: {
+            base: number;
+            initialBackoffMs: number;
+            maxAttempts: number;
+          };
+          runAt: number;
+        },
+        string
+      >;
+      enqueueBatch: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism?: number;
+          };
+          items: Array<{
+            fnArgs: any;
+            fnHandle: string;
+            fnName: string;
+            fnType: "action" | "mutation" | "query";
+            onComplete?: { context?: any; fnHandle: string };
+            retryBehavior?: {
+              base: number;
+              initialBackoffMs: number;
+              maxAttempts: number;
+            };
+            runAt: number;
+          }>;
+        },
+        Array<string>
+      >;
+      status: FunctionReference<
+        "query",
+        "internal",
+        { id: string },
+        | { previousAttempts: number; state: "pending" }
+        | { previousAttempts: number; state: "running" }
+        | { state: "finished" }
+      >;
+      statusBatch: FunctionReference<
+        "query",
+        "internal",
+        { ids: Array<string> },
+        Array<
+          | { previousAttempts: number; state: "pending" }
+          | { previousAttempts: number; state: "running" }
+          | { state: "finished" }
+        >
       >;
     };
   };

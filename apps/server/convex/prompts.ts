@@ -187,7 +187,11 @@ async function handleDefaultList(
         .withIndex("by_downloads")
         .order("desc")
         .paginate(paginationOpts)
-    : await ctx.db.query("prompts").order("desc").paginate(paginationOpts);
+    : await ctx.db
+        .query("prompts")
+        .withIndex("by_createdAt")
+        .order("desc")
+        .paginate(paginationOpts);
 
   return paginate(results, (page) => enrichPrompts(ctx, page));
 }

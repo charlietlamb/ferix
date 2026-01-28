@@ -14,6 +14,20 @@ export const syncStatusTypes = v.union(
   v.literal("error")
 );
 
+export const bulkImportJobStatus = v.union(
+  v.literal("pending"),
+  v.literal("running"),
+  v.literal("completed"),
+  v.literal("failed"),
+  v.literal("paused")
+);
+
+export const bulkImportItemStatus = v.union(
+  v.literal("pending"),
+  v.literal("completed"),
+  v.literal("failed")
+);
+
 export default defineSchema({
   /**
    * Cache for npm package name to GitHub organization mapping.
@@ -58,6 +72,7 @@ export default defineSchema({
     .index("by_userId_downloads", ["userId", "downloads"])
     .index("by_directoryId", ["directoryId"])
     .index("by_directoryId_filePath", ["directoryId", "filePath"])
+    .index("by_createdAt", ["createdAt"])
     .searchIndex("search_title", {
       searchField: "title",
       filterFields: ["type"],
@@ -118,4 +133,32 @@ export default defineSchema({
     value: v.any(),
     updatedAt: v.number(),
   }).index("by_key", ["key"]),
+
+  /** Bulk import jobs for importing multiple GitHub repositories. */
+  bulkImportJobs: defineTable({
+    status: bulkImportJobStatus,
+    totalCount: v.number(),
+    completedCount: v.number(),
+    failedCount: v.number(),
+    createdByUserId: v.string(),
+    defaultTags: v.optional(v.array(v.string())),
+    rateLimitRemaining: v.optional(v.number()),
+    rateLimitReset: v.optional(v.number()),
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_status", ["status"])
+    .index("by_createdAt", ["createdAt"]),
+
+  /** Individual items within a bulk import job for per-URL tracking. */
+  bulkImportItems: defineTable({
+    jobId: v.id("bulkImportJobs"),
+    githubUrl: v.string(),
+    status: bulkImportItemStatus,
+    error: v.optional(v.string()),
+    directoryId: v.optional(v.id("directories")),
+  })
+    .index("by_jobId", ["jobId"])
+    .index("by_jobId_status", ["jobId", "status"]),
 });

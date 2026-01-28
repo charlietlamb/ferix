@@ -1,4 +1,42 @@
 {
+  "admin": {
+    "bulkImports": {
+      "title": "Bulk Imports",
+      "description": "Import multiple GitHub repositories with rate limit protection",
+      "scrapeSkillsSh": "Scrape",
+      "scrapeDescription": "Auto-discover repositories from skills.sh",
+      "importLimit": "Import Limit",
+      "importLimitPlaceholder": "Leave empty for all",
+      "defaultTags": "Default Tags",
+      "selectTags": "Select tags...",
+      "importJobs": "Import Jobs",
+      "scraping": "Scraping...",
+      "scrapeAndImport": "Scrape & Import",
+      "loading": "Loading...",
+      "noJobsYet": "No import jobs yet",
+      "status": {
+        "pending": "pending",
+        "running": "running",
+        "completed": "completed",
+        "failed": "failed",
+        "paused": "paused"
+      },
+      "progress": {
+        "done": "done",
+        "failed": "failed",
+        "rateLimit": "Rate limit: {remaining} remaining",
+        "resetsIn": "resets in {time}"
+      },
+      "actions": {
+        "pause": "Pause",
+        "resume": "Resume"
+      },
+      "alerts": {
+        "error": "Error",
+        "success": "Success"
+      }
+    }
+  },
   "twitter": {
     "title": "Community",
     "viewOnX": "View on"
@@ -354,6 +392,7 @@
     "actionsSaved": "Saved",
     "actionsAdminDashboard": "Admin Dashboard",
     "actionsFeaturedRepositories": "Featured Repositories",
+    "actionsBulkImports": "Bulk Imports",
     "actionsSyncRepository": "Sync Repository",
     "actionsDeleteRepository": "Delete Repository",
     "actionsImpersonate": "Impersonate User",

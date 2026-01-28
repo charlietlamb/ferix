@@ -2,8 +2,7 @@
  * Helper functions for interacting with the npm registry.
  */
 
-// Regex pattern for extracting GitHub org from repository URLs
-const GITHUB_URL_PATTERN = /github\.com[:/]([^/]+)\/([^/.]+)/;
+import { GITHUB_REPO_PATTERN } from "./regex";
 
 interface NpmPackageInfo {
   name: string;
@@ -54,7 +53,7 @@ export function extractGitHubOrg(repositoryUrl: string | undefined): {
     return { org: null, url: null };
   }
 
-  const match = repositoryUrl.match(GITHUB_URL_PATTERN);
+  const match = repositoryUrl.match(GITHUB_REPO_PATTERN);
   if (match?.[1]) {
     return {
       org: match[1],

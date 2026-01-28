@@ -2,6 +2,7 @@ import {
   ArrowsClockwiseIcon,
   GitBranchIcon,
   TrashIcon,
+  UploadSimpleIcon,
   UserSwitchIcon,
 } from "@phosphor-icons/react";
 import type { AdminItemProps } from "./admin-item";
@@ -12,6 +13,12 @@ export const adminItems: Omit<AdminItemProps, "onAction">[] = [
     icon: GitBranchIcon,
     title: "Featured Repositories",
     description: "Manage which repositories appear first on the home page",
+  },
+  {
+    href: "/admin/bulk-imports",
+    icon: UploadSimpleIcon,
+    title: "Bulk Imports",
+    description: "Import multiple GitHub repositories at once",
   },
   {
     dialog: "syncRepositoryPalette",
