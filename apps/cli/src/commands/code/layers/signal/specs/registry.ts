@@ -17,7 +17,7 @@ export interface SignalSpec<T extends Signal = Signal> {
  * Registry for signal specifications.
  * Allows adding new signal types without modifying the parser.
  */
-export interface SignalSpecRegistry {
+interface SignalSpecRegistry {
   register<T extends Signal>(spec: SignalSpec<T>): void;
   parseAll(text: string): Signal[];
   getSignalKey(signal: Signal): string;
@@ -28,7 +28,7 @@ export interface SignalSpecRegistry {
 /**
  * Creates the signal spec registry.
  */
-export function createSignalSpecRegistry(): SignalSpecRegistry {
+function createSignalSpecRegistry(): SignalSpecRegistry {
   const specs: SignalSpec[] = [];
 
   return {

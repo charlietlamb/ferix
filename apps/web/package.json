@@ -8,7 +8,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@base-ui/react": "catalog:",
     "@convex-dev/better-auth": "catalog:",
     "@ferix/analytics": "*",
     "@ferix/auth": "*",
@@ -17,11 +16,9 @@
     "@ferix/server": "*",
     "@ferix/ui": "*",
     "@phosphor-icons/react": "catalog:",
-    "@tanstack/react-form": "catalog:",
     "better-auth": "catalog:",
-    "class-variance-authority": "catalog:",
-    "clsx": "catalog:",
     "convex": "catalog:",
+    "date-fns": "catalog:",
     "jotai": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",
@@ -30,16 +27,14 @@
     "posthog-js": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "sonner": "catalog:",
-    "tailwind-merge": "catalog:",
-    "zod": "catalog:"
+    "sonner": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "tailwindcss": "catalog:",
+    "postcss": "catalog:",
     "typescript": "catalog:"
   },
   "ignoreScripts": [

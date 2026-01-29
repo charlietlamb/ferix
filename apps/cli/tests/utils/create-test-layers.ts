@@ -65,33 +65,3 @@ export function createTestLayers(options: TestLayerOptions = {}) {
     FerixParser.Live
   );
 }
-
-/**
- * Creates minimal test layers with only the LLM and signal parser.
- *
- * Use this for unit tests that don't need the full service stack.
- *
- * @param events - LLM events to emit
- * @returns A Layer with LLM and signal parser only
- */
-export function createMinimalTestLayers(events: LLMEvent[] = []) {
-  return Layer.mergeAll(Mock.layer({ events }), FerixParser.Live);
-}
-
-/**
- * Creates test layers without the LLM service.
- *
- * Use this for testing store operations in isolation.
- *
- * @returns A Layer with all stores and signal parser
- */
-export function createStoreTestLayers() {
-  return Layer.mergeAll(
-    MemorySession.layer(),
-    MemoryPlan.layer(),
-    MemoryProgress.layer(),
-    MemoryGuardrails.layer(),
-    MemoryGit.layer(),
-    FerixParser.Live
-  );
-}

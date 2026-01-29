@@ -1,11 +1,10 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Effect } from "effect";
 import { PlanStoreError } from "../../domain/errors.js";
 import {
   formatTasksMd,
   type GeneratedTaskList,
-  parseTasksMd,
 } from "../../domain/schemas/task-generation.js";
 
 /**
@@ -65,47 +64,5 @@ export function writeTasksMd(
           cause: error,
         }),
     });
-  });
-}
-
-/**
- * Read tasks from tasks.md file
- */
-export function readTasksMd(
-  sessionId: string
-): Effect.Effect<GeneratedTaskList, PlanStoreError> {
-  return Effect.gen(function* () {
-    const tasksMdPath = getTasksMdPath(sessionId);
-
-    const content = yield* Effect.tryPromise({
-      try: () => readFile(tasksMdPath, "utf-8"),
-      catch: (error) =>
-        new PlanStoreError({
-          message: `Failed to read tasks.md: ${tasksMdPath}`,
-          operation: "load",
-          cause: error,
-        }),
-    });
-
-    return parseTasksMd(content);
-  });
-}
-
-/**
- * Update a task status in tasks.md
- */
-export function updateTaskInTasksMd(
-  sessionId: string,
-  taskId: string,
-  status: GeneratedTaskList[number]["status"]
-): Effect.Effect<void, PlanStoreError> {
-  return Effect.gen(function* () {
-    const tasks = yield* readTasksMd(sessionId);
-
-    const updatedTasks = tasks.map((task) =>
-      task.id === taskId ? { ...task, status } : task
-    );
-
-    yield* writeTasksMd(sessionId, updatedTasks);
   });
 }

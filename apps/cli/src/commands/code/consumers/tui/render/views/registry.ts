@@ -3,7 +3,7 @@ import type { TUIState, ViewMode } from "../../../../domain/schemas/tui.js";
 /**
  * View renderer interface.
  */
-export interface ViewRenderer {
+interface ViewRenderer {
   readonly mode: ViewMode;
   readonly render: (state: TUIState, height: number, width: number) => string[];
 }
@@ -11,7 +11,7 @@ export interface ViewRenderer {
 /**
  * Registry for view renderers.
  */
-export interface ViewRendererRegistry {
+interface ViewRendererRegistry {
   register(renderer: ViewRenderer): void;
   render(
     mode: ViewMode,
@@ -24,7 +24,7 @@ export interface ViewRendererRegistry {
 /**
  * Creates the view renderer registry.
  */
-export function createViewRendererRegistry(): ViewRendererRegistry {
+function createViewRendererRegistry(): ViewRendererRegistry {
   const renderers = new Map<ViewMode, ViewRenderer["render"]>();
 
   return {

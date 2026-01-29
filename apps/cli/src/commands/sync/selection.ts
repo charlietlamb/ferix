@@ -13,17 +13,17 @@ export interface SkillRepoItem {
   githubUrl: string;
 }
 
-export type SelectionResult =
+type SelectionResult =
   | { type: "selected"; repos: readonly SkillRepoItem[] }
   | { type: "cancelled" }
   | { type: "none" };
 
-export type AgentSelectionResult =
+type AgentSelectionResult =
   | { type: "selected"; agents: readonly AgentName[] }
   | { type: "cancelled" }
   | { type: "none" };
 
-export type ConfirmationResult = { type: "confirmed" } | { type: "cancelled" };
+type ConfirmationResult = { type: "confirmed" } | { type: "cancelled" };
 
 // ============================================================================
 // Repository Selection

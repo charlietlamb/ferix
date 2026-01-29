@@ -5,11 +5,11 @@ import { LLM, type LLMService } from "../../services/llm.js";
 /**
  * Schema for MockLLMConfig for runtime validation.
  */
-export const MockLLMConfigSchema = S.Struct({
+const MockLLMConfigSchema = S.Struct({
   events: S.Array(LLMEventSchema),
   delayMs: S.optional(S.Number),
 });
-export type MockLLMConfig = typeof MockLLMConfigSchema.Type;
+type MockLLMConfig = typeof MockLLMConfigSchema.Type;
 
 /**
  * Creates a mock LLM service that emits predefined events.
@@ -30,7 +30,7 @@ export type MockLLMConfig = typeof MockLLMConfigSchema.Type;
  * });
  * ```
  */
-export function createMockLLM(config: MockLLMConfig): LLMService {
+function createMockLLM(config: MockLLMConfig): LLMService {
   return {
     execute: (_prompt: string, _options?): Stream.Stream<LLMEvent, never> => {
       const baseStream = Stream.fromIterable(config.events);
@@ -77,7 +77,7 @@ const defaultMock: LLMService = createMockLLM({ events: defaultMockEvents });
  * Effect.runPromise(program.pipe(Effect.provide(Mock.Live)));
  * ```
  */
-export const Live = Layer.succeed(LLM, defaultMock);
+const Live = Layer.succeed(LLM, defaultMock);
 
 /**
  * Creates a Layer with custom mock events.
@@ -95,7 +95,7 @@ export const Live = Layer.succeed(LLM, defaultMock);
  * });
  * ```
  */
-export function layer(config: MockLLMConfig): Layer.Layer<LLM> {
+function layer(config: MockLLMConfig): Layer.Layer<LLM> {
   return Layer.succeed(LLM, createMockLLM(config));
 }
 

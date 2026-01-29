@@ -79,7 +79,7 @@ function getValidatedInput(
 /**
  * Configuration for how a tool is displayed.
  */
-export interface ToolDisplayConfig {
+interface ToolDisplayConfig {
   readonly tool: string;
   readonly inputKey: string;
   readonly color: (s: string) => string;
@@ -89,7 +89,7 @@ export interface ToolDisplayConfig {
 /**
  * Registry for tool display configurations.
  */
-export interface ToolDisplayRegistry {
+interface ToolDisplayRegistry {
   register(config: ToolDisplayConfig): void;
   getInputKey(tool: string): string | undefined;
   getColor(tool: string): (s: string) => string;
@@ -100,7 +100,7 @@ export interface ToolDisplayRegistry {
 /**
  * Creates the tool display registry.
  */
-export function createToolDisplayRegistry(): ToolDisplayRegistry {
+function createToolDisplayRegistry(): ToolDisplayRegistry {
   const configs = new Map<string, ToolDisplayConfig>();
   const defaultColor = pc.white;
 

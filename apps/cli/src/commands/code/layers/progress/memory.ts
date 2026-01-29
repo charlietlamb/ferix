@@ -103,7 +103,7 @@ function createMemoryProgressStore(
  * Effect.runPromise(program.pipe(Effect.provide(testLayer)));
  * ```
  */
-export function layer(): Layer.Layer<ProgressStore> {
+function layer(): Layer.Layer<ProgressStore> {
   return Layer.effect(
     ProgressStore,
     Effect.gen(function* () {
@@ -119,7 +119,7 @@ export function layer(): Layer.Layer<ProgressStore> {
  * Note: State is shared across all uses of this layer.
  * For isolated testing, use `MemoryProgress.layer()` instead.
  */
-export const Live = layer();
+const Live = layer();
 
 /**
  * MemoryProgress namespace containing the Live layer and factory.

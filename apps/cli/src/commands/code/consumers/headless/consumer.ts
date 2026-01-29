@@ -116,10 +116,4 @@ export function createHeadlessConsumer(): Consumer {
         ),
   };
 }
-
-export type {
-  EventFormatter,
-  HeadlessFormatterRegistry,
-} from "./formatters/index.js";
 // Re-export for backwards compatibility
-export { formatEvent, headlessFormatterRegistry } from "./formatters/index.js";

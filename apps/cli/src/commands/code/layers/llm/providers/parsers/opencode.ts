@@ -13,13 +13,9 @@
 import { Either } from "effect";
 import {
   isOpenCodeStepFinish,
-  isOpenCodeStepStart,
   isOpenCodeTextEvent,
   isOpenCodeToolUseEvent,
   type OpenCodeStepFinish,
-  type OpenCodeStepStart,
-  type OpenCodeTextEvent,
-  type OpenCodeToolUseEvent,
 } from "../../../../domain/schemas/cli-output-opencode.js";
 
 /**
@@ -38,38 +34,11 @@ export function parseJsonLine(line: string): unknown | null {
 }
 
 /**
- * Checks if the parsed JSON represents a text content event.
- * Uses Effect Schema type guard for validation.
- */
-export function isTextContent(json: unknown): json is OpenCodeTextEvent {
-  return isOpenCodeTextEvent(json);
-}
-
-/**
- * Checks if the parsed JSON represents a step start event.
- * Uses Effect Schema type guard for validation.
- */
-export function isStepStart(json: unknown): json is OpenCodeStepStart {
-  return isOpenCodeStepStart(json);
-}
-
-/**
  * Checks if the parsed JSON represents a step finish event.
  * Uses Effect Schema type guard for validation.
  */
 export function isStepFinish(json: unknown): json is OpenCodeStepFinish {
   return isOpenCodeStepFinish(json);
-}
-
-/**
- * Checks if the parsed JSON represents a tool_use event.
- * Uses Effect Schema type guard for validation.
- *
- * OpenCode tool_use events arrive as complete events (not streamed like Claude/Cursor).
- * They contain the full tool input and output in a single event.
- */
-export function isToolUse(json: unknown): json is OpenCodeToolUseEvent {
-  return isOpenCodeToolUseEvent(json);
 }
 
 /**
@@ -105,20 +74,4 @@ export function extractToolInfo(json: unknown): {
   }
 
   return null;
-}
-
-/**
- * OpenCode doesn't use a stream_event envelope, so this is a pass-through.
- */
-export function unwrapStreamEvent(json: unknown): unknown {
-  return json;
-}
-
-/**
- * Safely parse accumulated JSON, returning null on failure.
- */
-export function safeParseJson(jsonStr: string): unknown | null {
-  return Either.getOrNull(
-    Either.try({ try: () => JSON.parse(jsonStr) as unknown, catch: () => null })
-  );
 }

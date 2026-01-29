@@ -10,6 +10,5 @@ import "./session-name.js";
 import "./task-complete.js";
 import "./tasks.js";
 
-export type { SignalSpec, SignalSpecRegistry } from "./registry.js";
 // Re-export registry
 export { signalSpecRegistry } from "./registry.js";

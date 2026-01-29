@@ -3,13 +3,12 @@ import { Schema as S } from "effect";
 /**
  * Action types for progress entries.
  */
-export const ProgressActionSchema = S.Literal(
+const ProgressActionSchema = S.Literal(
   "started",
   "completed",
   "failed",
   "learning"
 );
-export type ProgressAction = typeof ProgressActionSchema.Type;
 
 /**
  * A single progress entry for the append-only log.
@@ -21,7 +20,7 @@ export type ProgressAction = typeof ProgressActionSchema.Type;
  * - Any learnings discovered
  * - Files that were modified
  */
-export const ProgressEntrySchema = S.Struct({
+const ProgressEntrySchema = S.Struct({
   iteration: S.Number,
   timestamp: S.String,
   taskId: S.String,
@@ -38,7 +37,7 @@ export type ProgressEntry = typeof ProgressEntrySchema.Type;
  * Contains session metadata and an array of progress entries.
  * This is the structure persisted to `.ferix/plans/:sessionId/progress.md`.
  */
-export const ProgressFileSchema = S.Struct({
+const ProgressFileSchema = S.Struct({
   sessionId: S.String,
   createdAt: S.String,
   entries: S.Array(ProgressEntrySchema),
@@ -48,5 +47,4 @@ export type ProgressFile = typeof ProgressFileSchema.Type;
 /**
  * Decode helpers.
  */
-export const decodeProgressEntry = S.decodeUnknown(ProgressEntrySchema);
 export const decodeProgressFile = S.decodeUnknown(ProgressFileSchema);

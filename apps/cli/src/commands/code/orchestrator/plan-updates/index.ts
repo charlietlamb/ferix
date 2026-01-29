@@ -9,22 +9,10 @@ import "./handlers/task-complete.js";
 import "./handlers/tasks-defined.js";
 
 // Re-export helpers
-export {
-  createPlanFromTasks,
-  markTaskCompleted,
-  updateCriterionStatus,
-  updatePhaseStatus,
-  updatePlanWithCriteria,
-  updatePlanWithPhases,
-} from "./helpers.js";
-export type {
-  PlanUpdateContext,
-  PlanUpdateHandler,
-  PlanUpdateRegistry,
-  PlanUpdateResult,
-} from "./registry.js";
+
+export type { PlanUpdateContext } from "./registry.js";
+
 // Re-export registry and types
-export { planUpdateRegistry } from "./registry.js";
 
 // Re-export convenience function
 import type { Plan, Signal } from "../../domain/index.js";

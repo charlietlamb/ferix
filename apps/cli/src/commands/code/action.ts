@@ -3,21 +3,15 @@ import {
   createHeadlessConsumer,
   createTUIConsumer,
 } from "./consumers/index.js";
-import type { DomainEvent, LoopConfig } from "./domain/index.js";
-import type { LLMEvent } from "./domain/schemas/llm.js";
+import type { LoopConfig } from "./domain/index.js";
 import type { ConsumerType } from "./domain/schemas/program.js";
-import {
-  createProductionLayers,
-  createTestLayers,
-  ProductionLayers,
-  TestLayers,
-} from "./layers/index.js";
+import { createProductionLayers, ProductionLayers } from "./layers/index.js";
 import { runLoop } from "./orchestrator/index.js";
 
 /**
  * Options for running the ralph loop program.
  */
-export interface RunOptions {
+interface RunOptions {
   /**
    * Loop configuration.
    */
@@ -74,7 +68,7 @@ export interface RunOptions {
  * }).pipe(Effect.runPromise);
  * ```
  */
-export function run(options: RunOptions): Effect.Effect<void, unknown, never> {
+function run(options: RunOptions): Effect.Effect<void, unknown, never> {
   const { config, consumer: consumerType = "headless", onEvent } = options;
 
   const events = runLoop(config);
@@ -98,74 +92,6 @@ export function run(options: RunOptions): Effect.Effect<void, unknown, never> {
     consumerType === "tui" ? createTUIConsumer() : createHeadlessConsumer();
 
   return consumer.consume(eventsWithLayers);
-}
-
-/**
- * Run the ralph loop with test layers.
- *
- * Uses mock LLM and in-memory storage for testing.
- *
- * @param options - Run options including config
- * @param mockEvents - Optional custom mock events
- * @returns Effect that completes when the loop finishes
- *
- * @example
- * ```typescript
- * const mockEvents: LLMEvent[] = [
- *   { _tag: "Text", text: "<ferix:tasks><task id=\"1\">Test</task></ferix:tasks>" },
- *   { _tag: "Done", output: "..." },
- * ];
- *
- * await runTest(
- *   { config: { task: "test", maxIterations: 1, verifyCommands: [] } },
- *   mockEvents
- * ).pipe(Effect.runPromise);
- * ```
- */
-export function runTest(
-  options: Omit<RunOptions, "consumer">,
-  mockEvents?: readonly LLMEvent[]
-): Effect.Effect<void, unknown, never> {
-  const { config, onEvent } = options;
-
-  const events = runLoop(config);
-
-  const eventsWithCallback = onEvent
-    ? events.pipe(Stream.tap((event) => Effect.sync(() => onEvent(event))))
-    : events;
-
-  const layers = mockEvents ? createTestLayers(mockEvents) : TestLayers;
-
-  const eventsWithLayers = eventsWithCallback.pipe(Stream.provideLayer(layers));
-
-  return eventsWithLayers.pipe(Stream.runDrain);
-}
-
-/**
- * Collect all events from a ralph loop run.
- *
- * Useful for testing to get all emitted events.
- *
- * @param config - Loop configuration
- * @param mockEvents - Optional custom mock events
- * @returns Array of all domain events emitted
- *
- * @example
- * ```typescript
- * const events = await collectEvents(config, mockEvents).pipe(Effect.runPromise);
- * expect(events).toContainEqual({ _tag: "LoopStarted", ... });
- * ```
- */
-export function collectEvents(
-  config: LoopConfig,
-  mockEvents?: readonly LLMEvent[]
-): Effect.Effect<readonly DomainEvent[], unknown, never> {
-  const events = runLoop(config);
-  const layers = mockEvents ? createTestLayers(mockEvents) : TestLayers;
-
-  return events
-    .pipe(Stream.provideLayer(layers), Stream.runCollect)
-    .pipe(Effect.map((chunk) => Array.from(chunk)));
 }
 
 /**

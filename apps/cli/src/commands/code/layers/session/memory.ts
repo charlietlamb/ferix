@@ -102,7 +102,7 @@ function createMemorySessionStore(
  * Effect.runPromise(program.pipe(Effect.provide(testLayer)));
  * ```
  */
-export function layer(): Layer.Layer<SessionStore> {
+function layer(): Layer.Layer<SessionStore> {
   return Layer.effect(
     SessionStore,
     Effect.gen(function* () {
@@ -119,7 +119,7 @@ export function layer(): Layer.Layer<SessionStore> {
  * Note: State is shared across all uses of this layer.
  * For isolated testing, use `MemorySession.layer()` instead.
  */
-export const Live = layer();
+const Live = layer();
 
 /**
  * MemorySession namespace containing the Live layer and factory.

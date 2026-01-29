@@ -109,28 +109,3 @@ export class RetryExhaustedError extends Data.TaggedError(
   /** Iteration where retries were exhausted */
   readonly iteration: number;
 }> {}
-
-/**
- * Error that occurs during metrics operations.
- */
-export class MetricsError extends Data.TaggedError("MetricsError")<{
-  readonly message: string;
-  readonly operation: "record" | "get" | "clear";
-  readonly cause?: unknown;
-}> {}
-
-/**
- * Union of all possible errors in the system.
- */
-export type FerixError =
-  | LLMError
-  | ParseError
-  | PlanStoreError
-  | SessionStoreError
-  | ProgressStoreError
-  | GuardrailsStoreError
-  | OrchestratorError
-  | GitError
-  | TokenBudgetError
-  | RetryExhaustedError
-  | MetricsError;

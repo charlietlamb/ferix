@@ -78,7 +78,7 @@ export const detectAgents = (
  * @param agents - Array of agent names to validate
  * @returns Array of invalid agent names
  */
-export const validateAgentNames = (agents: readonly string[]): string[] =>
+const validateAgentNames = (agents: readonly string[]): string[] =>
   agents.filter((agent) => !SUPPORTED_AGENTS.includes(agent as AgentName));
 
 /**

@@ -9,7 +9,7 @@ import { checkProviderAvailable } from "./index.js";
  * Uses the Cursor Agent CLI to execute prompts.
  * The output format is stream-json, similar to Claude CLI.
  */
-export const CursorProvider: Provider = createProvider(
+const CursorProvider: Provider = createProvider(
   "cursor",
   (child) => createEventStream(child, "Cursor"),
   checkProviderAvailable
@@ -28,7 +28,7 @@ export const CursorProvider: Provider = createProvider(
  * Effect.runPromise(program.pipe(Effect.provide(CursorCLI.Live)));
  * ```
  */
-export const Live = createProviderLayer(CursorProvider);
+const Live = createProviderLayer(CursorProvider);
 
 /**
  * CursorCLI namespace containing the Live layer.

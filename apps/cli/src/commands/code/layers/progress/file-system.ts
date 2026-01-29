@@ -223,7 +223,7 @@ const make: ProgressStoreService = {
  * Effect.runPromise(program.pipe(Effect.provide(FileSystemProgress.Live)));
  * ```
  */
-export const Live = Layer.succeed(ProgressStore, make);
+const Live = Layer.succeed(ProgressStore, make);
 
 /**
  * FileSystemProgress namespace containing the Live layer.

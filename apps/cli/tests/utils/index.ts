@@ -40,61 +40,26 @@
 
 // Custom Effect assertions
 export {
-  countEvents,
-  expectEffectDefect,
-  expectEffectFailure,
-  expectEffectSuccess,
-  expectEventOrder,
-  expectEventSequence,
-  expectEventsContain,
-  expectEventsExclude,
   findEvent,
   findEvents,
-  hasTag,
 } from "./assertions.js";
 // Layer composition helpers
-export {
-  createMinimalTestLayers,
-  createStoreTestLayers,
-  createTestLayers,
-  type TestLayerOptions,
-} from "./create-test-layers.js";
+export { createTestLayers } from "./create-test-layers.js";
 // LLM event factories
 export {
-  mockBashSequence,
-  mockConversation,
   mockDoneEvent,
-  mockReadFileSequence,
   mockTextEvent,
   mockToolEndEvent,
-  mockToolSequence,
   mockToolStartEvent,
   mockToolUseEvent,
-  mockWriteFileSequence,
 } from "./mock-events.js";
 // Signal string generators
 export {
   combineSignals,
-  type MockCriterion,
-  type MockPhase,
-  type MockTask,
-  type MockTaskCompletion,
-  mockCheckFailedSignal,
-  mockCheckPassedSignal,
-  mockCompleteTaskFlow,
-  mockCriteriaSignal,
-  mockCriterionFailedSignal,
-  mockCriterionPassedSignal,
-  mockGuardrailSignal,
-  mockLearningSignal,
   mockLoopCompleteSignal,
   mockPhaseDoneSignal,
-  mockPhaseFailedSignal,
   mockPhaseStartSignal,
   mockPhasesSignal,
-  mockReviewChangesMadeSignal,
-  mockReviewCompleteSignal,
-  mockSessionNameSignal,
   mockTaskCompleteSignal,
   mockTasksSignal,
 } from "./mock-signals.js";

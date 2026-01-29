@@ -1,5 +1,3 @@
-npm test
-
 #!/bin/sh
 # Exit on any error
 set -e
@@ -67,4 +65,30 @@ if [ "$STAGED_HASH" != "$NEW_STAGED_HASH" ]; then
   echo "✨ Files formatted by Ultracite"
 fi
 
-exit $FORMAT_EXIT_CODE
+if [ $FORMAT_EXIT_CODE -ne 0 ]; then
+  echo "❌ Formatting failed. Please fix before committing."
+  exit $FORMAT_EXIT_CODE
+fi
+
+echo "✨ Running knip to check for unused code"
+# Run knip to check for unused code
+bun run knip
+KNIP_EXIT_CODE=$?
+if [ $KNIP_EXIT_CODE -ne 0 ]; then
+  echo "❌ Knip found unused code. Please fix before committing."
+  exit $KNIP_EXIT_CODE
+fi
+
+echo "✨ Knip completed successfully"
+
+echo "✨ Running tests"
+bun run test
+TEST_EXIT_CODE=$?
+if [ $TEST_EXIT_CODE -ne 0 ]; then
+  echo "❌ Tests failed. Please fix before committing."
+  exit $TEST_EXIT_CODE
+fi
+
+echo "✨ Tests completed successfully"
+
+exit 0

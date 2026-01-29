@@ -15,7 +15,7 @@ export function toolUseLine(tool: string, detail: string): string {
 /**
  * Helper to create diamond banner.
  */
-export function diamondBanner(
+function diamondBanner(
   text: string,
   width: number,
   borderColor: (s: string) => string,

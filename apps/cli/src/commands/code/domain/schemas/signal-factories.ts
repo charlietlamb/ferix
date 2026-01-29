@@ -26,8 +26,6 @@ import {
   type LearningCategory,
   type LearningSignal,
   LearningSignalSchema,
-  type LoopCompleteSignal,
-  LoopCompleteSignalSchema,
   type PhaseCompletedSignal,
   PhaseCompletedSignalSchema,
   type PhaseFailedSignal,
@@ -36,15 +34,14 @@ import {
   PhaseStartedSignalSchema,
   type PhasesDefinedSignal,
   PhasesDefinedSignalSchema,
-  type ReviewCompleteSignal,
-  ReviewCompleteSignalSchema,
   type SessionNameDefinedSignal,
   SessionNameDefinedSignalSchema,
-  type TaskCompleteSignal,
-  TaskCompleteSignalSchema,
   type TasksDefinedSignal,
   TasksDefinedSignalSchema,
 } from "./signals.js";
+
+// Note: ReviewCompleteSignalSchema, TaskCompleteSignalSchema, and LoopCompleteSignalSchema
+// are not currently used but the factory functions for them were removed as unused.
 
 /**
  * Create a TasksDefined signal.
@@ -169,47 +166,6 @@ export function createCheckFailedSignal(
 ): Either.Either<CheckFailedSignal, ParseResult.ParseError> {
   return S.decodeUnknownEither(CheckFailedSignalSchema)({
     _tag: "CheckFailed",
-  });
-}
-
-/**
- * Create a ReviewCompleteSignal.
- */
-export function createReviewCompleteSignal(input: {
-  changesMade: boolean;
-}): Either.Either<ReviewCompleteSignal, ParseResult.ParseError> {
-  return S.decodeUnknownEither(ReviewCompleteSignalSchema)({
-    _tag: "ReviewComplete",
-    changesMade: input.changesMade,
-  });
-}
-
-/**
- * Create a TaskCompleteSignal.
- */
-export function createTaskCompleteSignal(input: {
-  taskId: string;
-  summary: string;
-  filesModified: readonly string[];
-  filesCreated: readonly string[];
-}): Either.Either<TaskCompleteSignal, ParseResult.ParseError> {
-  return S.decodeUnknownEither(TaskCompleteSignalSchema)({
-    _tag: "TaskComplete",
-    taskId: input.taskId,
-    summary: input.summary,
-    filesModified: input.filesModified,
-    filesCreated: input.filesCreated,
-  });
-}
-
-/**
- * Create a LoopCompleteSignal.
- */
-export function createLoopCompleteSignal(
-  _input: Record<string, never>
-): Either.Either<LoopCompleteSignal, ParseResult.ParseError> {
-  return S.decodeUnknownEither(LoopCompleteSignalSchema)({
-    _tag: "LoopComplete",
   });
 }
 

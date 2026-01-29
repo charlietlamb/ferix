@@ -11,7 +11,7 @@ export interface EventFormatter<T extends DomainEvent["_tag"]> {
 /**
  * Registry for headless event formatters.
  */
-export interface HeadlessFormatterRegistry {
+interface HeadlessFormatterRegistry {
   register<T extends DomainEvent["_tag"]>(formatter: EventFormatter<T>): void;
   format(event: DomainEvent): string | null;
 }
@@ -19,7 +19,7 @@ export interface HeadlessFormatterRegistry {
 /**
  * Creates the headless formatter registry.
  */
-export function createHeadlessFormatterRegistry(): HeadlessFormatterRegistry {
+function createHeadlessFormatterRegistry(): HeadlessFormatterRegistry {
   const formatters = new Map<string, (event: DomainEvent) => string | null>();
 
   return {

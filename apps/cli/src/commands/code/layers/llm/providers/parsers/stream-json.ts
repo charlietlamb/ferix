@@ -7,8 +7,6 @@
 import { Either } from "effect";
 import {
   type AssistantMessage,
-  type ContentBlockDelta,
-  type ContentBlockStart,
   isAssistantMessage,
   isContentBlockDelta,
   isContentBlockStart,
@@ -36,40 +34,6 @@ export function parseJsonLine(line: string): unknown | null {
 }
 
 /**
- * Checks if the parsed JSON represents a text content event.
- * Uses Effect Schema type guard for validation.
- */
-export function isTextContent(json: unknown): json is {
-  type: string;
-  message?: { content?: Array<{ type: string; text?: string }> };
-} {
-  // Check for assistant message with text content
-  if (isAssistantMessage(json)) {
-    return true;
-  }
-  // Check for content_block_delta with text_delta
-  if (isContentBlockDelta(json) && isTextDelta(json.delta)) {
-    return true;
-  }
-  // Check for content_block_start
-  if (isContentBlockStart(json)) {
-    return true;
-  }
-  return false;
-}
-
-/**
- * Checks if the parsed JSON represents a tool use event.
- * Uses Effect Schema type guard for validation.
- */
-export function isToolUse(json: unknown): json is ContentBlockStart {
-  if (!isContentBlockStart(json)) {
-    return false;
-  }
-  return isToolUseContentBlock(json.content_block);
-}
-
-/**
  * Extracts text from various CLI stream-json message formats.
  * Uses Effect Schema for type-safe extraction.
  */
@@ -89,19 +53,6 @@ export function extractText(json: unknown): string | null {
   }
 
   return null;
-}
-
-/**
- * Checks if the parsed JSON represents a tool input delta event.
- * Uses Effect Schema type guard for validation.
- */
-export function isToolInputDelta(json: unknown): json is ContentBlockDelta & {
-  delta: { type: "input_json_delta"; partial_json: string };
-} {
-  if (!isContentBlockDelta(json)) {
-    return false;
-  }
-  return isInputJsonDelta(json.delta);
 }
 
 /**

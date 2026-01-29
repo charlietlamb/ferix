@@ -2,14 +2,7 @@
 import "./bindings/navigation.js";
 import "./bindings/scroll.js";
 import "./bindings/view.js";
-
-export type {
-  KeyAction,
-  KeyBinding,
-  KeyBindingRegistry,
-} from "./registry.js";
 // Re-export registry and types
-export { keyBindingRegistry } from "./registry.js";
 
 // Re-export parsing and handling logic
 import { Effect, Ref, Stream } from "effect";
@@ -73,7 +66,7 @@ function parseMouseWheel(key: string): KeyAction | null {
 /**
  * Parse key sequence into action.
  */
-export function parseKey(data: Buffer, viewMode: ViewMode): KeyAction {
+function parseKey(data: Buffer, viewMode: ViewMode): KeyAction {
   const key = data.toString();
 
   // Check registry first
@@ -103,7 +96,7 @@ export function parseKey(data: Buffer, viewMode: ViewMode): KeyAction {
 /**
  * Apply action to state.
  */
-export function applyAction(
+function applyAction(
   state: TUIState,
   action: KeyAction,
   outputHeight: number

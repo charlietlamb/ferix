@@ -96,7 +96,7 @@ const make: SignalParserService = {
  * Effect.runPromise(program.pipe(Effect.provide(FerixParser.Live)));
  * ```
  */
-export const Live = Layer.succeed(SignalParser, make);
+const Live = Layer.succeed(SignalParser, make);
 
 /**
  * FerixParser namespace containing the Live layer.

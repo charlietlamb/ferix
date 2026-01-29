@@ -38,7 +38,7 @@ import type { AgentName } from "./types.js";
 // Types
 // ============================================================================
 
-export interface SyncOptions {
+interface SyncOptions {
   path: string;
   dryRun: boolean;
   global: boolean;

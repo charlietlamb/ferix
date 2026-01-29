@@ -1,18 +1,12 @@
 import { Schema as S } from "effect";
 
 // View/status literal schemas
-export const ViewModeSchema = S.Literal("logs", "tasks", "detail");
+const ViewModeSchema = S.Literal("logs", "tasks", "detail");
 export type ViewMode = typeof ViewModeSchema.Type;
 
-export const LoopStatusSchema = S.Literal(
-  "idle",
-  "running",
-  "complete",
-  "error"
-);
-export type LoopStatus = typeof LoopStatusSchema.Type;
+const LoopStatusSchema = S.Literal("idle", "running", "complete", "error");
 
-export const ExecutionModeSchema = S.Literal(
+const ExecutionModeSchema = S.Literal(
   "idle",
   "discovery",
   "breakdown",
@@ -25,7 +19,7 @@ export const ExecutionModeSchema = S.Literal(
 export type ExecutionMode = typeof ExecutionModeSchema.Type;
 
 // TUI-specific status schemas (prefixed to avoid conflicts with plan.ts)
-export const TUIPhaseStatusSchema = S.Literal(
+const TUIPhaseStatusSchema = S.Literal(
   "pending",
   "in_progress",
   "done",
@@ -33,14 +27,10 @@ export const TUIPhaseStatusSchema = S.Literal(
 );
 export type TUIPhaseStatus = typeof TUIPhaseStatusSchema.Type;
 
-export const TUICriterionStatusSchema = S.Literal(
-  "pending",
-  "passed",
-  "failed"
-);
+const TUICriterionStatusSchema = S.Literal("pending", "passed", "failed");
 export type TUICriterionStatus = typeof TUICriterionStatusSchema.Type;
 
-export const TUITaskStatusSchema = S.Literal(
+const TUITaskStatusSchema = S.Literal(
   "pending",
   "in_progress",
   "done",
@@ -49,7 +39,7 @@ export const TUITaskStatusSchema = S.Literal(
 export type TUITaskStatus = typeof TUITaskStatusSchema.Type;
 
 // TUI data schemas
-export const TUIPhaseSchema = S.Struct({
+const TUIPhaseSchema = S.Struct({
   id: S.String,
   description: S.String,
   status: TUIPhaseStatusSchema,
@@ -58,7 +48,7 @@ export const TUIPhaseSchema = S.Struct({
 });
 export type TUIPhase = typeof TUIPhaseSchema.Type;
 
-export const TUICriterionSchema = S.Struct({
+const TUICriterionSchema = S.Struct({
   id: S.String,
   description: S.String,
   status: TUICriterionStatusSchema,
@@ -66,7 +56,7 @@ export const TUICriterionSchema = S.Struct({
 });
 export type TUICriterion = typeof TUICriterionSchema.Type;
 
-export const TUITaskSchema = S.Struct({
+const TUITaskSchema = S.Struct({
   id: S.String,
   title: S.String,
   status: TUITaskStatusSchema,
@@ -77,7 +67,7 @@ export const TUITaskSchema = S.Struct({
 });
 export type TUITask = typeof TUITaskSchema.Type;
 
-export const TUIStateSchema = S.Struct({
+const TUIStateSchema = S.Struct({
   // Loop info
   task: S.String,
   iteration: S.Number,

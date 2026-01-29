@@ -20,6 +20,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "postcss": "catalog:",
     "tailwindcss": "catalog:",
     "tw-animate-css": "catalog:",
     "typescript": "catalog:"
@@ -37,7 +38,6 @@
     "@phosphor-icons/react": "catalog:",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-form": "catalog:",
-    "@tanstack/react-virtual": "catalog:",
     "better-auth": "catalog:",
     "better-result": "catalog:",
     "class-variance-authority": "catalog:",
@@ -49,6 +49,7 @@
     "input-otp": "catalog:",
     "jotai": "catalog:",
     "motion": "catalog:",
+    "next": "catalog:",
     "next-intl": "catalog:",
     "next-themes": "catalog:",
     "nuqs": "catalog:",

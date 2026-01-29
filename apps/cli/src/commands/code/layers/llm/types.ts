@@ -11,13 +11,12 @@ export type { ProviderName } from "../../domain/schemas/config.js";
 /**
  * Permission mode schema for CLI permission levels.
  */
-export const PermissionModeSchema = S.Literal("acceptEdits", "yolo", "prompt");
-export type PermissionMode = typeof PermissionModeSchema.Type;
+const PermissionModeSchema = S.Literal("acceptEdits", "yolo", "prompt");
 
 /**
  * Provider configuration schema with runtime validation.
  */
-export const ProviderConfigSchema = S.Struct({
+const ProviderConfigSchema = S.Struct({
   /** Provider name */
   name: ProviderNameSchema,
   /** CLI command to execute */
@@ -35,7 +34,7 @@ export const ProviderConfigSchema = S.Struct({
 /**
  * Configuration for a provider.
  */
-export type ProviderConfig = typeof ProviderConfigSchema.Type;
+type ProviderConfig = typeof ProviderConfigSchema.Type;
 
 /**
  * Provider interface that all LLM implementations must satisfy.

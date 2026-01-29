@@ -230,7 +230,7 @@ function createMemoryGitService(
  * Effect.runPromise(program.pipe(Effect.provide(testLayer)));
  * ```
  */
-export function layer(): Layer.Layer<Git> {
+function layer(): Layer.Layer<Git> {
   return Layer.effect(
     Git,
     Effect.gen(function* () {
@@ -247,7 +247,7 @@ export function layer(): Layer.Layer<Git> {
  * Note: State is shared across all uses of this layer.
  * For isolated testing, use `MemoryGit.layer()` instead.
  */
-export const Live = layer();
+const Live = layer();
 
 /**
  * MemoryGit namespace containing the Live layer and factory.

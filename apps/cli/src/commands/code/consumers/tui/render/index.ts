@@ -62,12 +62,3 @@ export function render(state: TUIState, output: TerminalOutput): void {
     }
   }
 }
-
-export { renderFooter } from "./footer.js";
-export { getMaxOutputOffset, renderOutputArea } from "./output-area.js";
-export { renderStatusBar } from "./status-bar.js";
-export { renderTaskBar } from "./task-bar.js";
-export { renderTaskDetailView } from "./task-detail.js";
-export { renderTasksListView } from "./tasks-list.js";
-export type { ViewRenderer, ViewRendererRegistry } from "./views/index.js";
-export { viewRendererRegistry } from "./views/index.js";

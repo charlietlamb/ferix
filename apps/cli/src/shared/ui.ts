@@ -5,7 +5,7 @@ import pc from "picocolors";
 // Symbols
 // ============================================================================
 
-export const SYMBOLS = {
+const SYMBOLS = {
   success: pc.green("✓"),
   error: pc.red("✗"),
 };

@@ -179,7 +179,7 @@ const make: SessionStoreService = {
  * Effect.runPromise(program.pipe(Effect.provide(FileSystemSession.Live)));
  * ```
  */
-export const Live = Layer.succeed(SessionStore, make);
+const Live = Layer.succeed(SessionStore, make);
 
 /**
  * FileSystemSession namespace containing the Live layer.

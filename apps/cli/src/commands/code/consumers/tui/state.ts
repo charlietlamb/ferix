@@ -21,9 +21,8 @@ export function createInitialState(): TUIState {
   };
 }
 
-export type { StateReducer, StateReducerRegistry } from "./reducers/index.js";
 // Re-export reducer from registry-based implementation
-export { appendError, reduce, stateReducerRegistry } from "./reducers/index.js";
+export { appendError, reduce } from "./reducers/index.js";
 
 // Scroll helpers
 export function scroll(

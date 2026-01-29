@@ -9,22 +9,11 @@ import "./tasks.js";
 import "./worktree.js";
 
 // Re-export formatToolInput from tools
-export { formatToolInput } from "../tools/index.js";
+
 // Re-export helpers
-export {
-  appendError,
-  appendOutput,
-  appendToolUse,
-  setCriterionStatus,
-  setPhaseStatus,
-  setTaskStatus,
-  toTUITask,
-  updateTaskCriteria,
-  updateTaskPhases,
-} from "./helpers.js";
-export type { StateReducer, StateReducerRegistry } from "./registry.js";
+export { appendError } from "./helpers.js";
+
 // Re-export registry
-export { stateReducerRegistry } from "./registry.js";
 
 // Re-export reduce function
 import type { DomainEvent } from "../../../domain/index.js";

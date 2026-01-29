@@ -228,7 +228,7 @@ const make: GuardrailsStoreService = {
  * Effect.runPromise(program.pipe(Effect.provide(FileSystemGuardrails.Live)));
  * ```
  */
-export const Live = Layer.succeed(GuardrailsStore, make);
+const Live = Layer.succeed(GuardrailsStore, make);
 
 /**
  * FileSystemGuardrails namespace containing the Live layer.

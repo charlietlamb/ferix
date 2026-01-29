@@ -17,15 +17,6 @@ export type CommitHash = string & { readonly _brand: "CommitHash" };
 export type PrUrl = string & { readonly _brand: "PrUrl" };
 
 /**
- * Information about a worktree.
- */
-export interface WorktreeInfo {
-  readonly path: WorktreePath;
-  readonly branch: string;
-  readonly sessionId: string;
-}
-
-/**
  * Service interface for git operations.
  *
  * Provides worktree management for isolated session execution.

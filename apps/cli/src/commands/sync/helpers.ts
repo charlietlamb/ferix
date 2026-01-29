@@ -6,7 +6,7 @@ import { NON_NPM_VERSION_PREFIXES } from "./types.js";
 // Package.json Types
 // ============================================================================
 
-export interface PackageJsonRaw {
+interface PackageJsonRaw {
   name?: string;
   version?: string;
   dependencies?: Record<string, string>;
@@ -18,7 +18,7 @@ export interface PackageJsonRaw {
 // Dependency Extraction
 // ============================================================================
 
-export const isNonNpmDependency = (version: string): boolean =>
+const isNonNpmDependency = (version: string): boolean =>
   NON_NPM_VERSION_PREFIXES.some((prefix) => version.startsWith(prefix));
 
 export const extractDependencies = (pkg: PackageJsonRaw): readonly string[] => {
@@ -43,7 +43,7 @@ export const extractDependencies = (pkg: PackageJsonRaw): readonly string[] => {
 // Workspace Pattern Extraction
 // ============================================================================
 
-export const extractWorkspacePatterns = (pkg: PackageJsonRaw): string[] => {
+const extractWorkspacePatterns = (pkg: PackageJsonRaw): string[] => {
   const workspaces = pkg.workspaces;
   if (!workspaces) {
     return [];
@@ -66,7 +66,7 @@ export const extractWorkspacePatterns = (pkg: PackageJsonRaw): string[] => {
 
 const GLOB_SUFFIX_PATTERN = /\/\*+$/;
 
-export const expandGlobPattern = async (
+const expandGlobPattern = async (
   rootDir: string,
   pattern: string
 ): Promise<string[]> => {

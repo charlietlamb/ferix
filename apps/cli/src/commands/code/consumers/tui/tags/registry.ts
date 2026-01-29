@@ -1,7 +1,7 @@
 /**
  * Tag renderer handler interface.
  */
-export interface TagHandler {
+interface TagHandler {
   readonly pattern: RegExp;
   readonly render: (match: RegExpMatchArray, width: number) => string;
 }
@@ -10,7 +10,7 @@ export interface TagHandler {
  * Registry for tag renderers.
  * Allows adding new tag handlers without modifying existing code.
  */
-export interface TagRendererRegistry {
+interface TagRendererRegistry {
   register(handler: TagHandler): void;
   style(line: string, width: number): string;
   getAll(): readonly TagHandler[];
@@ -19,7 +19,7 @@ export interface TagRendererRegistry {
 /**
  * Creates the tag renderer registry.
  */
-export function createTagRendererRegistry(): TagRendererRegistry {
+function createTagRendererRegistry(): TagRendererRegistry {
   const handlers: TagHandler[] = [];
 
   return {

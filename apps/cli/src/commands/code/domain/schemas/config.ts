@@ -6,7 +6,7 @@ import { Schema as S } from "effect";
 export const ProviderNameSchema = S.Literal("claude", "cursor", "opencode");
 export type ProviderName = typeof ProviderNameSchema.Type;
 
-export const PhasePromptOverridesSchema = S.Struct({
+const PhasePromptOverridesSchema = S.Struct({
   breakdown: S.optional(S.String),
   planning: S.optional(S.String),
   execution: S.optional(S.String),
@@ -15,9 +15,8 @@ export const PhasePromptOverridesSchema = S.Struct({
   review: S.optional(S.String),
   completion: S.optional(S.String),
 });
-export type PhasePromptOverrides = typeof PhasePromptOverridesSchema.Type;
 
-export const PromptConfigSchema = S.Struct({
+const PromptConfigSchema = S.Struct({
   systemPrompt: S.optional(S.String),
   phases: S.optional(PhasePromptOverridesSchema),
   additionalContext: S.optional(S.String),
@@ -55,6 +54,3 @@ export const LoopErrorSchema = S.Struct({
   phase: S.String,
   iteration: S.optional(S.Number),
 });
-export type LoopError = typeof LoopErrorSchema.Type;
-
-export const decodeLoopConfig = S.decodeUnknown(LoopConfigSchema);

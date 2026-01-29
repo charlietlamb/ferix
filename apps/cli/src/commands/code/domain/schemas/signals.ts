@@ -108,11 +108,7 @@ export type SessionNameDefinedSignal =
 /**
  * Learning category types.
  */
-export const LearningCategorySchema = S.Literal(
-  "success",
-  "failure",
-  "optimization"
-);
+const LearningCategorySchema = S.Literal("success", "failure", "optimization");
 export type LearningCategory = typeof LearningCategorySchema.Type;
 
 /**
@@ -138,7 +134,7 @@ export type GuardrailSignal = typeof GuardrailSignalSchema.Type;
 /**
  * Union of all signals.
  */
-export const SignalSchema = S.Union(
+const SignalSchema = S.Union(
   TasksDefinedSignalSchema,
   PhasesDefinedSignalSchema,
   CriteriaDefinedSignalSchema,
@@ -157,9 +153,3 @@ export const SignalSchema = S.Union(
   SessionNameDefinedSignalSchema
 );
 export type Signal = typeof SignalSchema.Type;
-
-/**
- * Decode helpers.
- */
-export const decodeSignal = S.decodeUnknown(SignalSchema);
-export const decodeSignalSync = S.decodeUnknownSync(SignalSchema);

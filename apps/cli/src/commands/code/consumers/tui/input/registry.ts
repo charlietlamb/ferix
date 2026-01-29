@@ -24,7 +24,7 @@ export type KeyAction =
 /**
  * Key binding configuration.
  */
-export interface KeyBinding {
+interface KeyBinding {
   readonly key: string;
   readonly action: KeyAction;
   readonly viewModes?: readonly ViewMode[];
@@ -33,7 +33,7 @@ export interface KeyBinding {
 /**
  * Registry for key bindings.
  */
-export interface KeyBindingRegistry {
+interface KeyBindingRegistry {
   register(binding: KeyBinding): void;
   getAction(key: string, viewMode: ViewMode): KeyAction | undefined;
   getAll(): readonly KeyBinding[];
@@ -42,7 +42,7 @@ export interface KeyBindingRegistry {
 /**
  * Creates the key binding registry.
  */
-export function createKeyBindingRegistry(): KeyBindingRegistry {
+function createKeyBindingRegistry(): KeyBindingRegistry {
   const bindings: KeyBinding[] = [];
 
   return {

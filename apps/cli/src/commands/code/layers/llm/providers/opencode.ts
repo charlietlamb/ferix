@@ -12,7 +12,7 @@ import { checkProviderAvailable } from "./index.js";
  * - Prompt is passed as a positional argument, not with `-p`
  * - Event types: `text`, `step_start`, `step_finish`
  */
-export const OpenCodeProvider: Provider = createProvider(
+const OpenCodeProvider: Provider = createProvider(
   "opencode",
   (child) => createOpenCodeEventStream(child, "OpenCode"),
   checkProviderAvailable
@@ -31,7 +31,7 @@ export const OpenCodeProvider: Provider = createProvider(
  * Effect.runPromise(program.pipe(Effect.provide(OpenCodeCLI.Live)));
  * ```
  */
-export const Live = createProviderLayer(OpenCodeProvider);
+const Live = createProviderLayer(OpenCodeProvider);
 
 /**
  * OpenCodeCLI namespace containing the Live layer.

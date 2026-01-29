@@ -6,7 +6,7 @@ import { checkProviderAvailable } from "./index.js";
 /**
  * Claude CLI provider implementation.
  */
-export const ClaudeProvider: Provider = createProvider(
+const ClaudeProvider: Provider = createProvider(
   "claude",
   (child) => createEventStream(child, "Claude"),
   checkProviderAvailable
@@ -25,7 +25,7 @@ export const ClaudeProvider: Provider = createProvider(
  * Effect.runPromise(program.pipe(Effect.provide(ClaudeCLI.Live)));
  * ```
  */
-export const Live = createProviderLayer(ClaudeProvider);
+const Live = createProviderLayer(ClaudeProvider);
 
 /**
  * ClaudeCLI namespace containing the Live layer.

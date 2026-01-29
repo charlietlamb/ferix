@@ -102,7 +102,7 @@ function createMemoryGuardrailsStore(
  * Effect.runPromise(program.pipe(Effect.provide(testLayer)));
  * ```
  */
-export function layer(): Layer.Layer<GuardrailsStore> {
+function layer(): Layer.Layer<GuardrailsStore> {
   return Layer.effect(
     GuardrailsStore,
     Effect.gen(function* () {
@@ -118,7 +118,7 @@ export function layer(): Layer.Layer<GuardrailsStore> {
  * Note: State is shared across all uses of this layer.
  * For isolated testing, use `MemoryGuardrails.layer()` instead.
  */
-export const Live = layer();
+const Live = layer();
 
 /**
  * MemoryGuardrails namespace containing the Live layer and factory.

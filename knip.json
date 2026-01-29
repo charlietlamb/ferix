@@ -1,0 +1,50 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": []
+    },
+    "apps/cli": {
+      "entry": ["tests/**/*.test.ts"],
+      "project": ["src/**/*.ts", "tests/**/*.ts"],
+      "tsup": {
+        "config": ["tsup.config.ts"]
+      }
+    },
+    "apps/web": {
+      "entry": ["app/**/*.{ts,tsx}"],
+      "project": ["**/*.{ts,tsx}"]
+    },
+    "apps/server": {
+      "entry": [
+        "convex/**/*.ts",
+        "!convex/_generated/**",
+        "!convex/betterAuth/_generated/**"
+      ],
+      "project": ["convex/**/*.ts"],
+      "ignore": ["convex/_generated/**", "convex/betterAuth/_generated/**"]
+    },
+    "packages/ui": {
+      "entry": ["src/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignore": ["src/styles/**"]
+    },
+    "packages/auth": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/env": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/analytics": {
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "packages/notifications": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/i18n": {
+      "project": ["src/**/*.ts"]
+    }
+  },
+  "ignore": ["**/node_modules/**", "**/dist/**", "**/.next/**"],
+  "ignoreDependencies": ["@ferix/typescript-config"]
+}

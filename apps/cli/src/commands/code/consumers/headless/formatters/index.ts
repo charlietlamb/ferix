@@ -8,13 +8,7 @@ import "./phases.js";
 import "./plan.js";
 import "./tasks.js";
 import "./worktree.js";
-
-export type {
-  EventFormatter,
-  HeadlessFormatterRegistry,
-} from "./registry.js";
 // Re-export registry and types
-export { headlessFormatterRegistry } from "./registry.js";
 
 // Re-export convenience function
 import type { DomainEvent } from "../../../domain/index.js";

@@ -2,14 +2,9 @@
 import "./llm-to-domain.js";
 import "./signal-to-domain.js";
 
-export type {
-  EventMappingRegistry,
-  LLMEventMapper,
-  MappingContext,
-  SignalMapper,
-} from "./registry.js";
+export type { MappingContext } from "./registry.js";
+
 // Re-export registry and types
-export { eventMappingRegistry } from "./registry.js";
 
 // Re-export convenience functions
 import type { DomainEvent, Signal } from "../../domain/index.js";

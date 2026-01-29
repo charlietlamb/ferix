@@ -3,18 +3,17 @@ import { Schema as S } from "effect";
 /**
  * Session status schema.
  */
-export const SessionStatusSchema = S.Literal(
+const SessionStatusSchema = S.Literal(
   "active",
   "completed",
   "failed",
   "paused"
 );
-export type SessionStatus = typeof SessionStatusSchema.Type;
 
 /**
  * Session schema.
  */
-export const SessionSchema = S.Struct({
+const SessionSchema = S.Struct({
   id: S.String,
   createdAt: S.String,
   status: SessionStatusSchema,

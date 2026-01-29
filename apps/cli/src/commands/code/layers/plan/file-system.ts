@@ -264,7 +264,7 @@ const make: PlanStoreService = {
  * Effect.runPromise(program.pipe(Effect.provide(FileSystemPlan.Live)));
  * ```
  */
-export const Live = Layer.succeed(PlanStore, make);
+const Live = Layer.succeed(PlanStore, make);
 
 /**
  * FileSystemPlan namespace containing the Live layer.

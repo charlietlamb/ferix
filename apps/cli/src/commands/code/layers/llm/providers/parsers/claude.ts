@@ -7,10 +7,6 @@
 export {
   extractText,
   extractToolInfo,
-  isTextContent,
-  isToolInputDelta,
-  isToolUse,
   parseJsonLine,
-  safeParseJson,
   unwrapStreamEvent,
 } from "./stream-json.js";

@@ -72,13 +72,6 @@ export function topBorder(width: number): string {
   );
 }
 
-export function bottomBorder(width: number): string {
-  const repeatCount = Math.max(0, width - 2);
-  return pc.cyan(
-    `${box.bottomLeft}${box.horizontal.repeat(repeatCount)}${box.bottomRight}`
-  );
-}
-
 export function separator(width: number): string {
   const repeatCount = Math.max(0, width - 2);
   return pc.cyan(

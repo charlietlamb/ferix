@@ -584,7 +584,7 @@ const make: GitService = {
  * Effect.runPromise(program.pipe(Effect.provide(FileSystemGit.Live)));
  * ```
  */
-export const Live = Layer.succeed(Git, make);
+const Live = Layer.succeed(Git, make);
 
 /**
  * FileSystemGit namespace containing the Live layer.

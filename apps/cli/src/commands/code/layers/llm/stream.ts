@@ -17,13 +17,11 @@ import {
 } from "./stream-factory.js";
 
 // Re-export for backward compatibility
-export type { ToolState } from "./stream-factory.js";
-export { handleToolEvent } from "./stream-factory.js";
 
 /**
  * Process a single JSON line and emit appropriate events.
  */
-export function processJsonLine(
+function processJsonLine(
   json: unknown,
   outputChunks: string[],
   toolState: ToolState,

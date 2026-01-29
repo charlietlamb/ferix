@@ -131,7 +131,7 @@ function createMemoryPlanStore(
  * Effect.runPromise(program.pipe(Effect.provide(testLayer)));
  * ```
  */
-export function layer(): Layer.Layer<PlanStore> {
+function layer(): Layer.Layer<PlanStore> {
   return Layer.effect(
     PlanStore,
     Effect.gen(function* () {
@@ -147,7 +147,7 @@ export function layer(): Layer.Layer<PlanStore> {
  * Note: State is shared across all uses of this layer.
  * For isolated testing, use `MemoryPlan.layer()` instead.
  */
-export const Live = layer();
+const Live = layer();
 
 /**
  * MemoryPlan namespace containing the Live layer and factory.

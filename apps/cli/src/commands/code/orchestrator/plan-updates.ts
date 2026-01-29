@@ -1,24 +1,7 @@
 import { DateTime, Effect, Ref } from "effect";
 import type { DomainEvent, Plan, Signal } from "../domain/index.js";
 import type { PlanStoreService } from "../services/plan-store.js";
-
-export type {
-  PlanUpdateContext,
-  PlanUpdateHandler,
-  PlanUpdateRegistry,
-  PlanUpdateResult,
-} from "./plan-updates/index.js";
 // Re-export from the new registry-based implementation
-export {
-  computePlanUpdate,
-  createPlanFromTasks,
-  markTaskCompleted,
-  planUpdateRegistry,
-  updateCriterionStatus,
-  updatePhaseStatus,
-  updatePlanWithCriteria,
-  updatePlanWithPhases,
-} from "./plan-updates/index.js";
 
 // Import for local use
 import { computePlanUpdate } from "./plan-updates/index.js";
@@ -34,7 +17,7 @@ export interface PlanPersistenceState {
 /**
  * Helper to persist a plan update and emit appropriate events.
  */
-export function persistPlanUpdate(
+function persistPlanUpdate(
   planStore: PlanStoreService,
   plan: Plan,
   operation: "create" | "update"
