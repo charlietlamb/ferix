@@ -81,16 +81,18 @@ export function runLoop(
       const planStore = yield* PlanStore;
       const git = yield* Git;
 
-      const session = yield* sessionStore.create(config.task).pipe(
-        Effect.mapError(
-          (e) =>
-            new OrchestratorError({
-              message: `Failed to create session: ${e.message}`,
-              phase: "setup",
-              cause: e,
-            })
-        )
-      );
+      const session = yield* sessionStore
+        .create(config.task, config.sessionId)
+        .pipe(
+          Effect.mapError(
+            (e) =>
+              new OrchestratorError({
+                message: `Failed to create session: ${e.message}`,
+                phase: "setup",
+                cause: e,
+              })
+          )
+        );
 
       // Capture the current branch as the base branch for PR creation
       const baseBranch = yield* git.getCurrentBranch().pipe(

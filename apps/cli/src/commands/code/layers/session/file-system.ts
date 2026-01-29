@@ -98,14 +98,17 @@ function deserializeSession(
  * Stores sessions as JSON files in `.ferix/sessions/`.
  */
 const make: SessionStoreService = {
-  create: (originalTask: string): Effect.Effect<Session, SessionStoreError> =>
+  create: (
+    originalTask: string,
+    providedSessionId?: string
+  ): Effect.Effect<Session, SessionStoreError> =>
     Effect.gen(function* () {
       const sessionsDir = join(process.cwd(), SESSIONS_DIR);
       yield* ensureDir(sessionsDir);
 
       const now = yield* DateTime.now;
       const timestampMs = DateTime.toEpochMillis(now);
-      const sessionId = generateSessionId(timestampMs);
+      const sessionId = providedSessionId ?? generateSessionId(timestampMs);
       const session: Session = {
         id: sessionId,
         createdAt: DateTime.formatIso(now),

@@ -23,7 +23,7 @@ export const registerCodeCommand = (program: Command): void => {
       "--no-yolo",
       "Require permission prompts (default runs in yolo mode on isolated worktree)"
     )
-    .option("--debug", "Enable debug logging to .ferix/logs/<session>.log")
+    .option("-d, --debug", "Enable debug logging to .ferix/logs/<session>.log")
     .action(async (task: string, options) => {
       const config: LoopConfig = {
         task,

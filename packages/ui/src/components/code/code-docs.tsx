@@ -15,6 +15,7 @@ const CODE_DOCS_CONFIG: CliDocsConfig = {
     { flag: "--pr", key: "pr" },
     { flag: "--provider <name>", key: "provider" },
     { flag: "--no-yolo", key: "noYolo" },
+    { flag: "-d, --debug", key: "debug" },
   ],
   examples: [
     { key: "basic", code: 'ferix "Add user authentication"' },

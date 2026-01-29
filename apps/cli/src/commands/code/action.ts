@@ -1,4 +1,5 @@
 import { Effect, Layer, Stream } from "effect";
+import { humanId } from "human-id";
 import {
   createHeadlessConsumer,
   createTUIConsumer,
@@ -13,11 +14,12 @@ import {
 import { runLoop } from "./orchestrator/index.js";
 
 /**
- * Generates a simple session ID for logging purposes.
- * Uses timestamp to ensure uniqueness.
+ * Generates a human-readable session ID with timestamp for uniqueness.
+ * Same format as the session store uses.
  */
-function generateLogSessionId(): string {
-  return `debug-${Date.now()}`;
+function generateSessionId(): string {
+  const id = humanId({ separator: "-", capitalize: false });
+  return `${id}-${Date.now()}`;
 }
 
 /**
@@ -83,7 +85,11 @@ interface RunOptions {
 function run(options: RunOptions): Effect.Effect<void, unknown, never> {
   const { config, consumer: consumerType = "headless", onEvent } = options;
 
-  const events = runLoop(config);
+  // Generate session ID if not provided - used for both logging and the loop
+  const sessionId = config.sessionId ?? generateSessionId();
+  const configWithSession = { ...config, sessionId };
+
+  const events = runLoop(configWithSession);
 
   const eventsWithCallback = onEvent
     ? events.pipe(Stream.tap((event) => Effect.sync(() => onEvent(event))))
@@ -94,11 +100,8 @@ function run(options: RunOptions): Effect.Effect<void, unknown, never> {
     ? createProductionLayers(config.provider)
     : ProductionLayers;
 
-  // Add logger layer if debug is enabled
-  const loggerLayer = createLoggerLayer(
-    config.debug ?? false,
-    generateLogSessionId()
-  );
+  // Add logger layer if debug is enabled - uses same session ID as the loop
+  const loggerLayer = createLoggerLayer(config.debug ?? false, sessionId);
   const layers = Layer.merge(baseLayers, loggerLayer);
 
   const eventsWithLayers = eventsWithCallback.pipe(Stream.provideLayer(layers));

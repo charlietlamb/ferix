@@ -35,10 +35,12 @@ export interface SessionStoreService {
    * Create a new session.
    *
    * @param originalTask - The task that initiated this session
-   * @returns The created session with a generated ID
+   * @param sessionId - Optional pre-generated session ID (generates one if not provided)
+   * @returns The created session with the provided or generated ID
    */
   readonly create: (
-    originalTask: string
+    originalTask: string,
+    sessionId?: string
   ) => Effect.Effect<Session, SessionStoreError>;
 
   /**

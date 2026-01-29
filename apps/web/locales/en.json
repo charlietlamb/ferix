@@ -100,6 +100,7 @@
       "option_pr": "Create PR",
       "option_provider": "LLM provider",
       "option_noYolo": "Require permission prompts (yolo mode is default)",
+      "option_debug": "Enable debug logging to .ferix/logs/",
       "yoloNotice": "Yolo mode is enabled by default. All work runs on an isolated git worktree. Use --no-yolo to require permission prompts.",
       "example_basic": "Basic Task",
       "example_basic_desc": "Describe what you want in plain English",
