@@ -1,12 +1,24 @@
-import { Effect, Stream } from "effect";
+import { Effect, Layer, Stream } from "effect";
 import {
   createHeadlessConsumer,
   createTUIConsumer,
 } from "./consumers/index.js";
 import type { DomainEvent, LoopConfig } from "./domain/index.js";
 import type { ConsumerType } from "./domain/schemas/program.js";
-import { createProductionLayers, ProductionLayers } from "./layers/index.js";
+import {
+  createLoggerLayer,
+  createProductionLayers,
+  ProductionLayers,
+} from "./layers/index.js";
 import { runLoop } from "./orchestrator/index.js";
+
+/**
+ * Generates a simple session ID for logging purposes.
+ * Uses timestamp to ensure uniqueness.
+ */
+function generateLogSessionId(): string {
+  return `debug-${Date.now()}`;
+}
 
 /**
  * Options for running the ralph loop program.
@@ -78,9 +90,16 @@ function run(options: RunOptions): Effect.Effect<void, unknown, never> {
     : events;
 
   // Use provider-specific layers if a provider is specified in config
-  const layers = config.provider
+  const baseLayers = config.provider
     ? createProductionLayers(config.provider)
     : ProductionLayers;
+
+  // Add logger layer if debug is enabled
+  const loggerLayer = createLoggerLayer(
+    config.debug ?? false,
+    generateLogSessionId()
+  );
+  const layers = Layer.merge(baseLayers, loggerLayer);
 
   const eventsWithLayers = eventsWithCallback.pipe(Stream.provideLayer(layers));
 

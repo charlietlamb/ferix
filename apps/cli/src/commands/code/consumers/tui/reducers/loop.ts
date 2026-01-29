@@ -15,6 +15,8 @@ const loopStartedReducer: StateReducer<"LoopStarted"> = {
     maxIterations: event.config.maxIterations,
     status: "running",
     startTime: event.timestamp,
+    yolo: event.config.yolo ?? false,
+    debug: event.config.debug ?? false,
   }),
 };
 

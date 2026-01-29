@@ -101,5 +101,11 @@ const TUIStateSchema = S.Struct({
   gitBranch: S.optional(S.String),
   gitPushed: S.Boolean,
   prUrl: S.optional(S.String),
+
+  // YOLO mode (skip permission prompts)
+  yolo: S.Boolean,
+
+  // Debug mode (logging enabled)
+  debug: S.Boolean,
 });
 export type TUIState = typeof TUIStateSchema.Type;

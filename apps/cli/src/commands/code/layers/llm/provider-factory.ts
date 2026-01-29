@@ -31,12 +31,16 @@ export function createProvider(
       return Stream.unwrap(
         checkAvailable(name).pipe(
           Effect.map(() => {
-            // Build args array: config args + prompt
+            // Build args array: config args + yolo args (if enabled) + prompt
+            let args = [...config.args];
+
+            if (options?.yolo && config.yoloArgs) {
+              args.push(...config.yoloArgs);
+            }
+
             // OpenCode uses positional argument, Claude/Cursor use -p flag
-            const args =
-              name === "opencode"
-                ? [...config.args, prompt]
-                : [...config.args, "-p", prompt];
+            args =
+              name === "opencode" ? [...args, prompt] : [...args, "-p", prompt];
 
             const child = spawn(config.cliCommand, args, {
               stdio: ["inherit", "pipe", "pipe"],

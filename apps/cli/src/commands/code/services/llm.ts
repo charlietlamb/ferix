@@ -11,6 +11,11 @@ export interface LLMExecuteOptions {
    * Used when running in a worktree context.
    */
   readonly cwd?: string;
+  /**
+   * Skip all permission prompts (YOLO mode).
+   * Passes provider-specific flags to disable permission checks.
+   */
+  readonly yolo?: boolean;
 }
 
 /**

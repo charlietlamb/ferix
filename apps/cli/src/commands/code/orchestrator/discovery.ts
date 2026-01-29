@@ -143,7 +143,7 @@ export function createDiscoveryStream(
   llm: {
     execute: (
       prompt: string,
-      options?: { cwd?: string }
+      options?: { cwd?: string; yolo?: boolean }
     ) => Stream.Stream<LLMEvent, unknown>;
   },
   signalParser: SignalParserService,
@@ -184,7 +184,7 @@ export function createDiscoveryStream(
       const prompt = buildDiscoveryPrompt(config);
 
       const llmStream: Stream.Stream<DomainEvent, never, never> = llm
-        .execute(prompt, worktreePath ? { cwd: worktreePath } : undefined)
+        .execute(prompt, { cwd: worktreePath, yolo: config.yolo })
         .pipe(
           Stream.mapError(
             (e) =>

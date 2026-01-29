@@ -35,6 +35,10 @@ export const LoopConfigSchema = S.Struct({
   prompts: S.optional(PromptConfigSchema),
   /** LLM provider to use. Defaults to "claude". */
   provider: S.optional(ProviderNameSchema),
+  /** Skip all permission prompts (YOLO mode). Use with caution. */
+  yolo: S.optional(S.Boolean),
+  /** Enable debug logging to .ferix/logs/<session>.log */
+  debug: S.optional(S.Boolean),
 });
 export type LoopConfig = typeof LoopConfigSchema.Type;
 

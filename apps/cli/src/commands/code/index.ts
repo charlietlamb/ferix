@@ -19,6 +19,8 @@ export const registerCodeCommand = (program: Command): void => {
       "LLM provider to use (claude, cursor, opencode)",
       "claude"
     )
+    .option("--yolo", "Skip all permission prompts (dangerous)")
+    .option("--debug", "Enable debug logging to .ferix/logs/<session>.log")
     .action(async (task: string, options) => {
       const config: LoopConfig = {
         task,
@@ -28,6 +30,8 @@ export const registerCodeCommand = (program: Command): void => {
         push: options.push,
         pr: options.pr,
         provider: options.provider as ProviderName,
+        yolo: options.yolo,
+        debug: options.debug,
       };
 
       try {

@@ -18,6 +18,8 @@ export function createInitialState(): TUIState {
     scrollOffset: 0,
     userScrolled: false,
     gitPushed: false,
+    yolo: false,
+    debug: false,
   };
 }
 

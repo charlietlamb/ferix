@@ -99,6 +99,7 @@
       "option_push": "Push to remote",
       "option_pr": "Create PR",
       "option_provider": "LLM provider",
+      "option_yolo": "Skip permission prompts",
       "example_basic": "Basic Task",
       "example_basic_desc": "Describe what you want in plain English",
       "example_verification": "With Verification",

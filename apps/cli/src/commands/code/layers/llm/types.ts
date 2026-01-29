@@ -29,6 +29,8 @@ const ProviderConfigSchema = S.Struct({
   permissions: S.optional(PermissionModeSchema),
   /** URL for installation instructions */
   installUrl: S.String,
+  /** Arguments to pass when YOLO mode is enabled */
+  yoloArgs: S.optional(S.Array(S.String)),
 });
 
 /**
@@ -76,6 +78,7 @@ const RAW_PROVIDER_CONFIGS = {
     ],
     permissions: "acceptEdits",
     installUrl: "https://docs.anthropic.com/claude-code",
+    yoloArgs: ["--dangerously-skip-permissions"],
   },
   cursor: {
     name: "cursor",
@@ -83,12 +86,14 @@ const RAW_PROVIDER_CONFIGS = {
     args: ["--print", "--force", "--output-format", "stream-json"],
     permissions: "acceptEdits",
     installUrl: "https://cursor.sh/agent",
+    yoloArgs: ["--yolo"],
   },
   opencode: {
     name: "opencode",
     cliCommand: "opencode",
     args: ["run", "--format", "json"],
     installUrl: "https://opencode.ai/docs/",
+    yoloArgs: ["--yolo"],
   },
 } as const;
 

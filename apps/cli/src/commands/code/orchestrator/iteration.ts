@@ -46,6 +46,14 @@ function processTextSignals(
       Effect.orElseSucceed(() => [])
     );
 
+    // Log successfully parsed signals
+    if (signals.length > 0) {
+      yield* Effect.logDebug("Signals parsed", {
+        signals: signals.map((s) => s._tag),
+        count: signals.length,
+      });
+    }
+
     for (const signal of signals) {
       events.push(mapSignalToDomain(signal, context));
       parsedSignals.push(signal);
@@ -123,7 +131,7 @@ export function createIterationStream(
   llm: {
     execute: (
       prompt: string,
-      options?: { cwd?: string }
+      options?: { cwd?: string; yolo?: boolean }
     ) => Stream.Stream<LLMEvent, unknown>;
   },
   signalParser: SignalParserService,
@@ -151,11 +159,24 @@ export function createIterationStream(
         iteration,
       };
 
+      // Build prompt and log stats for debugging
+      const prompt = buildPrompt(config, iteration, currentPlan);
+      const promptPreview = prompt.slice(0, 200);
+
+      yield* Effect.logDebug("Building prompt for iteration", {
+        iteration,
+        promptLength: prompt.length,
+        promptPreview:
+          promptPreview.length < prompt.length
+            ? `${promptPreview}...`
+            : promptPreview,
+      });
+
       const llmStream: Stream.Stream<DomainEvent, never, never> = llm
-        .execute(
-          buildPrompt(config, iteration, currentPlan),
-          worktreePath ? { cwd: worktreePath } : undefined
-        )
+        .execute(prompt, {
+          cwd: worktreePath,
+          yolo: config.yolo,
+        })
         .pipe(
           Stream.mapError(
             (e) =>

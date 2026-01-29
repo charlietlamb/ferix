@@ -13,6 +13,7 @@ const CODE_DOCS_CONFIG: CliDocsConfig = {
     { flag: "--push", key: "push" },
     { flag: "--pr", key: "pr" },
     { flag: "--provider <name>", key: "provider" },
+    { flag: "--yolo", key: "yolo" },
   ],
   examples: [
     { key: "basic", code: 'ferix "Add user authentication"' },

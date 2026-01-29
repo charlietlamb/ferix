@@ -7,6 +7,9 @@ import { FileSystemPlan } from "./plan/file-system.js";
 import { FileSystemProgress } from "./progress/file-system.js";
 import { FileSystemSession } from "./session/file-system.js";
 import { FerixParser } from "./signal/ferix-parser.js";
+
+// Re-export logger layer factory
+export { createLoggerLayer } from "./logger.js";
 // Re-export types
 
 /**

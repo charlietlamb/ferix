@@ -39,6 +39,16 @@ export function renderStatusBar(state: TUIState, width: number): string {
     `${colors.brand(symbols.diamond)} ${colors.brightWhite("FERIX")} ${colors.brand(symbols.diamond)}`
   );
 
+  // YOLO mode indicator (prominent warning)
+  if (state.yolo) {
+    parts.push(colors.warning("⚠ YOLO"));
+  }
+
+  // Debug mode indicator
+  if (state.debug) {
+    parts.push(colors.brightMagenta("DEBUG"));
+  }
+
   // Spinner + Mode (only when running)
   if (state.status === "running") {
     const spinner = getSpinner();
