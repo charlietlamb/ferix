@@ -111,11 +111,30 @@
       "example_github_desc": "Automatically fix all open GitHub issues",
       "example_prd": "From PRD",
       "example_prd_desc": "Complete tasks from a specification file"
+    },
+    "architecture": {
+      "flow": "How It Works",
+      "flowDesc": "The Ferix loop follows a structured flow: setup, discovery, iteration, and completion",
+      "setupTitle": "Setup",
+      "discoveryTitle": "Discovery",
+      "iterationTitle": "Iteration",
+      "completionTitle": "Completion",
+      "pureRalph": "Pure RALPH",
+      "pureRalphDesc": "The original pattern: same prompt piped to Claude in a bash loop",
+      "ferixLoop": "Ferix Loop",
+      "ferixLoopDesc": "Enhanced RALPH with orchestration, signals, and git isolation",
+      "differences": "Key Differences",
+      "differencesDesc": "How Ferix extends the pure RALPH pattern",
+      "aspect": "Aspect",
+      "diff_prompt": "Prompt",
+      "diff_context": "Context",
+      "diff_isolation": "Isolation",
+      "diff_tracking": "Tracking"
     }
   },
   "sync": {
-    "title": "Ferix Sync",
-    "description": "Auto-discover and install skills from your project dependencies.",
+    "title": "Introducing Sync",
+    "description": "Auto-discover and install skills from your project dependencies. All of your skills in one command.",
     "feature1Title": "Auto-Discovery",
     "feature1Description": "Scans your package.json and automatically finds relevant skill repositories for your dependencies.",
     "feature2Title": "Smart Caching",

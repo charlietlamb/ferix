@@ -3,7 +3,7 @@
 import { Brain } from "../home/cli/brain";
 import { CliHero } from "./cli-hero";
 
-const SYNC_COMMAND = "ferix sync";
+const SYNC_COMMAND = "npm i -g ferix-code";
 
 export function SyncHero() {
   return (

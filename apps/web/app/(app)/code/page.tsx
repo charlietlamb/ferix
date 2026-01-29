@@ -1,3 +1,4 @@
+import { CodeArchitecture } from "@ferix/ui/components/code/code-architecture";
 import { CodeDocs } from "@ferix/ui/components/code/code-docs";
 import { CodeHero } from "@ferix/ui/components/code/code-hero";
 import { LogoSection } from "@ferix/ui/components/home/logo/logo-section";
@@ -18,6 +19,7 @@ export default function CodePage() {
     <AppPage className="scrollbar-none h-auto overflow-visible">
       <CodeHero />
       <CodeDocs />
+      <CodeArchitecture />
       <LogoSection />
     </AppPage>
   );
