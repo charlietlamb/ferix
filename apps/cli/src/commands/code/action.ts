@@ -3,7 +3,7 @@ import {
   createHeadlessConsumer,
   createTUIConsumer,
 } from "./consumers/index.js";
-import type { LoopConfig } from "./domain/index.js";
+import type { DomainEvent, LoopConfig } from "./domain/index.js";
 import type { ConsumerType } from "./domain/schemas/program.js";
 import { createProductionLayers, ProductionLayers } from "./layers/index.js";
 import { runLoop } from "./orchestrator/index.js";
