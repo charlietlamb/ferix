@@ -16,6 +16,8 @@ export interface CliDocsConfig {
   options: readonly CliOption[];
   examples: readonly CliExample[];
   exampleColSpan?: 2 | 3;
+  /** Optional notice key for translation (renders as a small info banner) */
+  noticeKey?: string;
 }
 
 export interface CliHeroConfig {

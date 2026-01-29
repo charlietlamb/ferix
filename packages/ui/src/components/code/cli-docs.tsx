@@ -19,12 +19,21 @@ export function CliDocs({ config }: CliDocsProps) {
     options,
     examples,
     exampleColSpan = 2,
+    noticeKey,
   } = config;
   const t = useTranslations(`${translationNamespace}.docs`);
 
   return (
     <section className="overflow-hidden">
+      <Gutter />
       <div className="-mr-px grid grid-cols-1 lg:grid-cols-6">
+        {noticeKey && (
+          <div className="flex items-center border-border border-b bg-muted/30 px-4 py-3 lg:col-span-6">
+            <span className="text-muted-foreground text-xs">
+              {t(noticeKey)}
+            </span>
+          </div>
+        )}
         <Gutter />
         <DocCell
           className="lg:col-span-3"

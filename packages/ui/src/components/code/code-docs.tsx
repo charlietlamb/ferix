@@ -6,6 +6,7 @@ import type { CliDocsConfig } from "./types";
 const CODE_DOCS_CONFIG: CliDocsConfig = {
   translationNamespace: "code",
   quickStartCommand: 'ferix "Add auth to my app"',
+  noticeKey: "yoloNotice",
   options: [
     { flag: "-i, --iterations <n>", key: "iterations" },
     { flag: "-c, --verify <commands...>", key: "verify" },
@@ -13,7 +14,7 @@ const CODE_DOCS_CONFIG: CliDocsConfig = {
     { flag: "--push", key: "push" },
     { flag: "--pr", key: "pr" },
     { flag: "--provider <name>", key: "provider" },
-    { flag: "--yolo", key: "yolo" },
+    { flag: "--no-yolo", key: "noYolo" },
   ],
   examples: [
     { key: "basic", code: 'ferix "Add user authentication"' },
