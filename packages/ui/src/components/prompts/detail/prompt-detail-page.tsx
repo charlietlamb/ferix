@@ -37,6 +37,7 @@ interface PromptDetailPageProps {
       name?: string;
       promptCount: number;
     } | null;
+    filePath?: string | null;
     isCreator: boolean;
     isSaved: boolean;
     saveCount: number;
@@ -51,6 +52,7 @@ export function PromptDetailPage({ prompt }: PromptDetailPageProps) {
     <AppPage>
       {prompt.directory && (
         <PromptDetailInstallBanner
+          filePath={prompt.filePath}
           promptCount={prompt.directory.promptCount}
           repository={prompt.directory}
         />

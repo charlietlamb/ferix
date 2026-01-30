@@ -387,6 +387,7 @@
     "typeError": "Failed to update type",
     "install": "Install",
     "installDescription": "Install a collection of {count} prompts from {repository}",
+    "installSkillDescription": "Install this skill from {repository}",
     "viewRepository": "View repository"
   },
   "commandPalette": {
@@ -536,7 +537,6 @@
       "signIn": "Sign in",
       "success": "Account created successfully",
       "error": "Failed to sign up",
-      "githubSuccess": "Signed up with GitHub",
       "githubError": "Failed to sign up with GitHub",
       "successTitle": "Check your email",
       "successDescription": "We've sent you a verification link. Please check your email to verify your account and sign in."
