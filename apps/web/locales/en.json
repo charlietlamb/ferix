@@ -106,14 +106,14 @@
       "example_basic_desc": "Describe what you want in plain English",
       "example_verification": "With Verification",
       "example_verification_desc": "Run tests and linting after completion",
+      "example_autonomous": "Autonomous Loop",
+      "example_autonomous_desc": "Run multiple iterations for complex refactoring",
       "example_workflow": "Full Workflow",
       "example_workflow_desc": "Create a branch and open a pull request",
-      "example_linear": "Linear Integration",
-      "example_linear_desc": "Process tickets from your Linear project",
-      "example_github": "GitHub Issues",
-      "example_github_desc": "Automatically fix all open GitHub issues",
       "example_prd": "From PRD",
-      "example_prd_desc": "Complete tasks from a specification file"
+      "example_prd_desc": "Complete tasks from a structured specification file",
+      "example_provider": "Provider Choice",
+      "example_provider_desc": "Use Claude, Cursor, or OpenCode as the LLM"
     },
     "architecture": {
       "flow": "How It Works",

@@ -24,20 +24,20 @@ const CODE_DOCS_CONFIG: CliDocsConfig = {
       code: 'ferix "Fix login bug" -c "bun test" -c "bun lint"',
     },
     {
+      key: "autonomous",
+      code: 'ferix "Refactor the API layer" -i 10',
+    },
+    {
       key: "workflow",
       code: 'ferix "Add dark mode support" \\\n  --branch feat/dark-mode \\\n  --push --pr',
     },
     {
-      key: "linear",
-      code: 'ferix "Go through all the tickets on the chatbot Linear project and complete each one"',
-    },
-    {
-      key: "github",
-      code: 'ferix "Go through all of the GitHub issues and fix each one"',
-    },
-    {
       key: "prd",
-      code: 'ferix "Search the PRD.md file and complete all of the tasks"',
+      code: 'ferix "Complete all tasks in PRD.md"',
+    },
+    {
+      key: "provider",
+      code: 'ferix "Add caching layer" --provider cursor',
     },
   ],
   exampleColSpan: 2,
