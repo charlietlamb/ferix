@@ -49,6 +49,16 @@ export function renderStatusBar(state: TUIState, width: number): string {
     parts.push(colors.brightMagenta("DEBUG"));
   }
 
+  // Provider/agent indicator
+  const providerLabels: Record<string, string> = {
+    claude: "CLAUDE",
+    cursor: "CURSOR",
+    opencode: "OPENCODE",
+  };
+  const providerLabel =
+    providerLabels[state.provider] ?? state.provider.toUpperCase();
+  parts.push(colors.brightCyan(providerLabel));
+
   // Spinner + Mode (only when running)
   if (state.status === "running") {
     const spinner = getSpinner();
