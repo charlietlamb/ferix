@@ -343,7 +343,7 @@ describe("Iteration Stream", () => {
       expect(phaseCompleted).toBeDefined();
     });
 
-    it("should set loopCompletedRef when LoopComplete signal received", async () => {
+    it("should NOT set loopCompletedRef when LoopComplete signal received but tasks are pending", async () => {
       const testLayers = createTestLayers({
         events: [],
       });
@@ -351,7 +351,31 @@ describe("Iteration Stream", () => {
       const program = Effect.gen(function* () {
         const signalParser = yield* SignalParser;
         const planStore = yield* PlanStore;
-        const currentPlanRef = yield* Ref.make<Plan | undefined>(undefined);
+
+        // Create a plan with pending tasks
+        const initialPlan = createTestPlan([
+          {
+            id: "1",
+            title: "Task 1",
+            description: "Desc",
+            status: "pending",
+            phases: [],
+            criteria: [],
+            filesToModify: [],
+            attempts: 0,
+          },
+          {
+            id: "2",
+            title: "Task 2",
+            description: "Desc",
+            status: "pending",
+            phases: [],
+            criteria: [],
+            filesToModify: [],
+            attempts: 0,
+          },
+        ]);
+        const currentPlanRef = yield* Ref.make<Plan | undefined>(initialPlan);
         const loopCompletedRef = yield* Ref.make(false);
 
         const mockLLM = {
@@ -388,6 +412,222 @@ describe("Iteration Stream", () => {
 
       const completed = await Effect.runPromise(program);
 
+      // Should NOT complete when tasks are still pending
+      expect(completed).toBe(false);
+    });
+
+    it("should set loopCompletedRef when LoopComplete signal received AND all tasks are done", async () => {
+      const testLayers = createTestLayers({
+        events: [],
+      });
+
+      const program = Effect.gen(function* () {
+        const signalParser = yield* SignalParser;
+        const planStore = yield* PlanStore;
+
+        // Create a plan with all tasks done
+        const initialPlan = createTestPlan([
+          {
+            id: "1",
+            title: "Task 1",
+            description: "Desc",
+            status: "done",
+            phases: [],
+            criteria: [],
+            filesToModify: [],
+            attempts: 0,
+          },
+          {
+            id: "2",
+            title: "Task 2",
+            description: "Desc",
+            status: "done",
+            phases: [],
+            criteria: [],
+            filesToModify: [],
+            attempts: 0,
+          },
+        ]);
+        const currentPlanRef = yield* Ref.make<Plan | undefined>(initialPlan);
+        const loopCompletedRef = yield* Ref.make(false);
+
+        const mockLLM = {
+          execute: () =>
+            Stream.fromIterable([
+              mockTextEvent(mockLoopCompleteSignal()),
+              mockDoneEvent(),
+            ]),
+        };
+
+        const config = {
+          task: "Test task",
+          maxIterations: 5,
+          verbose: false,
+          verifyCommands: [],
+        };
+
+        yield* createIterationStream(
+          mockLLM,
+          signalParser,
+          planStore,
+          mockStateStore,
+          mockProgressStore,
+          mockGitService,
+          currentPlanRef,
+          loopCompletedRef,
+          config,
+          1,
+          "test-session"
+        ).pipe(Stream.runDrain);
+
+        return yield* Ref.get(loopCompletedRef);
+      }).pipe(Effect.provide(testLayers));
+
+      const completed = await Effect.runPromise(program);
+
+      // Should complete when all tasks are done
+      expect(completed).toBe(true);
+    });
+
+    it("should NOT set loopCompletedRef when tasks are in_progress", async () => {
+      const testLayers = createTestLayers({
+        events: [],
+      });
+
+      const program = Effect.gen(function* () {
+        const signalParser = yield* SignalParser;
+        const planStore = yield* PlanStore;
+
+        // Create a plan with one task in_progress
+        const initialPlan = createTestPlan([
+          {
+            id: "1",
+            title: "Task 1",
+            description: "Desc",
+            status: "done",
+            phases: [],
+            criteria: [],
+            filesToModify: [],
+            attempts: 0,
+          },
+          {
+            id: "2",
+            title: "Task 2",
+            description: "Desc",
+            status: "in_progress",
+            phases: [],
+            criteria: [],
+            filesToModify: [],
+            attempts: 0,
+          },
+        ]);
+        const currentPlanRef = yield* Ref.make<Plan | undefined>(initialPlan);
+        const loopCompletedRef = yield* Ref.make(false);
+
+        const mockLLM = {
+          execute: () =>
+            Stream.fromIterable([
+              mockTextEvent(mockLoopCompleteSignal()),
+              mockDoneEvent(),
+            ]),
+        };
+
+        const config = {
+          task: "Test task",
+          maxIterations: 5,
+          verbose: false,
+          verifyCommands: [],
+        };
+
+        yield* createIterationStream(
+          mockLLM,
+          signalParser,
+          planStore,
+          mockStateStore,
+          mockProgressStore,
+          mockGitService,
+          currentPlanRef,
+          loopCompletedRef,
+          config,
+          1,
+          "test-session"
+        ).pipe(Stream.runDrain);
+
+        return yield* Ref.get(loopCompletedRef);
+      }).pipe(Effect.provide(testLayers));
+
+      const completed = await Effect.runPromise(program);
+
+      // Should NOT complete when tasks are in_progress
+      expect(completed).toBe(false);
+    });
+
+    it("should complete when all tasks are skipped", async () => {
+      const testLayers = createTestLayers({
+        events: [],
+      });
+
+      const program = Effect.gen(function* () {
+        const signalParser = yield* SignalParser;
+        const planStore = yield* PlanStore;
+
+        // Create a plan with all tasks skipped
+        const initialPlan = createTestPlan([
+          {
+            id: "1",
+            title: "Task 1",
+            description: "Desc",
+            status: "skipped",
+            phases: [],
+            criteria: [],
+            filesToModify: [],
+            attempts: 0,
+          },
+          {
+            id: "2",
+            title: "Task 2",
+            description: "Desc",
+            status: "skipped",
+            phases: [],
+            criteria: [],
+            filesToModify: [],
+            attempts: 0,
+          },
+        ]);
+        const currentPlanRef = yield* Ref.make<Plan | undefined>(initialPlan);
+        const loopCompletedRef = yield* Ref.make(false);
+
+        const mockLLM = {
+          execute: () => Stream.fromIterable([mockDoneEvent()]),
+        };
+
+        const config = {
+          task: "Test task",
+          maxIterations: 5,
+          verbose: false,
+          verifyCommands: [],
+        };
+
+        yield* createIterationStream(
+          mockLLM,
+          signalParser,
+          planStore,
+          mockStateStore,
+          mockProgressStore,
+          mockGitService,
+          currentPlanRef,
+          loopCompletedRef,
+          config,
+          1,
+          "test-session"
+        ).pipe(Stream.runDrain);
+
+        return yield* Ref.get(loopCompletedRef);
+      }).pipe(Effect.provide(testLayers));
+
+      const completed = await Effect.runPromise(program);
+
+      // Should complete when all tasks are skipped
       expect(completed).toBe(true);
     });
 

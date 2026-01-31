@@ -166,13 +166,23 @@ describe("Orchestrator", () => {
       }
     });
 
-    it("should complete loop when LoopComplete signal is received", async () => {
+    it("should complete loop when LoopComplete signal is received AND all tasks are done", async () => {
+      // NOTE: Signals must be in separate text events to ensure correct processing order.
+      // The signal parser returns signals in registration order, not document order,
+      // so TasksDefined must be in its own text event before TaskComplete.
       const testLayers = createTestLayers([
         {
           _tag: "Text",
           text: `<ferix:tasks>
             <task id="1">Test</task>
-          </ferix:tasks>
+          </ferix:tasks>`,
+        },
+        {
+          _tag: "Text",
+          text: `<ferix:task-complete id="1">
+            <summary>Completed successfully</summary>
+            <commit-message>feat: completed task</commit-message>
+          </ferix:task-complete>
           <ferix:complete>`,
         },
         { _tag: "Done", output: "" },
@@ -186,7 +196,7 @@ describe("Orchestrator", () => {
       const events = await Effect.runPromise(program);
       const eventArray = Chunk.toArray(events);
 
-      // Should only have 1 iteration since loop completed
+      // Should only have 1 iteration since loop completed with all tasks done
       const iterationsStarted = eventArray.filter(
         (e) => e._tag === "IterationStarted"
       );
@@ -197,6 +207,33 @@ describe("Orchestrator", () => {
       if (loopCompleted?._tag === "LoopCompleted") {
         expect(loopCompleted.summary.success).toBe(true);
       }
+    });
+
+    it("should NOT complete loop when LoopComplete signal is received but tasks are pending", async () => {
+      const testLayers = createTestLayers([
+        {
+          _tag: "Text",
+          text: `<ferix:tasks>
+            <task id="1">Test</task>
+          </ferix:tasks>
+          <ferix:complete>`,
+        },
+        { _tag: "Done", output: "" },
+      ]);
+
+      const program = runLoop({
+        ...defaultConfig,
+        maxIterations: 3, // Should run all 3 iterations since task not done
+      }).pipe(Stream.runCollect, Effect.provide(testLayers));
+
+      const events = await Effect.runPromise(program);
+      const eventArray = Chunk.toArray(events);
+
+      // Should run all 3 iterations since LoopComplete is ignored when tasks are pending
+      const iterationsStarted = eventArray.filter(
+        (e) => e._tag === "IterationStarted"
+      );
+      expect(iterationsStarted).toHaveLength(3);
     });
 
     it("should handle phase status updates", async () => {

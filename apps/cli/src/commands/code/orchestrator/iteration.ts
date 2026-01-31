@@ -69,6 +69,7 @@ function commitTaskChanges(
 
 /**
  * Check if loop should complete and update the completion ref if needed.
+ * Only completes when all tasks are actually done or skipped, regardless of LLM signals.
  */
 function checkAndUpdateCompletion(
   currentPlanRef: Ref.Ref<Plan | undefined>,
@@ -76,28 +77,32 @@ function checkAndUpdateCompletion(
   llmEmittedComplete: boolean
 ): Effect.Effect<void, never, never> {
   return Effect.gen(function* () {
-    if (llmEmittedComplete) {
-      yield* Effect.logInfo(
-        "[DEBUG] createIterationStream: LLM emitted completion signal"
-      );
-      yield* Ref.set(loopCompletedRef, true);
-    }
-
     const updatedPlan = yield* Ref.get(currentPlanRef);
     const allComplete = areAllTasksComplete(updatedPlan);
 
-    yield* Effect.logInfo(
-      "[DEBUG] createIterationStream: Auto-complete check",
-      {
-        llmEmittedComplete,
-        allTasksComplete: allComplete,
-        taskStatuses: updatedPlan?.tasks.map((t) => ({
-          id: t.id,
-          status: t.status,
-        })),
-      }
-    );
+    yield* Effect.logInfo("[DEBUG] createIterationStream: Completion check", {
+      llmEmittedComplete,
+      allTasksComplete: allComplete,
+      taskStatuses: updatedPlan?.tasks.map((t) => ({
+        id: t.id,
+        status: t.status,
+      })),
+    });
 
+    // Warn if LLM emitted LoopComplete but not all tasks are done
+    if (llmEmittedComplete && !allComplete) {
+      yield* Effect.logWarning(
+        "[WARNING] LLM emitted LoopComplete but not all tasks are complete. Continuing.",
+        {
+          incompleteTasks: updatedPlan?.tasks
+            .filter((t) => t.status !== "done" && t.status !== "skipped")
+            .map((t) => ({ id: t.id, status: t.status })),
+        }
+      );
+      return; // Do NOT complete - continue the loop
+    }
+
+    // Only complete when all tasks are actually done
     if (allComplete) {
       yield* Effect.logInfo(
         "[DEBUG] createIterationStream: All tasks complete - ending loop"
