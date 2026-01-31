@@ -580,6 +580,57 @@ export const createJobInternal = internalMutation({
  * Extracts owner/repo patterns and creates a bulk import job.
  * Admin only.
  */
+// Skills.sh URLs to scrape - different views contain different repositories
+const SKILLS_SH_URLS = [
+  "https://skills.sh", // All Time (default view)
+  "https://skills.sh/trending", // Trending (24h)
+  "https://skills.sh/hot", // Hot
+] as const;
+
+/**
+ * Scrapes a single skills.sh URL with scrolling to load lazy content.
+ * Returns the markdown content from the page.
+ */
+async function scrapeSkillsShUrl(
+  firecrawl: Firecrawl,
+  url: string
+): Promise<string> {
+  // Firecrawl has a 5-minute (300s) max timeout. We optimize for maximum content:
+  // - 150 scroll cycles × 800ms wait = ~120 seconds of scrolling
+  // - Leaves ~180 seconds buffer for page rendering and content capture
+  // - Reduced wait time (800ms) still allows lazy-loaded content to appear
+  const scrollCount = 150; // Capture extensive content via scrolling
+  const scrollWaitMs = 800; // Balance between speed and content loading
+
+  const scrollAction = [
+    { type: "wait", milliseconds: scrollWaitMs },
+    { type: "scroll", direction: "down" },
+  ];
+  const scrollActions = new Array(scrollCount).fill(scrollAction).flat();
+
+  console.log(`[scrapeSkillsSh] Scraping ${url} with ${scrollCount} scrolls`);
+
+  const result = await firecrawl.scrapeUrl(url, {
+    formats: ["markdown"],
+    timeout: 300_000, // 5 minutes - Firecrawl maximum
+    actions: [
+      { type: "wait", milliseconds: 2000 }, // Initial wait for page load
+      { type: "scroll", direction: "down" },
+      ...scrollActions,
+    ],
+  });
+
+  if (!("markdown" in result && result.markdown)) {
+    console.log(`[scrapeSkillsSh] No markdown content from ${url}`);
+    return "";
+  }
+
+  console.log(
+    `[scrapeSkillsSh] Got ${result.markdown.length} chars from ${url}`
+  );
+  return result.markdown;
+}
+
 export const scrapeSkillsSh = action({
   args: {
     defaultTags: v.optional(v.array(v.string())),
@@ -592,45 +643,33 @@ export const scrapeSkillsSh = action({
       throw new Error("Unauthorized: Admin access required");
     }
 
-    // Initialize Firecrawl and scrape with scrolling
-    // Firecrawl has a 5-minute (300s) max timeout. We optimize for maximum content:
-    // - 150 scroll cycles × 800ms wait = ~120 seconds of scrolling
-    // - Leaves ~180 seconds buffer for page rendering and content capture
-    // - Reduced wait time (800ms) still allows lazy-loaded content to appear
     const firecrawl = new Firecrawl({
       apiKey: env.FIRECRAWL_API_KEY,
     });
 
-    const scrollCount = 150; // Increased from 20 to capture more content
-    const scrollWaitMs = 800; // Reduced from 1000ms for efficiency
+    // Scrape all skills.sh views to maximize repository discovery
+    // Each view (All Time, Trending, Hot) may contain unique repositories
+    const allMarkdown: string[] = [];
 
-    const scrollAction = [
-      { type: "wait", milliseconds: scrollWaitMs },
-      { type: "scroll", direction: "down" },
-    ];
-    const scrollActions = new Array(scrollCount).fill(scrollAction).flat();
-
-    const result = await firecrawl.scrapeUrl("https://skills.sh", {
-      formats: ["markdown"],
-      timeout: 300_000, // 5 minutes - Firecrawl maximum
-      actions: [
-        { type: "wait", milliseconds: 2000 }, // Initial wait for page load
-        { type: "scroll", direction: "down" },
-        ...scrollActions,
-      ],
-    });
-
-    // const result = mockFirecrawlResponse;
-
-    console.log("Result:", result);
-    // console.log(JSON.stringify(result, null, 2));
-
-    if (!("markdown" in result)) {
-      throw new Error("Failed to scrape skills.sh: no markdown content");
+    for (const url of SKILLS_SH_URLS) {
+      try {
+        const markdown = await scrapeSkillsShUrl(firecrawl, url);
+        if (markdown) {
+          allMarkdown.push(markdown);
+        }
+      } catch (error) {
+        console.error(`[scrapeSkillsSh] Error scraping ${url}:`, error);
+        // Continue with other URLs even if one fails
+      }
     }
 
-    // Match skills.sh URLs and extract org/repo
-    const matches = [...(result.markdown ?? "").matchAll(SKILLS_SH_URL_REGEX)];
+    if (allMarkdown.length === 0) {
+      throw new Error("Failed to scrape skills.sh: no content from any view");
+    }
+
+    // Combine markdown from all views and extract URLs
+    const combinedMarkdown = allMarkdown.join("\n");
+    const matches = [...combinedMarkdown.matchAll(SKILLS_SH_URL_REGEX)];
 
     // Transform to GitHub URLs and deduplicate
     const githubUrls = [
@@ -654,11 +693,8 @@ export const scrapeSkillsSh = action({
       : githubUrls;
 
     console.log(
-      `[scrapeSkillsSh] Found ${githubUrls.length} repos, importing ${limitedUrls.length}`
+      `[scrapeSkillsSh] Found ${githubUrls.length} unique repos from ${allMarkdown.length} views, importing ${limitedUrls.length}`
     );
-    for (const url of limitedUrls) {
-      console.log(`[scrapeSkillsSh] Queued: ${url}`);
-    }
 
     // Create bulk import job
     const jobResult: {
@@ -674,6 +710,7 @@ export const scrapeSkillsSh = action({
     return {
       ...jobResult,
       scrapedUrls: githubUrls.length,
+      viewsScraped: allMarkdown.length,
       limitedTo: args.limit,
     };
   },
