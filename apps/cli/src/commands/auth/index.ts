@@ -58,5 +58,6 @@ export const registerAuthCommand = (program: Command): void => {
 };
 
 export * from "./action.js";
+export * from "./api.js";
 export * from "./credentials.js";
 export * from "./types.js";
