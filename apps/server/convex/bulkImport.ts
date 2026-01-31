@@ -593,19 +593,28 @@ export const scrapeSkillsSh = action({
     }
 
     // Initialize Firecrawl and scrape with scrolling
+    // Firecrawl has a 5-minute (300s) max timeout. We optimize for maximum content:
+    // - 150 scroll cycles × 800ms wait = ~120 seconds of scrolling
+    // - Leaves ~180 seconds buffer for page rendering and content capture
+    // - Reduced wait time (800ms) still allows lazy-loaded content to appear
     const firecrawl = new Firecrawl({
       apiKey: env.FIRECRAWL_API_KEY,
     });
+
+    const scrollCount = 150; // Increased from 20 to capture more content
+    const scrollWaitMs = 800; // Reduced from 1000ms for efficiency
+
     const scrollAction = [
-      { type: "wait", milliseconds: 1000 },
+      { type: "wait", milliseconds: scrollWaitMs },
       { type: "scroll", direction: "down" },
     ];
-    const scrollActions = new Array(20).fill(scrollAction).flat();
+    const scrollActions = new Array(scrollCount).fill(scrollAction).flat();
+
     const result = await firecrawl.scrapeUrl("https://skills.sh", {
       formats: ["markdown"],
-      timeout: 300_000, // 5 minutes
+      timeout: 300_000, // 5 minutes - Firecrawl maximum
       actions: [
-        { type: "wait", milliseconds: 2000 },
+        { type: "wait", milliseconds: 2000 }, // Initial wait for page load
         { type: "scroll", direction: "down" },
         ...scrollActions,
       ],
