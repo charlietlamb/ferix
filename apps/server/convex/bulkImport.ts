@@ -592,22 +592,32 @@ export const scrapeSkillsSh = action({
       throw new Error("Unauthorized: Admin access required");
     }
 
-    // Initialize Firecrawl and scrape with scrolling
+    // Initialize Firecrawl and scrape with extensive scrolling
+    // skills.sh has 36,000+ skills loaded via infinite scroll
     const firecrawl = new Firecrawl({
       apiKey: env.FIRECRAWL_API_KEY,
     });
-    const scrollAction = [
-      { type: "wait", milliseconds: 1000 },
-      { type: "scroll", direction: "down" },
-    ];
-    const scrollActions = new Array(20).fill(scrollAction).flat();
+
+    // Build scroll actions: scroll down 1000px, wait for content to load
+    // With ~36,000 skills and ~50-100 loading per scroll, we need many iterations
+    const scrollIterations = 500;
+    const scrollActions: Array<
+      | { type: "wait"; milliseconds: number }
+      | { type: "scroll"; direction: "down"; amount: number }
+    > = [];
+
+    for (let i = 0; i < scrollIterations; i++) {
+      scrollActions.push({ type: "scroll", direction: "down", amount: 1000 });
+      scrollActions.push({ type: "wait", milliseconds: 800 });
+    }
+
     const result = await firecrawl.scrapeUrl("https://skills.sh", {
       formats: ["markdown"],
-      timeout: 300_000, // 5 minutes
+      timeout: 1_200_000, // 20 minutes to allow full page scrape
       actions: [
-        { type: "wait", milliseconds: 2000 },
-        { type: "scroll", direction: "down" },
+        { type: "wait", milliseconds: 3000 }, // Initial wait for page load
         ...scrollActions,
+        { type: "wait", milliseconds: 2000 }, // Final wait after all scrolling
       ],
     });
 
