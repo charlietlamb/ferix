@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@ferix/i18n/navigation";
-import { Skeleton } from "@ferix/ui/components/ui/skeleton";
+import { AnimatedSkeleton } from "@ferix/ui/components/ui/animated-skeleton";
 import {
   getGithubAvatarUrl,
   getRepositoryDisplayName,
@@ -70,25 +70,37 @@ export function RepositoryCell({
 }
 
 /**
- * Skeleton version of RepositoryCell for loading states
+ * Skeleton version of RepositoryCell for loading states.
+ * Uses AnimatedSkeleton with staggered shimmer effect for smooth loading.
  */
 export function RepositoryCellSkeleton({
   showAvatar = true,
   heightClass = "h-16",
+  /** Base delay for staggered animations in grid contexts */
+  delay = 0,
 }: {
   showAvatar?: boolean;
   heightClass?: string;
+  delay?: number;
 }) {
   return (
     <div className={cn("flex items-center gap-3 px-4", heightClass)}>
       {showAvatar ? (
-        <Skeleton className="size-10 rounded-sm" />
+        <AnimatedSkeleton className="size-10 rounded-sm" delay={delay} />
       ) : (
-        <Skeleton className="size-5 rounded" />
+        <AnimatedSkeleton className="size-5" delay={delay} variant="icon" />
       )}
       <div className="flex flex-col gap-1">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-3 w-32" />
+        <AnimatedSkeleton
+          className="h-4 w-24"
+          delay={delay + 0.05}
+          variant="text"
+        />
+        <AnimatedSkeleton
+          className="h-3 w-32"
+          delay={delay + 0.1}
+          variant="text"
+        />
       </div>
     </div>
   );

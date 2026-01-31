@@ -8,6 +8,24 @@ import {
 } from "@ferix/ui/components/repositories/repository-cell";
 import { getGridItemBorderClasses } from "@ferix/ui/lib/repositories";
 import { useQuery } from "convex/react";
+import { motion } from "motion/react";
+
+/** Stagger delay between grid items (in seconds) */
+const STAGGER_DELAY = 0.03;
+
+/** Animation configuration for grid items */
+const itemVariants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * STAGGER_DELAY,
+      duration: 0.3,
+      ease: [0.25, 0.1, 0.25, 1.0],
+    },
+  }),
+};
 
 interface Repository {
   _id: string;
@@ -27,9 +45,13 @@ function RepositoryGridInner({ repositories }: RepositoryGridInnerProps) {
     <div>
       <ul className="grid grid-cols-2 md:grid-cols-4">
         {repositories.map((repository, i) => (
-          <li
+          <motion.li
+            animate="visible"
             className={getGridItemBorderClasses(i, repositories.length)}
+            custom={i}
+            initial="hidden"
             key={repository._id}
+            variants={itemVariants}
           >
             <RepositoryCell
               count={repository.promptCount}
@@ -37,7 +59,7 @@ function RepositoryGridInner({ repositories }: RepositoryGridInnerProps) {
               repository={repository}
               showAvatar
             />
-          </li>
+          </motion.li>
         ))}
       </ul>
     </div>
@@ -51,7 +73,11 @@ function RepositoryGridSkeleton() {
       <div className="grid grid-cols-2 md:grid-cols-4">
         {Array.from({ length: 12 }, (_, i) => (
           <div className={getGridItemBorderClasses(i, 12)} key={i}>
-            <RepositoryCellSkeleton heightClass="h-24" showAvatar />
+            <RepositoryCellSkeleton
+              delay={i * STAGGER_DELAY}
+              heightClass="h-24"
+              showAvatar
+            />
           </div>
         ))}
       </div>
