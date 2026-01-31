@@ -4,7 +4,7 @@
   "private": true,
   "exports": {
     "./_generated/api": "./convex/_generated/api.js",
-    "./_generated/dataModel": "./convex/_generated/dataModel.js",
+    "./_generated/dataModel": "./convex/_generated/dataModel.d.ts",
     "./types": "./convex/types.ts"
   },
   "scripts": {
@@ -15,12 +15,13 @@
   "dependencies": {
     "@convex-dev/better-auth": "catalog:",
     "@convex-dev/migrations": "catalog:",
+    "@convex-dev/workpool": "catalog:",
     "@ferix/env": "*",
     "@ferix/notifications": "*",
+    "@mendable/firecrawl-js": "catalog:",
     "better-auth": "catalog:",
     "convex": "catalog:",
-    "slugify": "catalog:",
-    "zod": "catalog:"
+    "slugify": "catalog:"
   },
   "devDependencies": {
     "@ferix/typescript-config": "*",

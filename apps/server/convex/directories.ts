@@ -23,9 +23,9 @@ import {
   fetchRepoInfo,
   fetchRepoTree,
   filterMarkdownFiles,
-  parseGithubUrl,
 } from "./lib/github";
 import { orderByValidator, paginate } from "./lib/pagination";
+import { parseGithubUrl } from "./lib/regex";
 import { generateUniqueSlug } from "./lib/slug";
 
 export const create = mutation({
@@ -148,6 +148,38 @@ export const getByOwnerRepo = query({
   },
 });
 
+/**
+ * Gets all skill repositories owned by any of the specified GitHub orgs/users.
+ * Used by the sync feature to find skills for resolved package organizations.
+ */
+export const getByOwners = query({
+  args: { owners: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    const results: Array<{
+      owner: string;
+      repo: string;
+      githubUrl: string;
+    }> = [];
+
+    for (const owner of args.owners) {
+      const dirs = await ctx.db
+        .query("directories")
+        .withIndex("by_owner", (q) => q.eq("owner", owner))
+        .collect();
+
+      for (const dir of dirs) {
+        results.push({
+          owner: dir.owner,
+          repo: dir.repo,
+          githubUrl: dir.githubUrl,
+        });
+      }
+    }
+
+    return results;
+  },
+});
+
 export const updateTags = mutation({
   args: {
     directoryId: v.id("directories"),
@@ -230,87 +262,55 @@ export const remove = mutation({
       throw new Error("Unauthorized");
     }
 
-    let deletedPrompts = 0;
-    let cursor: string | null = null;
-    let isDone = false;
+    const prompts = await ctx.db
+      .query("prompts")
+      .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
+      .collect();
 
-    while (!isDone) {
-      const result: {
-        page: Array<{ _id: Id<"prompts"> }>;
-        isDone: boolean;
-        continueCursor: string;
-      } = await ctx.db
-        .query("prompts")
-        .withIndex("by_directoryId", (q) =>
-          q.eq("directoryId", args.directoryId)
-        )
-        .paginate({ numItems: 50, cursor });
+    for (const prompt of prompts) {
+      const [commits, saves] = await Promise.all([
+        ctx.db
+          .query("commits")
+          .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+          .collect(),
+        ctx.db
+          .query("saves")
+          .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+          .collect(),
+      ]);
 
-      for (const prompt of result.page) {
-        const [commits, saves] = await Promise.all([
-          ctx.db
-            .query("commits")
-            .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-            .take(100),
-          ctx.db
-            .query("saves")
-            .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
-            .take(100),
-        ]);
+      await Promise.all([
+        ...commits.map((c) => ctx.db.delete(c._id)),
+        ...saves.map((s) => ctx.db.delete(s._id)),
+      ]);
 
-        await Promise.all([
-          ...commits.map((c) => ctx.db.delete(c._id)),
-          ...saves.map((s) => ctx.db.delete(s._id)),
-        ]);
-
-        await deletePromptTags(ctx, prompt._id);
-        await ctx.db.delete(prompt._id);
-        deletedPrompts++;
-      }
-
-      isDone = result.isDone;
-      cursor = result.continueCursor;
+      await deletePromptTags(ctx, prompt._id);
+      await ctx.db.delete(prompt._id);
     }
 
     await ctx.db.delete(args.directoryId);
 
-    return { success: true, deletedPrompts };
+    return { success: true, deletedPrompts: prompts.length };
   },
 });
 
 /**
- * Recalculates directory counts by paginating through prompts.
+ * Recalculates directory counts by collecting all prompts.
  * Used as a reconciliation step after sync operations.
  */
 export const updateDirectoryCounts = internalMutation({
   args: { directoryId: v.id("directories") },
   handler: async (ctx, args) => {
-    let promptCount = 0;
-    let totalDownloads = 0;
-    let isDone = false;
-    let cursor: string | null = null;
+    const prompts = await ctx.db
+      .query("prompts")
+      .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
+      .collect();
 
-    while (!isDone) {
-      const result: {
-        page: Array<{ downloads?: number }>;
-        isDone: boolean;
-        continueCursor: string;
-      } = await ctx.db
-        .query("prompts")
-        .withIndex("by_directoryId", (q) =>
-          q.eq("directoryId", args.directoryId)
-        )
-        .paginate({ numItems: 100, cursor });
-
-      promptCount += result.page.length;
-      totalDownloads += result.page.reduce(
-        (sum, p) => sum + (p.downloads ?? 0),
-        0
-      );
-
-      isDone = result.isDone;
-      cursor = result.continueCursor;
-    }
+    const promptCount = prompts.length;
+    const totalDownloads = prompts.reduce(
+      (sum, p) => sum + (p.downloads ?? 0),
+      0
+    );
 
     await ctx.db.patch(args.directoryId, { promptCount, totalDownloads });
   },

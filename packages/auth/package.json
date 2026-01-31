@@ -11,8 +11,7 @@
     "@convex-dev/better-auth": "catalog:",
     "@ferix/env": "*",
     "better-auth": "catalog:",
-    "convex": "catalog:",
-    "convex-helpers": "catalog:"
+    "convex": "catalog:"
   },
   "devDependencies": {
     "@ferix/typescript-config": "*",

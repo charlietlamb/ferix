@@ -1,4 +1,42 @@
 {
+  "admin": {
+    "bulkImports": {
+      "title": "Bulk Imports",
+      "description": "Import multiple GitHub repositories with rate limit protection",
+      "scrapeSkillsSh": "Scrape",
+      "scrapeDescription": "Auto-discover repositories from skills.sh",
+      "importLimit": "Import Limit",
+      "importLimitPlaceholder": "Leave empty for all",
+      "defaultTags": "Default Tags",
+      "selectTags": "Select tags...",
+      "importJobs": "Import Jobs",
+      "scraping": "Scraping...",
+      "scrapeAndImport": "Scrape & Import",
+      "loading": "Loading...",
+      "noJobsYet": "No import jobs yet",
+      "status": {
+        "pending": "pending",
+        "running": "running",
+        "completed": "completed",
+        "failed": "failed",
+        "paused": "paused"
+      },
+      "progress": {
+        "done": "done",
+        "failed": "failed",
+        "rateLimit": "Rate limit: {remaining} remaining",
+        "resetsIn": "resets in {time}"
+      },
+      "actions": {
+        "pause": "Pause",
+        "resume": "Resume"
+      },
+      "alerts": {
+        "error": "Error",
+        "success": "Success"
+      }
+    }
+  },
   "twitter": {
     "title": "Community",
     "viewOnX": "View on"
@@ -7,8 +45,124 @@
     "placeholder": "Search for skills, repositories, subagents, rules, or tags..."
   },
   "hero": {
-    "title": "A collection of skills, subagents and rules for",
+    "title": "An ecosystem of tools for building applications with",
     "description": "Explore the latest skills, subagents and rules created by our community. Perfect for Cursor, Claude, and other AI agents."
+  },
+  "cli": {
+    "title": "Introducing FerixCode",
+    "description": "A powerful CLI for AI-assisted development. Write, refactor, and debug code with natural language commands.",
+    "banner": "Introducing the Ferix CLI. Ralph automation and dependency skills sync.",
+    "learnMore": "Learn More"
+  },
+  "cliHero": {
+    "title": "Introducing the Ferix CLI",
+    "description_code": "Purpose built ralph loops for Claude, Cursor & OpenCode.",
+    "description_sync": "Easily sync the skills from dependencies included in your package.json.",
+    "learnMore": "Learn More",
+    "install": "Install:",
+    "tab_code": "Code",
+    "tab_sync": "Sync",
+    "code_feature1Title": "Run Autonomously",
+    "code_feature1Description": "Start a task and step away. Perfect for long-running jobs.",
+    "code_feature2Title": "Provider Agnostic",
+    "code_feature2Description": "Works with Claude, Cursor, and OpenCode.",
+    "code_feature3Title": "End-to-End Workflows",
+    "code_feature3Description": "From task to PR in one command.",
+    "sync_feature1Title": "Auto-Discovery",
+    "sync_feature1Description": "Scans package.json to find relevant skill repositories.",
+    "sync_feature2Title": "Smart Caching",
+    "sync_feature2Description": "Fast lookups via intelligent npm registry caching.",
+    "sync_feature3Title": "One-Command Install",
+    "sync_feature3Description": "Install all discovered skills with a single command."
+  },
+  "code": {
+    "title": "Introducing FerixCode",
+    "description": "A powerful CLI for development with Ralph loops. Built on top of Claude, Cursor & OpenCode.",
+    "install": "Install",
+    "learnMore": "Learn More",
+    "feature1Title": "Run Autonomously",
+    "feature1Description": "Start a task and step away. Perfect for long-running jobs that complete while you're AFK.",
+    "feature2Title": "Provider Agnostic",
+    "feature2Description": "Works with Claude, Cursor, and OpenCode. Use your preferred AI provider with a single flag.",
+    "feature3Title": "End-to-End Workflows",
+    "feature3Description": "From task to PR in one command. Create branches, run tests, and open pull requests automatically.",
+    "docs": {
+      "installation": "Installation",
+      "installationDesc": "Install ferix-code globally with npm",
+      "quickStart": "Quick Start",
+      "quickStartDesc": "Run your first task with a simple command",
+      "options": "CLI Options",
+      "optionsDesc": "All available command-line flags",
+      "option_iterations": "Max iterations",
+      "option_verify": "Verify commands",
+      "option_branch": "Create branch",
+      "option_push": "Push to remote",
+      "option_pr": "Create PR",
+      "option_provider": "LLM provider",
+      "option_noYolo": "Require permission prompts (yolo mode is default)",
+      "option_debug": "Enable debug logging to .ferix/logs/",
+      "yoloNotice": "Yolo mode is enabled by default. All work runs on an isolated git worktree. Use --no-yolo to require permission prompts.",
+      "example_basic": "Basic Task",
+      "example_basic_desc": "Describe what you want in plain English",
+      "example_verification": "With Verification",
+      "example_verification_desc": "Run tests and linting after completion",
+      "example_autonomous": "Autonomous Loop",
+      "example_autonomous_desc": "Run multiple iterations for complex refactoring",
+      "example_workflow": "Full Workflow",
+      "example_workflow_desc": "Create a branch and open a pull request",
+      "example_prd": "From PRD",
+      "example_prd_desc": "Complete tasks from a structured specification file",
+      "example_provider": "Provider Choice",
+      "example_provider_desc": "Use Claude, Cursor, or OpenCode as the LLM"
+    },
+    "architecture": {
+      "flow": "How It Works",
+      "flowDesc": "The Ferix loop follows a structured flow: setup, discovery, iteration, and completion",
+      "setupTitle": "Setup",
+      "discoveryTitle": "Discovery",
+      "iterationTitle": "Iteration",
+      "completionTitle": "Completion",
+      "pureRalph": "Pure RALPH",
+      "pureRalphDesc": "The original pattern: same prompt piped to Claude in a bash loop",
+      "ferixLoop": "Ferix Loop",
+      "ferixLoopDesc": "Enhanced RALPH with orchestration, signals, and git isolation",
+      "differences": "Key Differences",
+      "differencesDesc": "How Ferix extends the pure RALPH pattern",
+      "aspect": "Aspect",
+      "diff_prompt": "Prompt",
+      "diff_context": "Context",
+      "diff_isolation": "Isolation",
+      "diff_tracking": "Tracking"
+    }
+  },
+  "sync": {
+    "title": "Introducing Sync",
+    "description": "Auto-discover and install skills from your project dependencies. All of your skills in one command.",
+    "feature1Title": "Auto-Discovery",
+    "feature1Description": "Scans your package.json and automatically finds relevant skill repositories for your dependencies.",
+    "feature2Title": "Smart Caching",
+    "feature2Description": "Resolves package organizations via npm registry with intelligent caching for fast lookups.",
+    "feature3Title": "One-Command Install",
+    "feature3Description": "Installs all discovered skills with a single command. Works locally or globally.",
+    "docs": {
+      "installation": "Installation",
+      "installationDesc": "Install ferix-code globally with npm",
+      "quickStart": "Quick Start",
+      "quickStartDesc": "Sync skills based on your project dependencies",
+      "options": "CLI Options",
+      "optionsDesc": "Available flags for the sync command",
+      "option_path": "Path to package.json (default: ./package.json)",
+      "option_dryRun": "Preview discovered skills without installing",
+      "option_global": "Install skills globally instead of project-level",
+      "example_basic": "Basic Sync",
+      "example_basic_desc": "Discover and install skills for your project",
+      "example_dryRun": "Dry Run",
+      "example_dryRun_desc": "Preview which skills would be installed",
+      "example_customPath": "Custom Path",
+      "example_customPath_desc": "Sync from a specific package.json location",
+      "example_global": "Global Install",
+      "example_global_desc": "Install skills globally for all projects"
+    }
   },
   "stats": {
     "prompts": "prompts",
@@ -22,7 +176,7 @@
     "promptCount": "{count} prompts"
   },
   "repositories": {
-    "title": "Top Repositories",
+    "title": "Top Skills Repositories",
     "viewAll": "View All",
     "promptCount": "{count} prompts"
   },
@@ -41,6 +195,8 @@
   "sidebar": {
     "browse": "Browse",
     "home": "Home",
+    "code": "Code",
+    "sync": "Sync",
     "popular": "Popular",
     "recent": "Recent",
     "tags": "All Tags",
@@ -51,7 +207,8 @@
     "myProfile": "My Profile",
     "saved": "Saved",
     "admin": "Admin",
-    "adminDashboard": "Dashboard"
+    "adminDashboard": "Dashboard",
+    "new": "New"
   },
   "pages": {
     "popular": {
@@ -230,6 +387,7 @@
     "typeError": "Failed to update type",
     "install": "Install",
     "installDescription": "Install a collection of {count} prompts from {repository}",
+    "installSkillDescription": "Install this skill from {repository}",
     "viewRepository": "View repository"
   },
   "commandPalette": {
@@ -258,6 +416,7 @@
     "actionsSaved": "Saved",
     "actionsAdminDashboard": "Admin Dashboard",
     "actionsFeaturedRepositories": "Featured Repositories",
+    "actionsBulkImports": "Bulk Imports",
     "actionsSyncRepository": "Sync Repository",
     "actionsDeleteRepository": "Delete Repository",
     "actionsImpersonate": "Impersonate User",
@@ -378,7 +537,6 @@
       "signIn": "Sign in",
       "success": "Account created successfully",
       "error": "Failed to sign up",
-      "githubSuccess": "Signed up with GitHub",
       "githubError": "Failed to sign up with GitHub",
       "successTitle": "Check your email",
       "successDescription": "We've sent you a verification link. Please check your email to verify your account and sign in."

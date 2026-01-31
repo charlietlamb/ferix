@@ -73,4 +73,48 @@ export const TWEETS: Tweet[] = [
     content: "LFG",
     url: "https://x.com/ay_ushr/status/2012606295505879144",
   },
+  {
+    id: "2013081200739676388",
+    username: "mynameistito",
+    displayName: "Tito",
+    content: "Hell yes, looks sick! Cool name too how'd ya come up with it",
+    url: "https://x.com/mynameistito/status/2013081200739676388",
+  },
+  {
+    id: "2013188123153289697",
+    username: "cirejr_",
+    displayName: "Cire Jr",
+    content: "Awesome. Was actually thinking of building one of this",
+    url: "https://x.com/cirejr_/status/2013188123153289697",
+  },
+  {
+    id: "2013514530190495845",
+    username: "ByteBriefTech",
+    displayName: "ByteBrief Tech Insights",
+    content:
+      "This website from Charlie is insane. The community literally can come together on this one and end the searching cycle once and for all!",
+    url: "https://x.com/ByteBriefTech/status/2013514530190495845",
+  },
+  {
+    id: "2013174187142050203",
+    username: "dominikkoch",
+    displayName: "Dominik Koch",
+    content: "this is so good wow",
+    url: "https://x.com/dominikkoch/status/2013174187142050203",
+  },
+  {
+    id: "2013175198732648456",
+    username: "chriszeuch",
+    displayName: "Chris",
+    content:
+      "This is amazing. Starting dabbling with skills recently so this is going to help a ton",
+    url: "https://x.com/chriszeuch/status/2013175198732648456",
+  },
+  {
+    id: "2013064667363418365",
+    username: "Baconbrix",
+    displayName: "Evan Bacon",
+    content: "Cool",
+    url: "https://x.com/Baconbrix/status/2013064667363418365",
+  },
 ];

@@ -7,6 +7,7 @@ interface UseInfiniteScrollOptions {
   isLoading: boolean;
   onLoadMore: () => void;
   threshold?: number;
+  rootMargin?: string;
 }
 
 /**
@@ -32,6 +33,7 @@ export function useInfiniteScroll<T extends HTMLElement = HTMLDivElement>({
   isLoading,
   onLoadMore,
   threshold = 0.1,
+  rootMargin = "0px",
 }: UseInfiniteScrollOptions) {
   const loaderRef = useRef<T>(null);
 
@@ -47,12 +49,12 @@ export function useInfiniteScroll<T extends HTMLElement = HTMLDivElement>({
           onLoadMore();
         }
       },
-      { threshold }
+      { threshold, rootMargin }
     );
 
     observer.observe(loader);
     return () => observer.disconnect();
-  }, [hasMore, isLoading, onLoadMore, threshold]);
+  }, [hasMore, isLoading, onLoadMore, threshold, rootMargin]);
 
   return loaderRef;
 }

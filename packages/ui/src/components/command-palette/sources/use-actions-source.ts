@@ -17,6 +17,7 @@ import {
   ShieldIcon,
   TagIcon,
   TrashIcon,
+  UploadSimpleIcon,
   UserIcon,
   UserSwitchIcon,
   XCircleIcon,
@@ -141,6 +142,14 @@ const actions: ActionItem[] = [
     icon: GitBranchIcon,
     action: "navigateFeaturedRepositories",
     keywords: ["featured", "repositories", "top", "order", "admin", "home"],
+    show: isAdmin,
+  },
+  {
+    id: "action-bulk-imports",
+    labelKey: "actionsBulkImports",
+    icon: UploadSimpleIcon,
+    action: "navigateBulkImports",
+    keywords: ["bulk", "import", "batch", "multiple", "github", "admin"],
     show: isAdmin,
   },
   {

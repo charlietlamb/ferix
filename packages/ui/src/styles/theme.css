@@ -23,6 +23,8 @@
   --accent: oklch(0.96 0.008 260);
   --accent-foreground: oklch(0.55 0.18 90);
 
+  --accent-2: oklch(0.5327 0.246 275.6);
+
   --destructive: oklch(0.55 0.22 27.325);
 
   /* Borders - cool blue tinted */
@@ -79,6 +81,8 @@
   /* Accent - uses primary color for emphasis */
   --accent: oklch(0.19 0.02 260);
   --accent-foreground: oklch(0.92 0.17 95);
+
+  --accent-2: oklch(0.5327 0.246 275.6);
 
   --destructive: oklch(0.66 0.217 30.383);
 

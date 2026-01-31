@@ -18,16 +18,32 @@ interface PromptDetailInstallBannerProps {
     name?: string;
   };
   promptCount: number;
+  filePath?: string | null;
+}
+
+function getSkillName(filePath: string | null | undefined): string | null {
+  if (!filePath) {
+    return null;
+  }
+  const parts = filePath.split("/");
+  if (parts.length < 2) {
+    return null;
+  }
+  return parts.at(-2) ?? null;
 }
 
 export function PromptDetailInstallBanner({
   repository,
   promptCount,
+  filePath,
 }: PromptDetailInstallBannerProps) {
   const t = useTranslations("promptDetail");
   const { copy, copied } = useCopy();
 
-  const command = `npx skills add ${repository.owner}/${repository.repo}`;
+  const skillName = getSkillName(filePath);
+  const command = skillName
+    ? `npx skills add https://github.com/${repository.owner}/${repository.repo} --skill "${skillName}"`
+    : `npx skills add ${repository.owner}/${repository.repo}`;
   const repositoryTitle = getRepositoryDisplayName(repository);
 
   const handleCopy = () => {
@@ -50,10 +66,14 @@ export function PromptDetailInstallBanner({
         </Link>
         <div className="flex flex-col">
           <span className="text-sm">
-            {t("installDescription", {
-              count: promptCount,
-              repository: repositoryTitle,
-            })}
+            {skillName
+              ? t("installSkillDescription", {
+                  repository: repositoryTitle,
+                })
+              : t("installDescription", {
+                  count: promptCount,
+                  repository: repositoryTitle,
+                })}
           </span>
           <Link
             className="text-muted-foreground text-xs hover:underline"
@@ -64,7 +84,7 @@ export function PromptDetailInstallBanner({
         </div>
       </div>
       <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5">
-        <code className="max-w-64 truncate font-mono text-sm">{command}</code>
+        <code className="font-mono text-sm">{command}</code>
         <Button
           className="size-7 shrink-0"
           onClick={handleCopy}
