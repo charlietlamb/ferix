@@ -1,9 +1,19 @@
 import { DateTime, Effect, pipe, Ref, Stream } from "effect";
 import { OrchestratorError } from "../domain/errors.js";
-import type { DomainEvent, LoopConfig, Plan, Signal } from "../domain/index.js";
+import type {
+  DomainEvent,
+  LoopConfig,
+  Plan,
+  ProgressEntry,
+  Signal,
+} from "../domain/index.js";
 import type { LLMEvent } from "../domain/schemas/llm.js";
-import type { GeneratedTask } from "../domain/schemas/task-generation.js";
-import { writeTasksMd } from "../layers/plan/task-generation.js";
+import type { SessionState } from "../domain/schemas/state.js";
+import type {
+  GeneratedTask,
+  TasksFile,
+} from "../domain/schemas/task-generation.js";
+import { writeTasksJson } from "../layers/plan/task-generation.js";
 import type { PlanStoreService } from "../services/plan-store.js";
 import type { SignalParserService } from "../services/signal-parser.js";
 import {
@@ -16,7 +26,7 @@ import {
   type PlanPersistenceState,
   updatePlanFromSignal,
 } from "./plan-updates.js";
-import { buildDiscoveryPrompt } from "./prompt.js";
+import { buildDiscoveryPrompt, buildSessionState } from "./prompt.js";
 
 /**
  * Process signals from text and return events with parsed signals.
@@ -107,14 +117,24 @@ function mapTaskStatus(
 }
 
 /**
- * Convert plan tasks to GeneratedTask format for tasks.md
+ * Convert plan tasks to TasksFile format for tasks.json
  */
-function planTasksToGeneratedTasks(plan: Plan): GeneratedTask[] {
-  return plan.tasks.map((task) => ({
-    id: task.id,
-    title: task.title,
-    status: mapTaskStatus(task.status),
-  }));
+function planToTasksFile(
+  plan: Plan,
+  sessionId: string,
+  originalTask: string
+): TasksFile {
+  return {
+    sessionId,
+    originalTask,
+    tasks: plan.tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      status: mapTaskStatus(task.status),
+      steps: task.phases.map((p) => p.description),
+    })),
+  };
 }
 
 /**
@@ -128,11 +148,15 @@ export type SessionNameCallback = (
 /**
  * Creates a stream for the discovery phase.
  * This phase runs the LLM to break down the task into subtasks,
- * generates a descriptive session name, then writes tasks.md and initializes the plan.
+ * generates a descriptive session name, copies PROMPT.md template,
+ * writes tasks.json and STATE.json, and initializes the plan.
  *
  * @param llm - LLM service for executing prompts
  * @param signalParser - Signal parser service
  * @param planStore - Plan storage service
+ * @param stateStore - State storage service
+ * @param promptStore - Prompt template storage service
+ * @param progressStore - Progress storage service for recent progress summaries
  * @param currentPlanRef - Reference to current plan
  * @param config - Loop configuration
  * @param sessionId - Session identifier
@@ -148,6 +172,21 @@ export function createDiscoveryStream(
   },
   signalParser: SignalParserService,
   planStore: PlanStoreService,
+  stateStore: {
+    write: (
+      sessionId: string,
+      state: SessionState
+    ) => Effect.Effect<void, unknown>;
+  },
+  promptStore: {
+    copyTemplate: (sessionId: string) => Effect.Effect<void, unknown>;
+  },
+  progressStore: {
+    getRecent: (
+      sessionId: string,
+      count: number
+    ) => Effect.Effect<readonly ProgressEntry[], unknown>;
+  },
   currentPlanRef: Ref.Ref<Plan | undefined>,
   config: LoopConfig,
   sessionId: string,
@@ -241,7 +280,7 @@ export function createDiscoveryStream(
           )
         );
 
-      // Completion stream that flushes persistence, writes tasks.md, and emits DiscoveryCompleted
+      // Completion stream that flushes persistence, writes files, and emits DiscoveryCompleted
       const completionStream: Stream.Stream<DomainEvent, never, never> =
         Stream.fromEffect(
           Effect.gen(function* () {
@@ -252,16 +291,62 @@ export function createDiscoveryStream(
               persistenceStateRef
             );
 
-            // Get the plan to write tasks.md
+            // Get the plan
             const plan = yield* Ref.get(currentPlanRef);
             const taskCount = plan?.tasks.length ?? 0;
 
-            // Write tasks.md if we have tasks
+            // Copy PROMPT.md template to session directory for debugging visibility
+            yield* promptStore.copyTemplate(sessionId).pipe(
+              Effect.tapError((error) =>
+                Effect.logDebug("Failed to copy PROMPT.md, continuing", {
+                  error: String(error),
+                })
+              ),
+              Effect.orElseSucceed(() => undefined)
+            );
+
+            // Write tasks.json if we have tasks
             if (plan && plan.tasks.length > 0) {
-              const generatedTasks = planTasksToGeneratedTasks(plan);
-              yield* writeTasksMd(sessionId, generatedTasks).pipe(
+              const tasksFile = planToTasksFile(plan, sessionId, config.task);
+              yield* writeTasksJson(sessionId, tasksFile).pipe(
                 Effect.tapError((error) =>
-                  Effect.logDebug("Failed to write tasks.md, continuing", {
+                  Effect.logDebug("Failed to write tasks.json, continuing", {
+                    error: String(error),
+                  })
+                ),
+                Effect.orElseSucceed(() => undefined)
+              );
+
+              // Write initial STATE.json
+              // Fetch recent progress entries to include in state
+              const recentEntries = yield* progressStore
+                .getRecent(sessionId, 5)
+                .pipe(
+                  Effect.tapError((error) =>
+                    Effect.logDebug(
+                      "Failed to get recent progress, continuing",
+                      {
+                        error: String(error),
+                      }
+                    )
+                  ),
+                  Effect.orElseSucceed(() => [] as const)
+                );
+              const recentProgress = recentEntries.map(
+                (entry) =>
+                  `[${entry.action}] Task ${entry.taskId}: ${entry.summary}`
+              );
+
+              const initialState = buildSessionState(
+                config,
+                0, // iteration 0 = discovery
+                sessionId,
+                plan,
+                recentProgress
+              );
+              yield* stateStore.write(sessionId, initialState).pipe(
+                Effect.tapError((error) =>
+                  Effect.logDebug("Failed to write STATE.json, continuing", {
                     error: String(error),
                   })
                 ),

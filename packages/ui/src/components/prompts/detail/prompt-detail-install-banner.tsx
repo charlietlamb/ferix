@@ -84,7 +84,7 @@ export function PromptDetailInstallBanner({
         </div>
       </div>
       <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5">
-        <code className="max-w-64 truncate font-mono text-sm">{command}</code>
+        <code className="font-mono text-sm">{command}</code>
         <Button
           className="size-7 shrink-0"
           onClick={handleCopy}

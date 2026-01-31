@@ -14,6 +14,21 @@ import {
   mockTextEvent,
 } from "../utils/index.js";
 
+// Mock state store that does nothing (for testing)
+const mockStateStore = {
+  write: (): Effect.Effect<void> => Effect.void,
+};
+
+// Mock prompt store that does nothing (for testing)
+const mockPromptStore = {
+  copyTemplate: (): Effect.Effect<void> => Effect.void,
+};
+
+// Mock progress store that returns empty recent entries (for testing)
+const mockProgressStore = {
+  getRecent: (): Effect.Effect<readonly []> => Effect.succeed([]),
+};
+
 describe("Discovery Stream", () => {
   describe("createDiscoveryStream", () => {
     it("should emit DiscoveryStarted at beginning", async () => {
@@ -45,6 +60,9 @@ describe("Discovery Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockPromptStore,
+          mockProgressStore,
           currentPlanRef,
           config,
           "test-session"
@@ -85,6 +103,9 @@ describe("Discovery Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockPromptStore,
+          mockProgressStore,
           currentPlanRef,
           config,
           "test-session"
@@ -134,6 +155,9 @@ describe("Discovery Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockPromptStore,
+          mockProgressStore,
           currentPlanRef,
           config,
           "test-session"
@@ -182,6 +206,9 @@ describe("Discovery Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockPromptStore,
+          mockProgressStore,
           currentPlanRef,
           config,
           "test-session"
@@ -228,6 +255,9 @@ describe("Discovery Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockPromptStore,
+          mockProgressStore,
           currentPlanRef,
           config,
           "test-session"
@@ -271,6 +301,9 @@ describe("Discovery Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockPromptStore,
+          mockProgressStore,
           currentPlanRef,
           config,
           "test-session"
@@ -319,6 +352,9 @@ describe("Discovery Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockPromptStore,
+          mockProgressStore,
           currentPlanRef,
           config,
           "test-session"
@@ -376,6 +412,9 @@ describe("Discovery Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockPromptStore,
+          mockProgressStore,
           currentPlanRef,
           config,
           "test-session",
@@ -423,6 +462,9 @@ describe("Discovery Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockPromptStore,
+          mockProgressStore,
           currentPlanRef,
           config,
           "test-session"

@@ -22,6 +22,16 @@ import {
   mockToolUseEvent,
 } from "../utils/index.js";
 
+// Mock state store that does nothing (for testing)
+const mockStateStore = {
+  write: (): Effect.Effect<void> => Effect.void,
+};
+
+// Mock progress store that returns empty recent entries (for testing)
+const mockProgressStore = {
+  getRecent: (): Effect.Effect<readonly []> => Effect.succeed([]),
+};
+
 /**
  * Helper to create a test plan.
  */
@@ -64,6 +74,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -110,6 +122,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -157,6 +171,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -216,6 +232,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -291,6 +309,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -343,6 +363,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -407,6 +429,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -475,6 +499,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -536,6 +562,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -583,6 +611,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -624,6 +654,8 @@ describe("Iteration Stream", () => {
           mockLLM,
           signalParser,
           planStore,
+          mockStateStore,
+          mockProgressStore,
           currentPlanRef,
           loopCompletedRef,
           config,

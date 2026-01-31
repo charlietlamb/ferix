@@ -11,15 +11,17 @@ import { Git, type WorktreePath } from "../services/git.js";
 import type { GuardrailsStore } from "../services/guardrails-store.js";
 import { LLM } from "../services/llm.js";
 import { PlanStore } from "../services/plan-store.js";
-import type { ProgressStore } from "../services/progress-store.js";
+import { ProgressStore } from "../services/progress-store.js";
+import { PromptStore } from "../services/prompt-store.js";
 import { SessionStore } from "../services/session-store.js";
 import { SignalParser } from "../services/signal-parser.js";
+import { StateStore } from "../services/state-store.js";
 import { createDiscoveryStream } from "./discovery.js";
 import { createIterationStream } from "./iteration.js";
 
 /**
  * Required services for the orchestrator.
- * Now includes ProgressStore, GuardrailsStore, and Git for worktree support.
+ * Includes ProgressStore, GuardrailsStore, Git, StateStore, and PromptStore.
  */
 export type OrchestratorServices =
   | LLM
@@ -28,7 +30,9 @@ export type OrchestratorServices =
   | SessionStore
   | ProgressStore
   | GuardrailsStore
-  | Git;
+  | Git
+  | StateStore
+  | PromptStore;
 
 /**
  * Run the ralph loop.
@@ -79,7 +83,10 @@ export function runLoop(
       const signalParser = yield* SignalParser;
       const sessionStore = yield* SessionStore;
       const planStore = yield* PlanStore;
+      const progressStore = yield* ProgressStore;
       const git = yield* Git;
+      const stateStore = yield* StateStore;
+      const promptStore = yield* PromptStore;
 
       const session = yield* sessionStore
         .create(config.task, config.sessionId)
@@ -188,11 +195,14 @@ export function runLoop(
         });
 
       // Discovery phase - runs LLM to break down the task into subtasks,
-      // generates a descriptive session name, and writes tasks.md before iterations begin
+      // generates a descriptive session name, copies PROMPT.md, and writes tasks.json + STATE.json
       const discoveryStream = createDiscoveryStream(
         llm,
         signalParser,
         planStore,
+        stateStore,
+        promptStore,
+        progressStore,
         currentPlanRef,
         config,
         session.id,
@@ -218,6 +228,8 @@ export function runLoop(
               llm,
               signalParser,
               planStore,
+              stateStore,
+              progressStore,
               currentPlanRef,
               loopCompletedRef,
               config,

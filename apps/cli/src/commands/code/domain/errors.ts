@@ -109,3 +109,21 @@ export class RetryExhaustedError extends Data.TaggedError(
   /** Iteration where retries were exhausted */
   readonly iteration: number;
 }> {}
+
+/**
+ * Error that occurs during state storage operations.
+ */
+export class StateStoreError extends Data.TaggedError("StateStoreError")<{
+  readonly message: string;
+  readonly operation: "write" | "read";
+  readonly cause?: unknown;
+}> {}
+
+/**
+ * Error that occurs during prompt template operations.
+ */
+export class PromptStoreError extends Data.TaggedError("PromptStoreError")<{
+  readonly message: string;
+  readonly operation: "copy" | "read";
+  readonly cause?: unknown;
+}> {}

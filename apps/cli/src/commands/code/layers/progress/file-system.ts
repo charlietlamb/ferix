@@ -4,6 +4,7 @@ import { DateTime, Effect, Layer } from "effect";
 import { ProgressStoreError } from "../../domain/errors.js";
 import {
   decodeProgressFile,
+  formatProgressMd,
   type ProgressEntry,
   type ProgressFile,
 } from "../../domain/index.js";
@@ -40,10 +41,17 @@ function getSessionDir(sessionId: string): string {
 }
 
 /**
- * Gets the file path for a session's progress file.
+ * Gets the file path for a session's progress JSON file.
  */
-function getProgressPath(sessionId: string): string {
+function getProgressJsonPath(sessionId: string): string {
   return join(getSessionDir(sessionId), "progress.json");
+}
+
+/**
+ * Gets the file path for a session's progress markdown file.
+ */
+function getProgressMdPath(sessionId: string): string {
+  return join(getSessionDir(sessionId), "progress.md");
 }
 
 /**
@@ -100,9 +108,48 @@ function createEmptyProgress(
 }
 
 /**
+ * Write both progress.json and progress.md files.
+ * JSON is the source of truth, markdown is for human readability.
+ */
+function writeProgressFiles(
+  sessionId: string,
+  progress: ProgressFile,
+  originalTask?: string
+): Effect.Effect<void, ProgressStoreError> {
+  return Effect.gen(function* () {
+    const jsonPath = getProgressJsonPath(sessionId);
+    const mdPath = getProgressMdPath(sessionId);
+
+    // Write JSON (source of truth)
+    yield* Effect.tryPromise({
+      try: () => writeFile(jsonPath, serializeProgress(progress), "utf-8"),
+      catch: (error) =>
+        new ProgressStoreError({
+          message: `Failed to write progress.json: ${jsonPath}`,
+          operation: "append",
+          cause: error,
+        }),
+    });
+
+    // Write markdown (human-readable)
+    yield* Effect.tryPromise({
+      try: () =>
+        writeFile(mdPath, formatProgressMd(progress, originalTask), "utf-8"),
+      catch: (error) =>
+        new ProgressStoreError({
+          message: `Failed to write progress.md: ${mdPath}`,
+          operation: "append",
+          cause: error,
+        }),
+    });
+  });
+}
+
+/**
  * File system progress store service implementation.
  *
- * Stores progress as JSON in `.ferix/plans/:sessionId/progress.json`.
+ * Stores progress as JSON in `.ferix/plans/:sessionId/progress.json`
+ * and also writes a human-readable `.ferix/plans/:sessionId/progress.md`.
  */
 const make: ProgressStoreService = {
   append: (
@@ -113,7 +160,7 @@ const make: ProgressStoreService = {
       const sessionDir = getSessionDir(sessionId);
       yield* ensureDir(sessionDir);
 
-      const progressPath = getProgressPath(sessionId);
+      const progressPath = getProgressJsonPath(sessionId);
 
       // Load existing or create new
       const existing = yield* Effect.tryPromise({
@@ -156,22 +203,13 @@ const make: ProgressStoreService = {
         entries: [...progress.entries, entry],
       };
 
-      // Write back
-      yield* Effect.tryPromise({
-        try: () =>
-          writeFile(progressPath, serializeProgress(updatedProgress), "utf-8"),
-        catch: (error) =>
-          new ProgressStoreError({
-            message: `Failed to write progress file: ${progressPath}`,
-            operation: "append",
-            cause: error,
-          }),
-      });
+      // Write both JSON and markdown files
+      yield* writeProgressFiles(sessionId, updatedProgress);
     }),
 
   load: (sessionId: string): Effect.Effect<ProgressFile, ProgressStoreError> =>
     Effect.gen(function* () {
-      const progressPath = getProgressPath(sessionId);
+      const progressPath = getProgressJsonPath(sessionId);
 
       const content = yield* Effect.tryPromise({
         try: async () => {

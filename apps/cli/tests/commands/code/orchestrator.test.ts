@@ -6,8 +6,10 @@ import { MemoryGuardrails } from "../../../src/commands/code/layers/guardrails/m
 import { Mock } from "../../../src/commands/code/layers/llm/mock.js";
 import { MemoryPlan } from "../../../src/commands/code/layers/plan/memory.js";
 import { MemoryProgress } from "../../../src/commands/code/layers/progress/memory.js";
+import { MemoryPrompt } from "../../../src/commands/code/layers/prompt/memory.js";
 import { MemorySession } from "../../../src/commands/code/layers/session/memory.js";
 import { FerixParser } from "../../../src/commands/code/layers/signal/ferix-parser.js";
+import { MemoryState } from "../../../src/commands/code/layers/state/memory.js";
 import { runLoop } from "../../../src/commands/code/orchestrator/loop.js";
 
 /**
@@ -21,6 +23,8 @@ function createTestLayers(events: LLMEvent[]) {
     MemoryProgress.layer(),
     MemoryGuardrails.layer(),
     MemoryGit.layer(),
+    MemoryState.layer(),
+    MemoryPrompt.layer(),
     FerixParser.Live
   );
 }

@@ -1,7 +1,7 @@
 import { Schema as S } from "effect";
 
 /**
- * Status for generated tasks in tasks.md
+ * Status for generated tasks in tasks.json
  */
 const GeneratedTaskStatusSchema = S.Literal(
   "pending",
@@ -9,62 +9,33 @@ const GeneratedTaskStatusSchema = S.Literal(
   "done",
   "failed"
 );
-type GeneratedTaskStatus = typeof GeneratedTaskStatusSchema.Type;
 
 /**
- * Single generated task entry schema
+ * Single generated task entry schema with steps for verification
  */
 const GeneratedTaskSchema = S.Struct({
   id: S.String,
   title: S.String,
+  description: S.String,
   status: GeneratedTaskStatusSchema,
+  steps: S.Array(S.String),
 });
 export type GeneratedTask = typeof GeneratedTaskSchema.Type;
 
 /**
- * Array of generated tasks schema
+ * Tasks file schema for tasks.json
  */
-const GeneratedTaskListSchema = S.Array(GeneratedTaskSchema);
-export type GeneratedTaskList = typeof GeneratedTaskListSchema.Type;
+const TasksFileSchema = S.Struct({
+  sessionId: S.String,
+  originalTask: S.String,
+  tasks: S.Array(GeneratedTaskSchema),
+});
+export type TasksFile = typeof TasksFileSchema.Type;
 
 /**
- * Status icon mapping for markdown formatting
+ * Format tasks file to JSON string for persistence.
+ * JSON format prevents inappropriate modifications compared to Markdown.
  */
-const STATUS_ICONS: Record<GeneratedTaskStatus, string> = {
-  done: "[x]",
-  in_progress: "[~]",
-  pending: "[ ]",
-  failed: "[!]",
-};
-
-/**
- * Format tasks to a human-readable markdown string
- */
-export function formatTasksMd(tasks: GeneratedTaskList): string {
-  const completedCount = tasks.filter((t) => t.status === "done").length;
-  const totalCount = tasks.length;
-
-  const lines: string[] = [
-    "# Tasks",
-    "",
-    `## Status: ${completedCount}/${totalCount} complete`,
-    "",
-  ];
-
-  const currentTaskId = tasks.find(
-    (t) => t.status === "in_progress" || t.status === "pending"
-  )?.id;
-
-  for (const task of tasks) {
-    const icon = STATUS_ICONS[task.status];
-    const currentMarker = task.id === currentTaskId ? " ← current" : "";
-    lines.push(`- ${icon} **Task ${task.id}**: ${task.title}${currentMarker}`);
-  }
-
-  lines.push("");
-  lines.push("---");
-  lines.push("");
-  lines.push(`*Last updated: ${new Date().toISOString()}*`);
-
-  return lines.join("\n");
+export function formatTasksJson(tasksFile: TasksFile): string {
+  return JSON.stringify(tasksFile, null, 2);
 }

@@ -1,4 +1,5 @@
 import type { LoopConfig, Plan, PromptConfig, Task } from "../domain/index.js";
+import type { SessionState } from "../domain/schemas/state.js";
 
 /**
  * Default system prompt for the ralph loop.
@@ -67,7 +68,7 @@ const DISCOVERY_SYSTEM_PROMPT = `You are in the DISCOVERY phase of a ralph loop 
 
 Your goal is to:
 1. Generate a short, descriptive name for this session
-2. Analyze the task and break it into logical subtasks
+2. Analyze the task and break it into SMALL, GRANULAR subtasks
 
 Your output must include these signals that the orchestrator will parse.
 These signals MUST appear on their own lines, not inside code blocks.
@@ -88,6 +89,21 @@ Guidelines for session name:
   <task id="1">Brief description of first task</task>
   <task id="2">Brief description of second task</task>
 </ferix:tasks>
+
+## Task Granularity Rules (CRITICAL)
+
+Apply the **"one sentence without 'and'" test**:
+- If describing a task requires "and" to connect unrelated functions, split it
+- Good: "Add login endpoint that validates credentials and returns JWT"
+- Bad: "Handle authentication, user profiles, and billing"
+
+Each task MUST be:
+- Small enough to complete in ONE context window
+- Testable in isolation with automated checks
+- A single logical unit of work
+
+For a typical feature, create 5-15 tasks.
+For complex projects, create 50-200+ discrete tasks.
 
 ## CRITICAL: Task Exclusions
 
@@ -404,4 +420,64 @@ export function areAllTasksComplete(plan: Plan | undefined): boolean {
     return false;
   }
   return plan.tasks.every((t) => t.status === "done" || t.status === "skipped");
+}
+
+/**
+ * Builds session state from plan and config for STATE.json.
+ *
+ * @param config - Loop configuration
+ * @param iteration - Current iteration number
+ * @param plan - Current plan state (if available)
+ * @param recentProgress - Array of recent progress summaries
+ * @returns SessionState object for STATE.json
+ */
+export function buildSessionState(
+  config: LoopConfig,
+  iteration: number,
+  sessionId: string,
+  plan?: Plan,
+  recentProgress: string[] = []
+): SessionState {
+  // Find the current task
+  const currentTask = plan?.tasks.find(
+    (t) => t.status === "in_progress" || t.status === "pending"
+  );
+
+  // Calculate task summary
+  const taskSummary = plan
+    ? {
+        total: plan.tasks.length,
+        done: plan.tasks.filter((t) => t.status === "done").length,
+        inProgress: plan.tasks.filter((t) => t.status === "in_progress").length,
+        pending: plan.tasks.filter(
+          (t) => t.status === "pending" || t.status === "planning"
+        ).length,
+      }
+    : { total: 0, done: 0, inProgress: 0, pending: 0 };
+
+  return {
+    sessionId,
+    originalTask: config.task,
+    iteration,
+    maxIterations: config.maxIterations,
+    taskSummary,
+    currentTask: currentTask
+      ? {
+          id: currentTask.id,
+          title: currentTask.title,
+          description: currentTask.description,
+          phases: currentTask.phases.map((p) => ({
+            id: p.id,
+            description: p.description,
+            status: p.status,
+          })),
+          criteria: currentTask.criteria.map((c) => ({
+            id: c.id,
+            description: c.description,
+            status: c.status,
+          })),
+        }
+      : null,
+    recentProgress,
+  };
 }

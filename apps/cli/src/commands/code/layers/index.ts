@@ -5,8 +5,10 @@ import { FileSystemGuardrails } from "./guardrails/file-system.js";
 import { ClaudeCLI, createProviderLayer } from "./llm/providers/index.js";
 import { FileSystemPlan } from "./plan/file-system.js";
 import { FileSystemProgress } from "./progress/file-system.js";
+import { FileSystemPrompt } from "./prompt/file-system.js";
 import { FileSystemSession } from "./session/file-system.js";
 import { FerixParser } from "./signal/ferix-parser.js";
+import { FileSystemState } from "./state/file-system.js";
 
 // Re-export logger layer factory
 export { createLoggerLayer } from "./logger.js";
@@ -18,7 +20,7 @@ export { createLoggerLayer } from "./logger.js";
  * Uses real implementations:
  * - Claude CLI for LLM (default)
  * - Ferix parser for signals
- * - File system for plan, session, progress, guardrails, and git storage
+ * - File system for plan, session, progress, guardrails, git, state, and prompt storage
  *
  * @example
  * ```typescript
@@ -39,7 +41,9 @@ export const ProductionLayers = Layer.mergeAll(
   FileSystemSession.Live,
   FileSystemProgress.Live,
   FileSystemGuardrails.Live,
-  FileSystemGit.Live
+  FileSystemGit.Live,
+  FileSystemState.Live,
+  FileSystemPrompt.Live
 );
 
 /**
@@ -71,6 +75,8 @@ export function createProductionLayers(provider: ProviderName = "claude") {
     FileSystemSession.Live,
     FileSystemProgress.Live,
     FileSystemGuardrails.Live,
-    FileSystemGit.Live
+    FileSystemGit.Live,
+    FileSystemState.Live,
+    FileSystemPrompt.Live
   );
 }

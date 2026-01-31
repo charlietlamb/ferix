@@ -1,7 +1,14 @@
 import { DateTime, Effect, pipe, Ref, Stream } from "effect";
 import { OrchestratorError } from "../domain/errors.js";
-import type { DomainEvent, LoopConfig, Plan, Signal } from "../domain/index.js";
+import type {
+  DomainEvent,
+  LoopConfig,
+  Plan,
+  ProgressEntry,
+  Signal,
+} from "../domain/index.js";
 import type { LLMEvent } from "../domain/schemas/llm.js";
+import type { SessionState } from "../domain/schemas/state.js";
 import type { PlanStoreService } from "../services/plan-store.js";
 import type { SignalParserService } from "../services/signal-parser.js";
 import {
@@ -14,7 +21,11 @@ import {
   type PlanPersistenceState,
   updatePlanFromSignal,
 } from "./plan-updates.js";
-import { areAllTasksComplete, buildPrompt } from "./prompt.js";
+import {
+  areAllTasksComplete,
+  buildPrompt,
+  buildSessionState,
+} from "./prompt.js";
 
 /**
  * Process signals from text and return events with completion flag and signals for plan updates.
@@ -116,10 +127,13 @@ function processLLMEvent(
 /**
  * Creates a stream for a single iteration.
  * Plan updates are batched and persisted once at the end of each iteration.
+ * STATE.json is written before each iteration for context recovery.
  *
  * @param llm - LLM service for executing prompts
  * @param signalParser - Signal parser service
  * @param planStore - Plan storage service
+ * @param stateStore - State storage service for STATE.json
+ * @param progressStore - Progress storage service for recent progress summaries
  * @param currentPlanRef - Reference to current plan
  * @param loopCompletedRef - Reference to loop completion state
  * @param config - Loop configuration
@@ -136,6 +150,18 @@ export function createIterationStream(
   },
   signalParser: SignalParserService,
   planStore: PlanStoreService,
+  stateStore: {
+    write: (
+      sessionId: string,
+      state: SessionState
+    ) => Effect.Effect<void, unknown>;
+  },
+  progressStore: {
+    getRecent: (
+      sessionId: string,
+      count: number
+    ) => Effect.Effect<readonly ProgressEntry[], unknown>;
+  },
   currentPlanRef: Ref.Ref<Plan | undefined>,
   loopCompletedRef: Ref.Ref<boolean>,
   config: LoopConfig,
@@ -158,6 +184,36 @@ export function createIterationStream(
         _tag: "IterationStarted",
         iteration,
       };
+
+      // Write STATE.json before each iteration for context recovery
+      // Fetch recent progress entries to include in state
+      const recentEntries = yield* progressStore.getRecent(sessionId, 5).pipe(
+        Effect.tapError((error) =>
+          Effect.logDebug("Failed to get recent progress, continuing", {
+            error: String(error),
+          })
+        ),
+        Effect.orElseSucceed(() => [] as const)
+      );
+      const recentProgress = recentEntries.map(
+        (entry) => `[${entry.action}] Task ${entry.taskId}: ${entry.summary}`
+      );
+
+      const state = buildSessionState(
+        config,
+        iteration,
+        sessionId,
+        currentPlan,
+        recentProgress
+      );
+      yield* stateStore.write(sessionId, state).pipe(
+        Effect.tapError((error) =>
+          Effect.logDebug("Failed to write STATE.json, continuing", {
+            error: String(error),
+          })
+        ),
+        Effect.orElseSucceed(() => undefined)
+      );
 
       // Build prompt and log stats for debugging
       const prompt = buildPrompt(config, iteration, currentPlan);

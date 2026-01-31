@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { Effect } from "effect";
 import { PlanStoreError } from "../../domain/errors.js";
 import {
-  formatTasksMd,
-  type GeneratedTaskList,
+  formatTasksJson,
+  type TasksFile,
 } from "../../domain/schemas/task-generation.js";
 
 /**
@@ -35,31 +35,32 @@ function getSessionDir(sessionId: string): string {
 }
 
 /**
- * Gets the file path for tasks.md
+ * Gets the file path for tasks.json
  */
-function getTasksMdPath(sessionId: string): string {
-  return join(getSessionDir(sessionId), "tasks.md");
+function getTasksJsonPath(sessionId: string): string {
+  return join(getSessionDir(sessionId), "tasks.json");
 }
 
 /**
- * Write tasks to tasks.md file
+ * Write tasks to tasks.json file.
+ * JSON format prevents inappropriate modifications compared to Markdown.
  */
-export function writeTasksMd(
+export function writeTasksJson(
   sessionId: string,
-  tasks: GeneratedTaskList
+  tasksFile: TasksFile
 ): Effect.Effect<void, PlanStoreError> {
   return Effect.gen(function* () {
     const sessionDir = getSessionDir(sessionId);
     yield* ensureDir(sessionDir);
 
-    const tasksMdPath = getTasksMdPath(sessionId);
-    const content = formatTasksMd(tasks);
+    const tasksJsonPath = getTasksJsonPath(sessionId);
+    const content = formatTasksJson(tasksFile);
 
     yield* Effect.tryPromise({
-      try: () => writeFile(tasksMdPath, content, "utf-8"),
+      try: () => writeFile(tasksJsonPath, content, "utf-8"),
       catch: (error) =>
         new PlanStoreError({
-          message: `Failed to write tasks.md: ${tasksMdPath}`,
+          message: `Failed to write tasks.json: ${tasksJsonPath}`,
           operation: "create",
           cause: error,
         }),
