@@ -592,22 +592,36 @@ export const scrapeSkillsSh = action({
       throw new Error("Unauthorized: Admin access required");
     }
 
-    // Initialize Firecrawl and scrape with scrolling
+    // Initialize Firecrawl and scrape with extensive scrolling
+    // The skills.sh leaderboard has ~200 skills that lazy-load on scroll
     const firecrawl = new Firecrawl({
       apiKey: env.FIRECRAWL_API_KEY,
     });
+
+    // Create scroll actions with longer waits to ensure lazy content loads
+    // Each scroll + wait cycle allows new content to render
     const scrollAction = [
-      { type: "wait", milliseconds: 1000 },
       { type: "scroll", direction: "down" },
+      { type: "wait", milliseconds: 1500 },
     ];
-    const scrollActions = new Array(20).fill(scrollAction).flat();
+
+    // 150 scroll iterations to ensure we capture all ~200 skills
+    const scrollIterations = 150;
+    const scrollActions = new Array(scrollIterations).fill(scrollAction).flat();
+
     const result = await firecrawl.scrapeUrl("https://skills.sh", {
       formats: ["markdown"],
-      timeout: 300_000, // 5 minutes
+      timeout: 600_000, // 10 minutes for extensive scrolling
       actions: [
-        { type: "wait", milliseconds: 2000 },
+        // Initial wait for page to fully load
+        { type: "wait", milliseconds: 3000 },
+        // Initial scroll to trigger lazy loading
         { type: "scroll", direction: "down" },
+        { type: "wait", milliseconds: 2000 },
+        // Extensive scrolling to load all content
         ...scrollActions,
+        // Final wait to ensure last items are loaded
+        { type: "wait", milliseconds: 3000 },
       ],
     });
 
