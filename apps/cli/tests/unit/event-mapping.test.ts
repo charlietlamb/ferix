@@ -371,17 +371,14 @@ describe("Event Mapping", () => {
     });
 
     describe("LoopComplete signal", () => {
-      it("should map LoopComplete to LoopCompleted with placeholder summary", () => {
+      it("should not map to LoopCompleted (internal signal only)", () => {
         const context = createTestContext();
         const signal = { _tag: "LoopComplete" as const };
 
         const result = eventMappingRegistry.mapSignal(signal, context);
 
-        expect(result._tag).toBe("LoopCompleted");
-        if (result._tag === "LoopCompleted") {
-          expect(result.summary.success).toBe(true);
-          expect(result.summary.iterations).toBe(0);
-        }
+        // Falls back to empty LLMText event since no mapper is registered
+        expect(result._tag).toBe("LLMText");
       });
     });
 
