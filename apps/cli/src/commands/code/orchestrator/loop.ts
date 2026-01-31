@@ -356,9 +356,9 @@ function createCompletionStream(
         Effect.orElseSucceed(() => undefined)
       );
 
-      // Push branch if config.push is true
+      // Push branch if config.push is true or config.pr is true (PR requires push)
       let branchPushed = false;
-      if (config.push === true) {
+      if (config.push === true || config.pr === true) {
         const pushResult = yield* git.pushBranch(session.id).pipe(
           Effect.map(() => true),
           Effect.tapError((error) =>
