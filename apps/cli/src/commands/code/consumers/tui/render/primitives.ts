@@ -19,6 +19,7 @@ export const colors = {
   brightGreen: (s: string) => pc.bold(pc.green(s)),
   brightYellow: (s: string) => pc.bold(pc.yellow(s)),
   brightRed: (s: string) => pc.bold(pc.red(s)),
+  brightBlue: (s: string) => pc.bold(pc.blue(s)),
 };
 
 // Tool-specific colors
