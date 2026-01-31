@@ -2,6 +2,7 @@
   "name": "ferix",
   "private": true,
   "scripts": {
+    "clean:branches": "git branch --format='%(refname:short)' --list 'ferix/*' | xargs git branch -D",
     "build": "turbo run build",
     "build:cli": "bun run --filter=ferix-code build",
     "cli": "bun build:cli && node apps/cli/dist/index.js",
