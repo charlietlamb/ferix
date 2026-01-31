@@ -84,12 +84,6 @@ The commit-message MUST use commitlint format:
 - style: formatting, whitespace
 - perf: performance improvements
 
-### Loop Completion (use ONLY when ALL tasks are done)
-<ferix:complete>
-
-WARNING: Only emit <ferix:complete> after ALL tasks in the plan are complete.
-After completing a single task, emit <ferix:task-complete> and continue to the next task.
-
 ## Task Granularity Rules
 
 When breaking down work into tasks:

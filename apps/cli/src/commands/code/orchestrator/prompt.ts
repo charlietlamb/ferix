@@ -53,12 +53,6 @@ Use these XML-like tags to communicate structured information:
   <files-created>new-file.ts</files-created>
 </ferix:task-complete>
 
-### Loop Completion (use ONLY when ALL tasks are done)
-<ferix:complete>
-
-⚠️ IMPORTANT: Only emit <ferix:complete> after ALL tasks in the plan are complete.
-After completing a single task, emit <ferix:task-complete> and continue to the next task.
-
 IMPORTANT: Always emit signals on their own lines, never inside markdown code blocks.`;
 
 /**
@@ -156,12 +150,11 @@ When you finish the CURRENT task, emit:
   <summary>What was accomplished</summary>
   <files-modified>list of modified files</files-modified>
   <files-created>list of new files</files-created>
+  <commit-message>feat: your descriptive commit message</commit-message>
 </ferix:task-complete>
 
 After emitting task-complete, CONTINUE working on the next pending task.
-
-⚠️ ONLY emit <ferix:complete> when ALL tasks in the plan are done.
-Do NOT emit <ferix:complete> after completing just one task - continue to the next task instead.`;
+The loop will automatically complete when all tasks are done.`;
 
 /**
  * Gets a phase prompt, using override if provided.
@@ -197,8 +190,8 @@ If any fail, fix the issues and re-verify.
 
 IMPORTANT: Once ALL verification commands pass:
 - Emit <ferix:task-complete id="N"> with a summary of what was done
-- If this was the last task, also emit <ferix:complete>
-- Do NOT run verification again after it passes`;
+- Do NOT run verification again after it passes
+- The loop will automatically complete when all tasks are done`;
 
   return prompts?.phases?.verify ?? defaultVerifyPrompt;
 }

@@ -1,8 +1,10 @@
 import type {
+  LoopCompletedEvent,
   LoopFailedEvent,
   LoopStartedEvent,
 } from "../../../domain/index.js";
 import { MAX_OUTPUT_LINES } from "../constants.js";
+import { completeBanner } from "../tags/primitives.js";
 import { appendError } from "./helpers.js";
 import type { StateReducer } from "./registry.js";
 import { stateReducerRegistry } from "./registry.js";
@@ -23,16 +25,26 @@ const loopStartedReducer: StateReducer<"LoopStarted"> = {
 
 const loopCompletedReducer: StateReducer<"LoopCompleted"> = {
   tag: "LoopCompleted",
-  reduce: (state) => {
+  reduce: (state, event: LoopCompletedEvent) => {
+    const newStatus = event.summary.success ? "complete" : "paused";
+
+    let newOutputLines = state.outputLines;
     if (state.partialLine) {
-      const combined = [...state.outputLines, state.partialLine];
-      const outputLines =
-        combined.length > MAX_OUTPUT_LINES
-          ? combined.slice(-MAX_OUTPUT_LINES)
-          : combined;
-      return { ...state, outputLines, partialLine: "", status: "complete" };
+      newOutputLines = [...newOutputLines, state.partialLine];
     }
-    return { ...state, status: "complete" };
+
+    // Add verified completion banner only when all tasks done
+    if (event.summary.success) {
+      const width = process.stdout.columns || 80;
+      newOutputLines = [...newOutputLines, completeBanner(width)];
+    }
+
+    const outputLines =
+      newOutputLines.length > MAX_OUTPUT_LINES
+        ? newOutputLines.slice(-MAX_OUTPUT_LINES)
+        : newOutputLines;
+
+    return { ...state, outputLines, partialLine: "", status: newStatus };
   },
 };
 

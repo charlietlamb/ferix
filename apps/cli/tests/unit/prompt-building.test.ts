@@ -112,7 +112,7 @@ describe("Prompt Building", () => {
         expect(prompt).toContain("Signal Format");
         expect(prompt).toContain("<ferix:tasks>");
         expect(prompt).toContain("<ferix:phases");
-        expect(prompt).toContain("<ferix:complete>");
+        expect(prompt).toContain("<ferix:task-complete");
       });
 
       it("should include all phase prompts", () => {
@@ -385,12 +385,12 @@ describe("Prompt Building", () => {
         expect(prompt).toContain("<files-modified>");
       });
 
-      it("should warn about loop complete signal usage", () => {
+      it("should explain automatic loop completion", () => {
         const config = createTestConfig();
         const prompt = buildPrompt(config, 1);
 
-        expect(prompt).toContain("ONLY emit <ferix:complete> when ALL tasks");
-        expect(prompt).toContain("continue to the next task");
+        expect(prompt).toContain("loop will automatically complete");
+        expect(prompt).toContain("working on the next pending task");
       });
     });
   });

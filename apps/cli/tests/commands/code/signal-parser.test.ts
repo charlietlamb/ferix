@@ -198,20 +198,6 @@ describe("FerixParser", () => {
       }
     });
 
-    it("should parse loop complete signal", async () => {
-      const program = Effect.gen(function* () {
-        const parser = yield* SignalParser;
-        return yield* parser.parse("<ferix:complete>");
-      });
-
-      const result = await Effect.runPromise(
-        program.pipe(Effect.provide(TestLayer))
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0]?._tag).toBe("LoopComplete");
-    });
-
     it("should return empty array for text without signals", async () => {
       const program = Effect.gen(function* () {
         const parser = yield* SignalParser;

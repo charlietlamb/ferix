@@ -71,6 +71,8 @@ export function renderStatusBar(state: TUIState, width: number): string {
     parts.push(`${spinner} ${mode}`);
   } else if (state.status === "complete") {
     parts.push(colors.brightCyan("COMPLETE"));
+  } else if (state.status === "paused") {
+    parts.push(colors.warning("PAUSED"));
   } else if (state.status === "error") {
     parts.push(colors.brightRed("ERROR"));
   }

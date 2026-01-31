@@ -123,15 +123,6 @@ export function mockTaskCompleteSignal(data: MockTaskCompletion): string {
 }
 
 /**
- * Creates a loop-complete signal.
- *
- * @returns XML signal string
- */
-export function mockLoopCompleteSignal(): string {
-  return "<ferix:complete>";
-}
-
-/**
  * Combines multiple signals into a single text block.
  *
  * @param signals - Array of signal strings

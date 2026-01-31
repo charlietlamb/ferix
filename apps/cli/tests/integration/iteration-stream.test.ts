@@ -11,7 +11,6 @@ import {
   findEvent,
   findEvents,
   mockDoneEvent,
-  mockLoopCompleteSignal,
   mockPhaseDoneSignal,
   mockPhaseStartSignal,
   mockPhasesSignal,
@@ -343,7 +342,7 @@ describe("Iteration Stream", () => {
       expect(phaseCompleted).toBeDefined();
     });
 
-    it("should NOT set loopCompletedRef when LoopComplete signal received but tasks are pending", async () => {
+    it("should NOT set loopCompletedRef when tasks are pending", async () => {
       const testLayers = createTestLayers({
         events: [],
       });
@@ -381,7 +380,7 @@ describe("Iteration Stream", () => {
         const mockLLM = {
           execute: () =>
             Stream.fromIterable([
-              mockTextEvent(mockLoopCompleteSignal()),
+              mockTextEvent("Working on tasks..."),
               mockDoneEvent(),
             ]),
         };
@@ -416,7 +415,7 @@ describe("Iteration Stream", () => {
       expect(completed).toBe(false);
     });
 
-    it("should set loopCompletedRef when LoopComplete signal received AND all tasks are done", async () => {
+    it("should set loopCompletedRef when all tasks are done", async () => {
       const testLayers = createTestLayers({
         events: [],
       });
@@ -454,7 +453,7 @@ describe("Iteration Stream", () => {
         const mockLLM = {
           execute: () =>
             Stream.fromIterable([
-              mockTextEvent(mockLoopCompleteSignal()),
+              mockTextEvent("All tasks done"),
               mockDoneEvent(),
             ]),
         };
@@ -527,7 +526,7 @@ describe("Iteration Stream", () => {
         const mockLLM = {
           execute: () =>
             Stream.fromIterable([
-              mockTextEvent(mockLoopCompleteSignal()),
+              mockTextEvent("Working on task 2..."),
               mockDoneEvent(),
             ]),
         };

@@ -377,20 +377,6 @@ describe("Signal Roundtrip Properties", () => {
       expect(result).toHaveLength(1);
       expect(result[0]?._tag).toBe("CheckFailed");
     });
-
-    it("should parse complete signal", async () => {
-      const program = Effect.gen(function* () {
-        const parser = yield* SignalParser;
-        return yield* parser.parse("<ferix:complete>");
-      });
-
-      const result = await Effect.runPromise(
-        program.pipe(Effect.provide(TestLayer))
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0]?._tag).toBe("LoopComplete");
-    });
   });
 
   describe("Signal accumulation properties", () => {

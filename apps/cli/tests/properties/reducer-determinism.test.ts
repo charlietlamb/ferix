@@ -36,6 +36,9 @@ function createDefaultState(): TUIState {
     gitBranch: undefined,
     gitPushed: false,
     prUrl: undefined,
+    yolo: false,
+    debug: false,
+    provider: "claude",
   };
 }
 
@@ -85,8 +88,13 @@ const loopCompletedEventArb: fc.Arbitrary<
   Extract<DomainEvent, { _tag: "LoopCompleted" }>
 > = fc.record({
   _tag: fc.constant("LoopCompleted" as const),
-  reason: fc.constantFrom("complete", "max_iterations", "error"),
-  timestamp: fc.integer({ min: 0 }),
+  summary: fc.record({
+    iterations: fc.integer({ min: 1, max: 100 }),
+    success: fc.boolean(),
+    sessionId: fc.string({ minLength: 1, maxLength: 20 }),
+    completedTasks: fc.array(fc.string(), { maxLength: 5 }),
+    durationMs: fc.integer({ min: 0 }),
+  }),
 });
 
 describe("Reducer Determinism Properties", () => {
@@ -118,13 +126,15 @@ describe("Reducer Determinism Properties", () => {
       );
     });
 
-    it("should set status to complete on LoopCompleted", () => {
+    it("should set status to complete or paused on LoopCompleted", () => {
       fc.assert(
         fc.property(loopCompletedEventArb, (event) => {
           const state = createDefaultState();
           const result = stateReducerRegistry.reduce(state, event);
 
-          expect(result.status).toBe("complete");
+          // Status depends on success flag
+          const expectedStatus = event.summary.success ? "complete" : "paused";
+          expect(result.status).toBe(expectedStatus);
         }),
         { numRuns: 50 }
       );

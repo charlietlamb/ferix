@@ -56,7 +56,6 @@ export {
 // Signal string generators
 export {
   combineSignals,
-  mockLoopCompleteSignal,
   mockPhaseDoneSignal,
   mockPhaseStartSignal,
   mockPhasesSignal,

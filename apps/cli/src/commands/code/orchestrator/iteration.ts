@@ -69,40 +69,16 @@ function commitTaskChanges(
 
 /**
  * Check if loop should complete and update the completion ref if needed.
- * Only completes when all tasks are actually done or skipped, regardless of LLM signals.
+ * Completion is determined purely by task status - all tasks must be "done" or "skipped".
  */
 function checkAndUpdateCompletion(
   currentPlanRef: Ref.Ref<Plan | undefined>,
-  loopCompletedRef: Ref.Ref<boolean>,
-  llmEmittedComplete: boolean
+  loopCompletedRef: Ref.Ref<boolean>
 ): Effect.Effect<void, never, never> {
   return Effect.gen(function* () {
     const updatedPlan = yield* Ref.get(currentPlanRef);
     const allComplete = areAllTasksComplete(updatedPlan);
 
-    yield* Effect.logInfo("[DEBUG] createIterationStream: Completion check", {
-      llmEmittedComplete,
-      allTasksComplete: allComplete,
-      taskStatuses: updatedPlan?.tasks.map((t) => ({
-        id: t.id,
-        status: t.status,
-      })),
-    });
-
-    // Warn if LLM emitted LoopComplete but not all tasks are done
-    if (llmEmittedComplete && !allComplete) {
-      yield* Effect.logWarning(
-        "[WARNING] LLM emitted LoopComplete but not all tasks are complete. Continuing.",
-        {
-          incompleteTasks: updatedPlan?.tasks
-            .filter((t) => t.status !== "done" && t.status !== "skipped")
-            .map((t) => ({ id: t.id, status: t.status })),
-        }
-      );
-      return; // Do NOT complete - continue the loop
-    }
-
-    // Only complete when all tasks are actually done
     if (allComplete) {
       yield* Effect.logInfo(
         "[DEBUG] createIterationStream: All tasks complete - ending loop"
@@ -155,20 +131,15 @@ function processSignalsAndCommit(
 }
 
 /**
- * Process signals from text and return events with completion flag and signals for plan updates.
+ * Process signals from text and return events with signals for plan updates.
  */
 function processTextSignals(
   signalParser: SignalParserService,
   text: string,
   context: MappingContext
-): Effect.Effect<
-  { events: DomainEvent[]; completed: boolean; signals: Signal[] },
-  never,
-  never
-> {
+): Effect.Effect<{ events: DomainEvent[]; signals: Signal[] }, never, never> {
   return Effect.gen(function* () {
     const events: DomainEvent[] = [];
-    let completed = false;
     const parsedSignals: Signal[] = [];
 
     const signals = yield* signalParser.parse(text).pipe(
@@ -195,12 +166,9 @@ function processTextSignals(
     for (const signal of signals) {
       events.push(mapSignalToDomain(signal, context));
       parsedSignals.push(signal);
-      if (signal._tag === "LoopComplete") {
-        completed = true;
-      }
     }
 
-    return { events, completed, signals: parsedSignals };
+    return { events, signals: parsedSignals };
   });
 }
 
@@ -211,15 +179,10 @@ function processLLMEvent(
   signalParser: SignalParserService,
   llmEvent: LLMEvent,
   context: MappingContext
-): Effect.Effect<
-  { events: DomainEvent[]; completed: boolean; signals: Signal[] },
-  never,
-  never
-> {
+): Effect.Effect<{ events: DomainEvent[]; signals: Signal[] }, never, never> {
   return Effect.gen(function* () {
     const domainEvent = mapLLMEventToDomain(llmEvent, context);
     const events: DomainEvent[] = [domainEvent];
-    let completed = false;
     const allSignals: Signal[] = [];
 
     if (llmEvent._tag === "Text" && llmEvent.text) {
@@ -230,9 +193,6 @@ function processLLMEvent(
       );
       events.push(...result.events);
       allSignals.push(...result.signals);
-      if (result.completed) {
-        completed = true;
-      }
     }
 
     if (llmEvent._tag === "Done") {
@@ -242,12 +202,9 @@ function processLLMEvent(
         context
       );
       allSignals.push(...result.signals);
-      if (result.completed) {
-        completed = true;
-      }
     }
 
-    return { events, completed, signals: allSignals };
+    return { events, signals: allSignals };
   });
 }
 
@@ -402,11 +359,10 @@ export function createIterationStream(
                 );
                 events.push(...signalEvents);
 
-                // Check and update completion state
+                // Check and update completion state based on task statuses
                 yield* checkAndUpdateCompletion(
                   currentPlanRef,
-                  loopCompletedRef,
-                  result.completed
+                  loopCompletedRef
                 );
 
                 return Stream.fromIterable(events);

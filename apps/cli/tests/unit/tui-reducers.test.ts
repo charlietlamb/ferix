@@ -179,7 +179,9 @@ describe("TUI Reducers", () => {
 
         const result = stateReducerRegistry.reduce(state, event);
 
-        expect(result.outputLines).toEqual(["Line 1"]);
+        // Should contain original line plus completion banner
+        expect(result.outputLines[0]).toBe("Line 1");
+        expect(result.outputLines[1]).toContain("ALL TASKS COMPLETE");
         expect(result.partialLine).toBe("");
       });
     });

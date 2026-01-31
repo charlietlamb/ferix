@@ -88,9 +88,6 @@ export const TaskCompleteSignalSchema = taggedFromData(
 );
 export type TaskCompleteSignal = typeof TaskCompleteSignalSchema.Type;
 
-export const LoopCompleteSignalSchema = S.TaggedStruct("LoopComplete", {});
-export type LoopCompleteSignal = typeof LoopCompleteSignalSchema.Type;
-
 /**
  * Session name signal - defines a task-based descriptive name for the session.
  * Generated during discovery phase.
@@ -147,7 +144,6 @@ const SignalSchema = S.Union(
   CheckFailedSignalSchema,
   ReviewCompleteSignalSchema,
   TaskCompleteSignalSchema,
-  LoopCompleteSignalSchema,
   LearningSignalSchema,
   GuardrailSignalSchema,
   SessionNameDefinedSignalSchema

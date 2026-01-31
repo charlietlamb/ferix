@@ -7,7 +7,13 @@ const TUIProviderSchema = S.Literal("claude", "cursor", "opencode");
 const ViewModeSchema = S.Literal("logs", "tasks", "detail");
 export type ViewMode = typeof ViewModeSchema.Type;
 
-const LoopStatusSchema = S.Literal("idle", "running", "complete", "error");
+const LoopStatusSchema = S.Literal(
+  "idle",
+  "running",
+  "complete",
+  "paused",
+  "error"
+);
 
 const ExecutionModeSchema = S.Literal(
   "idle",

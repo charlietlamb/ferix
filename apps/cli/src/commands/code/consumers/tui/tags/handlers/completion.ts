@@ -1,11 +1,5 @@
-import { completeBanner, errorLine } from "../primitives.js";
+import { errorLine } from "../primitives.js";
 import { tagRendererRegistry } from "../registry.js";
-
-// Complete banner
-tagRendererRegistry.register({
-  pattern: /<ferix:complete>/g,
-  render: (_, w) => completeBanner(w),
-});
 
 // Error line
 tagRendererRegistry.register({

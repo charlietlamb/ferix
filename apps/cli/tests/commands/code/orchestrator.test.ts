@@ -182,8 +182,7 @@ describe("Orchestrator", () => {
           text: `<ferix:task-complete id="1">
             <summary>Completed successfully</summary>
             <commit-message>feat: completed task</commit-message>
-          </ferix:task-complete>
-          <ferix:complete>`,
+          </ferix:task-complete>`,
         },
         { _tag: "Done", output: "" },
       ]);
@@ -209,14 +208,13 @@ describe("Orchestrator", () => {
       }
     });
 
-    it("should NOT complete loop when LoopComplete signal is received but tasks are pending", async () => {
+    it("should NOT complete loop when tasks are still pending", async () => {
       const testLayers = createTestLayers([
         {
           _tag: "Text",
           text: `<ferix:tasks>
             <task id="1">Test</task>
-          </ferix:tasks>
-          <ferix:complete>`,
+          </ferix:tasks>`,
         },
         { _tag: "Done", output: "" },
       ]);
@@ -229,7 +227,7 @@ describe("Orchestrator", () => {
       const events = await Effect.runPromise(program);
       const eventArray = Chunk.toArray(events);
 
-      // Should run all 3 iterations since LoopComplete is ignored when tasks are pending
+      // Should run all 3 iterations since task is not marked done
       const iterationsStarted = eventArray.filter(
         (e) => e._tag === "IterationStarted"
       );

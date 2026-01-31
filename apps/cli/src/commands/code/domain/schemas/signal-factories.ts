@@ -40,7 +40,7 @@ import {
   TasksDefinedSignalSchema,
 } from "./signals.js";
 
-// Note: ReviewCompleteSignalSchema, TaskCompleteSignalSchema, and LoopCompleteSignalSchema
+// Note: ReviewCompleteSignalSchema and TaskCompleteSignalSchema
 // are not currently used but the factory functions for them were removed as unused.
 
 /**

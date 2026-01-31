@@ -43,7 +43,6 @@ const FERIX_SELF_CLOSING_PATTERNS = [
   /<ferix:check-failed\s*\/>/g,
   /<ferix:review-complete\s*\/>/g,
   /<ferix:review-changes-made\s*\/>/g,
-  /<ferix:complete\s*>/g, // Note: complete is not self-closing, just <ferix:complete>
 ];
 
 /**
