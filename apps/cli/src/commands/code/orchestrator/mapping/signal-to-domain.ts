@@ -70,21 +70,6 @@ eventMappingRegistry.registerSignalMapper({
   }),
 });
 
-// Loop complete - triggers LoopCompleted event with placeholder summary
-eventMappingRegistry.registerSignalMapper({
-  tag: "LoopComplete",
-  map: (_signal, _context) => ({
-    _tag: "LoopCompleted",
-    summary: {
-      iterations: 0,
-      success: true,
-      sessionId: "",
-      completedTasks: [],
-      durationMs: 0,
-    },
-  }),
-});
-
 // Learning signal - maps to LearningRecorded event
 // Note: The actual persistence happens in iteration.ts, this is just for event emission
 eventMappingRegistry.registerSignalMapper({
