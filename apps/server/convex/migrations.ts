@@ -336,6 +336,116 @@ export const backfillSaveCountBatch = internalMutation({
 });
 
 /**
+ * Deletes prompts linked to directories where filePath is not SKILL.md.
+ * Also removes related promptTags and commits entries.
+ * Use: npx convex run migrations:deleteNonSkillPrompts
+ */
+export const deleteNonSkillPrompts = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    await ctx.scheduler.runAfter(
+      0,
+      internal.migrations.deleteNonSkillPromptsBatch,
+      { cursor: null }
+    );
+
+    return { message: "Migration started. Check logs for progress." };
+  },
+});
+
+/**
+ * Internal batch processor for deleting non-SKILL.md prompts.
+ * Processes prompts with a directoryId, filters to those where filePath
+ * does not end with "skill.md", and deletes them along with related records.
+ */
+export const deleteNonSkillPromptsBatch = internalMutation({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, args) => {
+    const results = await ctx.db
+      .query("prompts")
+      .paginate({ numItems: BATCH_SIZE, cursor: args.cursor });
+
+    let deleted = 0;
+    const directoryUpdates: Map<string, number> = new Map();
+
+    for (const prompt of results.page) {
+      // Only process prompts that have a directoryId (imported from GitHub)
+      if (!prompt.directoryId) {
+        continue;
+      }
+
+      // Check if filePath ends with "skill.md" (case-insensitive)
+      const filePath = prompt.filePath?.toLowerCase() ?? "";
+      if (filePath.endsWith("skill.md")) {
+        continue;
+      }
+
+      // Delete related promptTags
+      const promptTags = await ctx.db
+        .query("promptTags")
+        .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+        .collect();
+
+      for (const tag of promptTags) {
+        await ctx.db.delete(tag._id);
+      }
+
+      // Delete related commits
+      const commits = await ctx.db
+        .query("commits")
+        .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
+        .collect();
+
+      for (const commit of commits) {
+        await ctx.db.delete(commit._id);
+      }
+
+      // Delete the prompt
+      await ctx.db.delete(prompt._id);
+      deleted++;
+
+      // Track directory updates
+      const directoryIdStr = prompt.directoryId as string;
+      directoryUpdates.set(
+        directoryIdStr,
+        (directoryUpdates.get(directoryIdStr) ?? 0) + 1
+      );
+    }
+
+    // Update directory promptCount for affected directories
+    for (const [directoryIdStr, decrementCount] of directoryUpdates) {
+      const directoryId =
+        directoryIdStr as unknown as (typeof results.page)[0]["directoryId"];
+      if (!directoryId) {
+        continue;
+      }
+
+      const directory = await ctx.db.get(directoryId);
+      if (directory) {
+        const currentCount = directory.promptCount ?? 0;
+        await ctx.db.patch(directoryId, {
+          promptCount: Math.max(0, currentCount - decrementCount),
+        });
+      }
+    }
+
+    console.log(
+      `[Migration] Processed ${results.page.length} prompts, deleted ${deleted} non-SKILL.md prompts`
+    );
+
+    if (results.isDone) {
+      console.log("[Migration] deleteNonSkillPrompts complete!");
+    } else {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.migrations.deleteNonSkillPromptsBatch,
+        { cursor: results.continueCursor }
+      );
+    }
+  },
+});
+
+/**
  * Runs all migrations in sequence.
  * Use: npx convex run migrations:runAllMigrations
  */

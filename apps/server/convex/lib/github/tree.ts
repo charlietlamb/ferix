@@ -87,10 +87,11 @@ export async function fetchRepoTreeWithRateLimit(
 }
 
 /**
- * Filter tree items to only include markdown files
+ * Filter tree items to only include SKILL.md files
  */
 export function filterMarkdownFiles(tree: GitHubTreeItem[]): GitHubTreeItem[] {
   return tree.filter(
-    (item) => item.type === "blob" && item.path.toLowerCase().endsWith(".md")
+    (item) =>
+      item.type === "blob" && item.path.toLowerCase().endsWith("skill.md")
   );
 }
