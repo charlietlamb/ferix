@@ -7,7 +7,6 @@ const schema = z.object({
   GITHUB_CLIENT_SECRET: z.string().min(1),
   GITHUB_TOKEN: z.string().min(1),
   RESEND_API_KEY: z.string().min(1),
-  FIRECRAWL_API_KEY: z.string().min(1),
 });
 
 export const env = schema.parse(process.env);

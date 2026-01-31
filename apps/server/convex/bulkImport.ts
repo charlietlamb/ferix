@@ -1,6 +1,4 @@
 import { Workpool } from "@convex-dev/workpool";
-import { env } from "@ferix/env/convex";
-import Firecrawl from "@mendable/firecrawl-js";
 import { v } from "convex/values";
 import { components, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
@@ -19,7 +17,7 @@ import {
   fetchRepoTreeWithRateLimit,
   filterMarkdownFiles,
 } from "./lib/github";
-import { parseGithubUrl, SKILLS_SH_URL_REGEX } from "./lib/regex";
+import { parseGithubUrl } from "./lib/regex";
 import { bulkImportJobStatus } from "./schema";
 
 // Workpool configuration: conservative parallelism for rate limit safety
@@ -576,59 +574,45 @@ export const createJobInternal = internalMutation({
 // ============================================================================
 
 /**
- * Scrapes skills.sh using Firecrawl to find GitHub repositories.
- * Extracts owner/repo patterns and creates a bulk import job.
- * Admin only.
+ * Regex to extract owner/repo from skills.sh RSC payload.
+ * The data is embedded in Next.js React Server Components format with escaped quotes.
+ * Matches patterns like: \"source\":\"owner/repo\"
  */
-// Skills.sh URLs to scrape - different views contain different repositories
-const SKILLS_SH_URLS = [
-  "https://skills.sh", // All Time (default view)
-  "https://skills.sh/trending", // Trending (24h)
-  "https://skills.sh/hot", // Hot
-] as const;
+const SKILLS_SH_SOURCE_REGEX = /\\"source\\":\\"([\w-]+)\/([\w.-]+)\\"/g;
 
 /**
- * Scrapes a single skills.sh URL with scrolling to load lazy content.
- * Returns the markdown content from the page.
+ * Extracts GitHub repositories from skills.sh by parsing the embedded RSC data.
+ * This is much faster than using Firecrawl since the data is already in the HTML.
  */
-async function scrapeSkillsShUrl(
-  firecrawl: Firecrawl,
-  url: string
-): Promise<string> {
-  // Firecrawl has a 5-minute (300s) max timeout. We optimize for maximum content:
-  // - 150 scroll cycles × 800ms wait = ~120 seconds of scrolling
-  // - Leaves ~180 seconds buffer for page rendering and content capture
-  // - Reduced wait time (800ms) still allows lazy-loaded content to appear
-  const scrollCount = 150; // Capture extensive content via scrolling
-  const scrollWaitMs = 800; // Balance between speed and content loading
+async function extractSkillsShRepos(): Promise<string[]> {
+  console.log("[scrapeSkillsSh] Fetching skills.sh HTML...");
 
-  const scrollAction = [
-    { type: "wait", milliseconds: scrollWaitMs },
-    { type: "scroll", direction: "down" },
-  ];
-  const scrollActions = new Array(scrollCount).fill(scrollAction).flat();
-
-  console.log(`[scrapeSkillsSh] Scraping ${url} with ${scrollCount} scrolls`);
-
-  const result = await firecrawl.scrapeUrl(url, {
-    formats: ["markdown"],
-    timeout: 300_000, // 5 minutes - Firecrawl maximum
-    actions: [
-      { type: "wait", milliseconds: 2000 }, // Initial wait for page load
-      { type: "scroll", direction: "down" },
-      ...scrollActions,
-    ],
+  const response = await fetch("https://skills.sh", {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+      Accept: "text/html,application/xhtml+xml",
+    },
   });
 
-  if (!("markdown" in result && result.markdown)) {
-    console.log(`[scrapeSkillsSh] No markdown content from ${url}`);
-    return "";
+  if (!response.ok) {
+    throw new Error(`Failed to fetch skills.sh: ${response.status}`);
   }
 
+  const html = await response.text();
+  console.log(`[scrapeSkillsSh] Got ${html.length} chars of HTML`);
+
+  // Extract owner/repo from the RSC payload embedded in the page
+  const matches = [...html.matchAll(SKILLS_SH_SOURCE_REGEX)];
+  const uniqueRepos = [
+    ...new Set(matches.map((m) => `https://github.com/${m[1]}/${m[2]}`)),
+  ];
+
   console.log(
-    `[scrapeSkillsSh] Got ${result.markdown.length} chars from ${url}`
+    `[scrapeSkillsSh] Extracted ${uniqueRepos.length} unique repositories`
   );
-  return result.markdown;
+
+  return uniqueRepos;
 }
 
 export const scrapeSkillsSh = action({
@@ -643,38 +627,8 @@ export const scrapeSkillsSh = action({
       throw new Error("Unauthorized: Admin access required");
     }
 
-    const firecrawl = new Firecrawl({
-      apiKey: env.FIRECRAWL_API_KEY,
-    });
-
-    // Scrape all skills.sh views to maximize repository discovery
-    // Each view (All Time, Trending, Hot) may contain unique repositories
-    const allMarkdown: string[] = [];
-
-    for (const url of SKILLS_SH_URLS) {
-      try {
-        const markdown = await scrapeSkillsShUrl(firecrawl, url);
-        if (markdown) {
-          allMarkdown.push(markdown);
-        }
-      } catch (error) {
-        console.error(`[scrapeSkillsSh] Error scraping ${url}:`, error);
-        // Continue with other URLs even if one fails
-      }
-    }
-
-    if (allMarkdown.length === 0) {
-      throw new Error("Failed to scrape skills.sh: no content from any view");
-    }
-
-    // Combine markdown from all views and extract URLs
-    const combinedMarkdown = allMarkdown.join("\n");
-    const matches = [...combinedMarkdown.matchAll(SKILLS_SH_URL_REGEX)];
-
-    // Transform to GitHub URLs and deduplicate
-    const githubUrls = [
-      ...new Set(matches.map((m) => `https://github.com/${m[1]}/${m[2]}`)),
-    ];
+    // Extract repositories directly from skills.sh HTML (no Firecrawl needed)
+    const githubUrls = await extractSkillsShRepos();
 
     // Log any URLs that don't pass parseGithubUrl validation
     for (const url of githubUrls) {
@@ -693,7 +647,7 @@ export const scrapeSkillsSh = action({
       : githubUrls;
 
     console.log(
-      `[scrapeSkillsSh] Found ${githubUrls.length} unique repos from ${allMarkdown.length} views, importing ${limitedUrls.length}`
+      `[scrapeSkillsSh] Found ${githubUrls.length} unique repos, importing ${limitedUrls.length}`
     );
 
     // Create bulk import job
@@ -710,7 +664,6 @@ export const scrapeSkillsSh = action({
     return {
       ...jobResult,
       scrapedUrls: githubUrls.length,
-      viewsScraped: allMarkdown.length,
       limitedTo: args.limit,
     };
   },

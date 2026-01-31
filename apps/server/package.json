@@ -18,7 +18,6 @@
     "@convex-dev/workpool": "catalog:",
     "@ferix/env": "*",
     "@ferix/notifications": "*",
-    "@mendable/firecrawl-js": "catalog:",
     "better-auth": "catalog:",
     "convex": "catalog:",
     "slugify": "catalog:"
