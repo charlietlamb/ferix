@@ -16,7 +16,7 @@ function RepositoriesGridSkeleton() {
   return (
     <div className="flex-1 overflow-y-auto">
       <ul className="grid grid-cols-2 md:grid-cols-4">
-        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+        {Array.from({ length: 48 }, (_, i) => (
           <li
             className={getGridItemBorderClasses(i, 8, {
               alwaysShowBottomBorder: true,
@@ -36,7 +36,7 @@ export function RepositoriesContent() {
   const { results, status, loadMore } = usePaginatedQuery(
     api.directories.list,
     { orderBy: "popular" },
-    { initialNumItems: 20 }
+    { initialNumItems: 48 }
   );
 
   const validRepositories = useMemo(
