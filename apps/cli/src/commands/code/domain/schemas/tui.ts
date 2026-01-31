@@ -1,5 +1,8 @@
 import { Schema as S } from "effect";
 
+// Provider schema for TUI state (mirrors ProviderNameSchema from config.ts)
+const TUIProviderSchema = S.Literal("claude", "cursor", "opencode");
+
 // View/status literal schemas
 const ViewModeSchema = S.Literal("logs", "tasks", "detail");
 export type ViewMode = typeof ViewModeSchema.Type;
@@ -107,5 +110,8 @@ const TUIStateSchema = S.Struct({
 
   // Debug mode (logging enabled)
   debug: S.Boolean,
+
+  // Current provider/agent (claude, cursor, opencode)
+  provider: TUIProviderSchema,
 });
 export type TUIState = typeof TUIStateSchema.Type;
