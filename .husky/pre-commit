@@ -62,7 +62,7 @@ fi
 # Check if staged files actually changed
 NEW_STAGED_HASH=$(git diff --cached | sha256sum | cut -d' ' -f1)
 if [ "$STAGED_HASH" != "$NEW_STAGED_HASH" ]; then
-  echo "✨ Files formatted by Ultracite"
+  echo "🎨 Files formatted by Ultracite"
 fi
 
 if [ $FORMAT_EXIT_CODE -ne 0 ]; then
@@ -70,7 +70,7 @@ if [ $FORMAT_EXIT_CODE -ne 0 ]; then
   exit $FORMAT_EXIT_CODE
 fi
 
-echo "✨ Running knip to check for unused code"
+echo "🔍 Running knip to check for unused code"
 # Run knip to check for unused code
 bun run knip
 KNIP_EXIT_CODE=$?
@@ -79,9 +79,9 @@ if [ $KNIP_EXIT_CODE -ne 0 ]; then
   exit $KNIP_EXIT_CODE
 fi
 
-echo "✨ Knip completed successfully"
+echo "✂️ Knip completed successfully"
 
-echo "✨ Running tests"
+echo "🧪 Running tests"
 bun run test
 TEST_EXIT_CODE=$?
 if [ $TEST_EXIT_CODE -ne 0 ]; then
@@ -89,6 +89,16 @@ if [ $TEST_EXIT_CODE -ne 0 ]; then
   exit $TEST_EXIT_CODE
 fi
 
-echo "✨ Tests completed successfully"
+echo "✅ Tests completed successfully"
+
+echo "🔨 Running build"
+bun run build
+BUILD_EXIT_CODE=$?
+if [ $BUILD_EXIT_CODE -ne 0 ]; then
+  echo "❌ Build failed. Please fix before committing."
+  exit $BUILD_EXIT_CODE
+fi
+
+echo "🏗️ Build completed successfully"
 
 exit 0
