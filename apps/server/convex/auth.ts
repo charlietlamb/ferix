@@ -4,7 +4,8 @@ import { env } from "@ferix/env/convex";
 import { sendPasswordResetEmail } from "@ferix/notifications/emails/password-reset";
 import { sendVerificationEmail } from "@ferix/notifications/emails/verification";
 import { type BetterAuthOptions, betterAuth } from "better-auth";
-import { admin, username } from "better-auth/plugins";
+import { admin, deviceAuthorization, username } from "better-auth/plugins";
+
 import { components } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import { query } from "./_generated/server";
@@ -88,6 +89,9 @@ export const createAuthOptions = (
         maxUsernameLength: 30,
       }),
       admin(),
+      deviceAuthorization({
+        verificationUri: `${env.FRONTEND_URL}/device`,
+      }),
     ],
   };
 };

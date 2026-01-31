@@ -3,12 +3,21 @@
 import { convexClient } from "@convex-dev/better-auth/client/plugins";
 import { env } from "@ferix/env/nextjs";
 import type { User } from "better-auth";
-import { adminClient, usernameClient } from "better-auth/client/plugins";
+import {
+  adminClient,
+  deviceAuthorizationClient,
+  usernameClient,
+} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
   baseURL: env.NEXT_PUBLIC_SITE_URL,
-  plugins: [convexClient(), usernameClient(), adminClient()],
+  plugins: [
+    convexClient(),
+    usernameClient(),
+    adminClient(),
+    deviceAuthorizationClient(),
+  ],
 });
 
 export const {
