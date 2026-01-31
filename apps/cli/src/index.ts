@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import packageJson from "../package.json" with { type: "json" };
+import { registerAuthCommand } from "./commands/auth/index.js";
 import { registerCodeCommand } from "./commands/code/index.js";
 import { registerSyncCommand } from "./commands/sync/index.js";
 
@@ -12,5 +13,6 @@ program
 
 registerCodeCommand(program);
 registerSyncCommand(program);
+registerAuthCommand(program);
 
 program.parse();
