@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev --port 3003",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "prod": "next build && next start --port 3003"
   },
   "dependencies": {
     "@convex-dev/better-auth": "catalog:",

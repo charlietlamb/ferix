@@ -6,6 +6,7 @@
     "build:cli": "bun run --filter=ferix-code build",
     "cli": "bun build:cli && node apps/cli/dist/index.js",
     "dev": "turbo run dev --filter=@ferix/web --filter=@ferix/server",
+    "prod": "turbo run prod --filter=@ferix/web",
     "lint": "bunx biome lint",
     "format": "bunx biome format --write",
     "check-types": "turbo run check-types",
@@ -15,7 +16,7 @@
     "prepare": "husky",
     "test": "echo 'No tests yet'",
     "bump": "cd apps/cli && bun bump",
-    "patch": "cd apps/cli && bun patch"
+    "patch": "cd apps/cli && bun run patch"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",

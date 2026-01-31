@@ -596,20 +596,17 @@ export const scrapeSkillsSh = action({
     const firecrawl = new Firecrawl({
       apiKey: env.FIRECRAWL_API_KEY,
     });
+    const scrollAction = [
+      { type: "wait", milliseconds: 1000 },
+      { type: "scroll", direction: "down" },
+    ];
+    const scrollActions = new Array(20).fill(scrollAction).flat();
     const result = await firecrawl.scrapeUrl("https://skills.sh", {
       formats: ["markdown"],
       actions: [
         { type: "wait", milliseconds: 2000 },
         { type: "scroll", direction: "down" },
-        { type: "wait", milliseconds: 1000 },
-        { type: "scroll", direction: "down" },
-        { type: "wait", milliseconds: 1000 },
-        { type: "scroll", direction: "down" },
-        { type: "wait", milliseconds: 1000 },
-        { type: "scroll", direction: "down" },
-        { type: "wait", milliseconds: 1000 },
-        { type: "scroll", direction: "down" },
-        { type: "wait", milliseconds: 1000 },
+        ...scrollActions,
       ],
     });
 
