@@ -303,6 +303,18 @@ export type SessionNameGeneratedEvent =
   typeof SessionNameGeneratedEventSchema.Type;
 
 /**
+ * Task committed event - signals that a git commit was created after task completion.
+ */
+const TaskCommittedEventSchema = taggedEvent("TaskCommitted", {
+  sessionId: S.String,
+  taskId: S.String,
+  commitHash: S.String,
+  commitMessage: S.String,
+  timestamp: S.Number,
+});
+export type TaskCommittedEvent = typeof TaskCommittedEventSchema.Type;
+
+/**
  * Explicit discriminated union type for proper TypeScript narrowing.
  */
 export type DomainEvent =
@@ -329,6 +341,7 @@ export type DomainEvent =
   | CheckFailedEvent
   | ReviewCompleteEvent
   | TaskCompletedEvent
+  | TaskCommittedEvent
   | PlanCreatedEvent
   | PlanUpdatedEvent
   | PlanUpdateFailedEvent

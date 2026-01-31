@@ -71,7 +71,18 @@ These signals MUST appear on their own lines, not inside code blocks.
   <summary>Brief summary of what was done</summary>
   <files-modified>file1.ts, file2.ts</files-modified>
   <files-created>new-file.ts</files-created>
+  <commit-message>feat: add dark mode toggle to settings</commit-message>
 </ferix:task-complete>
+
+The commit-message MUST use commitlint format:
+- feat: new feature
+- fix: bug fix
+- chore: maintenance, config, dependencies
+- refactor: code restructuring without behavior change
+- docs: documentation only
+- test: adding or updating tests
+- style: formatting, whitespace
+- perf: performance improvements
 
 ### Loop Completion (use ONLY when ALL tasks are done)
 <ferix:complete>

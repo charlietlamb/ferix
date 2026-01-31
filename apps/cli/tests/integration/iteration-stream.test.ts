@@ -32,6 +32,11 @@ const mockProgressStore = {
   getRecent: (): Effect.Effect<readonly []> => Effect.succeed([]),
 };
 
+// Mock git service for testing
+const mockGitService = {
+  commitChanges: (): Effect.Effect<string> => Effect.succeed("abc123"),
+};
+
 /**
  * Helper to create a test plan.
  */
@@ -76,6 +81,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -124,6 +130,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -173,6 +180,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -234,6 +242,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -311,6 +320,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -365,6 +375,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -431,6 +442,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -501,6 +513,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -564,6 +577,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -613,6 +627,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,
@@ -656,6 +671,7 @@ describe("Iteration Stream", () => {
           planStore,
           mockStateStore,
           mockProgressStore,
+          mockGitService,
           currentPlanRef,
           loopCompletedRef,
           config,

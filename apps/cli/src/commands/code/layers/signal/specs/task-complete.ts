@@ -10,6 +10,7 @@ const TASK_COMPLETE =
 const SUMMARY = /<summary>([\s\S]*?)<\/summary>/;
 const FILES_MODIFIED = /<files-modified>([\s\S]*?)<\/files-modified>/;
 const FILES_CREATED = /<files-created>([\s\S]*?)<\/files-created>/;
+const COMMIT_MESSAGE = /<commit-message>([\s\S]*?)<\/commit-message>/;
 
 /**
  * Helper to parse comma-separated file lists.
@@ -37,12 +38,15 @@ const taskCompleteSpec: SignalSpec<TaskCompleteSignal> = {
     const summaryMatch = content.match(SUMMARY);
     const filesModifiedMatch = content.match(FILES_MODIFIED);
     const filesCreatedMatch = content.match(FILES_CREATED);
+    const commitMessageMatch = content.match(COMMIT_MESSAGE);
     const raw = {
       _tag: "TaskComplete" as const,
       taskId: match[1],
       summary: summaryMatch?.[1]?.trim() || "",
       filesModified: parseFileList(filesModifiedMatch?.[1]),
       filesCreated: parseFileList(filesCreatedMatch?.[1]),
+      commitMessage:
+        commitMessageMatch?.[1]?.trim() || `chore: complete task ${match[1]}`,
     };
     const result = S.decodeUnknownEither(TaskCompleteSignalSchema)(raw);
     if (result._tag === "Right") {

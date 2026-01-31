@@ -230,6 +230,7 @@ export function runLoop(
               planStore,
               stateStore,
               progressStore,
+              { commitChanges: git.commitChanges },
               currentPlanRef,
               loopCompletedRef,
               config,
@@ -342,17 +343,18 @@ function createCompletionStream(
       const completed = yield* Ref.get(loopCompletedRef);
 
       // Final commit before completion
-      yield* git
-        .commitChanges(session.id, `feat: complete session ${session.id}`)
-        .pipe(
-          Effect.tapError((error) =>
-            Effect.logDebug("Final commit failed, continuing", {
-              sessionId: session.id,
-              error: String(error),
-            })
-          ),
-          Effect.orElseSucceed(() => undefined)
-        );
+      const finalCommitMessage = session.displayName
+        ? `feat: complete ${session.displayName}`
+        : `feat: complete ${session.originalTask.slice(0, 50)}`;
+      yield* git.commitChanges(session.id, finalCommitMessage).pipe(
+        Effect.tapError((error) =>
+          Effect.logDebug("Final commit failed, continuing", {
+            sessionId: session.id,
+            error: String(error),
+          })
+        ),
+        Effect.orElseSucceed(() => undefined)
+      );
 
       // Push branch if config.push is true
       let branchPushed = false;

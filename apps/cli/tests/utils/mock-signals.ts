@@ -29,6 +29,7 @@ export interface MockTaskCompletion {
   summary: string;
   filesModified?: string[];
   filesCreated?: string[];
+  commitMessage?: string;
 }
 
 /**
@@ -110,6 +111,11 @@ export function mockTaskCompleteSignal(data: MockTaskCompletion): string {
       `  <files-created>${data.filesCreated.join(", ")}</files-created>`
     );
   }
+
+  // Add commit message (default to chore if not provided)
+  const commitMessage =
+    data.commitMessage || `chore: complete task ${data.taskId}`;
+  parts.push(`  <commit-message>${commitMessage}</commit-message>`);
 
   parts.push("</ferix:task-complete>");
 

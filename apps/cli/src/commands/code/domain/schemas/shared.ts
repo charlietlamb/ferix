@@ -66,6 +66,7 @@ export const TaskCompleteSignalDataSchema = S.Struct({
   summary: S.String,
   filesModified: S.Array(S.String),
   filesCreated: S.Array(S.String),
+  commitMessage: S.String,
 });
 
 /**

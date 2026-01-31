@@ -8,6 +8,7 @@ import type {
   Signal,
 } from "../domain/index.js";
 import type { LLMEvent } from "../domain/schemas/llm.js";
+import type { TaskCompleteSignal } from "../domain/schemas/signals.js";
 import type { SessionState } from "../domain/schemas/state.js";
 import type { PlanStoreService } from "../services/plan-store.js";
 import type { SignalParserService } from "../services/signal-parser.js";
@@ -26,6 +27,127 @@ import {
   buildPrompt,
   buildSessionState,
 } from "./prompt.js";
+
+/**
+ * Git service interface for committing changes.
+ */
+interface GitCommitService {
+  commitChanges: (
+    sessionId: string,
+    message: string
+  ) => Effect.Effect<string, unknown>;
+}
+
+/**
+ * Commit changes for a TaskComplete signal and return the event if successful.
+ */
+function commitTaskChanges(
+  git: GitCommitService,
+  signal: TaskCompleteSignal,
+  sessionId: string,
+  timestamp: number
+): Effect.Effect<DomainEvent | null, never, never> {
+  return git.commitChanges(sessionId, signal.commitMessage).pipe(
+    Effect.map(
+      (hash): DomainEvent => ({
+        _tag: "TaskCommitted",
+        sessionId,
+        taskId: signal.taskId,
+        commitHash: hash,
+        commitMessage: signal.commitMessage,
+        timestamp,
+      })
+    ),
+    Effect.tapError((error) =>
+      Effect.logDebug("Task commit failed, continuing", {
+        error: String(error),
+      })
+    ),
+    Effect.orElseSucceed(() => null)
+  );
+}
+
+/**
+ * Check if loop should complete and update the completion ref if needed.
+ */
+function checkAndUpdateCompletion(
+  currentPlanRef: Ref.Ref<Plan | undefined>,
+  loopCompletedRef: Ref.Ref<boolean>,
+  llmEmittedComplete: boolean
+): Effect.Effect<void, never, never> {
+  return Effect.gen(function* () {
+    if (llmEmittedComplete) {
+      yield* Effect.logInfo(
+        "[DEBUG] createIterationStream: LLM emitted completion signal"
+      );
+      yield* Ref.set(loopCompletedRef, true);
+    }
+
+    const updatedPlan = yield* Ref.get(currentPlanRef);
+    const allComplete = areAllTasksComplete(updatedPlan);
+
+    yield* Effect.logInfo(
+      "[DEBUG] createIterationStream: Auto-complete check",
+      {
+        llmEmittedComplete,
+        allTasksComplete: allComplete,
+        taskStatuses: updatedPlan?.tasks.map((t) => ({
+          id: t.id,
+          status: t.status,
+        })),
+      }
+    );
+
+    if (allComplete) {
+      yield* Effect.logInfo(
+        "[DEBUG] createIterationStream: All tasks complete - ending loop"
+      );
+      yield* Ref.set(loopCompletedRef, true);
+    }
+  });
+}
+
+/**
+ * Process signals from an LLM event, updating plan state and committing task changes.
+ */
+function processSignalsAndCommit(
+  signals: Signal[],
+  currentPlanRef: Ref.Ref<Plan | undefined>,
+  persistenceStateRef: Ref.Ref<PlanPersistenceState>,
+  git: GitCommitService,
+  sessionId: string,
+  task: string,
+  timestamp: number
+): Effect.Effect<DomainEvent[], never, never> {
+  return Effect.gen(function* () {
+    const events: DomainEvent[] = [];
+
+    for (const signal of signals) {
+      const planEvents = yield* updatePlanFromSignal(
+        currentPlanRef,
+        persistenceStateRef,
+        signal,
+        sessionId,
+        task
+      );
+      events.push(...planEvents);
+
+      if (signal._tag === "TaskComplete") {
+        const commitResult = yield* commitTaskChanges(
+          git,
+          signal,
+          sessionId,
+          timestamp
+        );
+        if (commitResult) {
+          events.push(commitResult);
+        }
+      }
+    }
+
+    return events;
+  });
+}
 
 /**
  * Process signals from text and return events with completion flag and signals for plan updates.
@@ -134,6 +256,7 @@ function processLLMEvent(
  * @param planStore - Plan storage service
  * @param stateStore - State storage service for STATE.json
  * @param progressStore - Progress storage service for recent progress summaries
+ * @param git - Git service for committing changes after task completion
  * @param currentPlanRef - Reference to current plan
  * @param loopCompletedRef - Reference to loop completion state
  * @param config - Loop configuration
@@ -161,6 +284,12 @@ export function createIterationStream(
       sessionId: string,
       count: number
     ) => Effect.Effect<readonly ProgressEntry[], unknown>;
+  },
+  git: {
+    commitChanges: (
+      sessionId: string,
+      message: string
+    ) => Effect.Effect<string, unknown>;
   },
   currentPlanRef: Ref.Ref<Plan | undefined>,
   loopCompletedRef: Ref.Ref<boolean>,
@@ -256,48 +385,24 @@ export function createIterationStream(
                 );
                 const events = [...result.events];
 
-                // Process signals to update plan state (in-memory only)
-                for (const signal of result.signals) {
-                  const planEvents = yield* updatePlanFromSignal(
-                    currentPlanRef,
-                    persistenceStateRef,
-                    signal,
-                    sessionId,
-                    config.task
-                  );
-                  events.push(...planEvents);
-                }
-
-                // Update completion state from LLM signal
-                if (result.completed) {
-                  yield* Effect.logInfo(
-                    "[DEBUG] createIterationStream: LLM emitted completion signal"
-                  );
-                  yield* Ref.set(loopCompletedRef, true);
-                }
-
-                // Auto-complete if all tasks are done (prevents infinite linting loop)
-                const updatedPlan = yield* Ref.get(currentPlanRef);
-                const allComplete = areAllTasksComplete(updatedPlan);
-
-                yield* Effect.logInfo(
-                  "[DEBUG] createIterationStream: Auto-complete check",
-                  {
-                    llmEmittedComplete: result.completed,
-                    allTasksComplete: allComplete,
-                    taskStatuses: updatedPlan?.tasks.map((t) => ({
-                      id: t.id,
-                      status: t.status,
-                    })),
-                  }
+                // Process signals to update plan state and commit task changes
+                const signalEvents = yield* processSignalsAndCommit(
+                  result.signals,
+                  currentPlanRef,
+                  persistenceStateRef,
+                  git,
+                  sessionId,
+                  config.task,
+                  context.timestamp
                 );
+                events.push(...signalEvents);
 
-                if (allComplete) {
-                  yield* Effect.logInfo(
-                    "[DEBUG] createIterationStream: All tasks complete - ending loop"
-                  );
-                  yield* Ref.set(loopCompletedRef, true);
-                }
+                // Check and update completion state
+                yield* checkAndUpdateCompletion(
+                  currentPlanRef,
+                  loopCompletedRef,
+                  result.completed
+                );
 
                 return Stream.fromIterable(events);
               })
