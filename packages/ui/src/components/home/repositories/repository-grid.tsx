@@ -22,7 +22,7 @@ const itemVariants = {
     transition: {
       delay: i * STAGGER_DELAY,
       duration: 0.3,
-      ease: [0.25, 0.1, 0.25, 1.0],
+      ease: [0.25, 0.1, 0.25, 1.0] as const,
     },
   }),
 };
