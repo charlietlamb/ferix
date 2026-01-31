@@ -603,6 +603,7 @@ export const scrapeSkillsSh = action({
     const scrollActions = new Array(20).fill(scrollAction).flat();
     const result = await firecrawl.scrapeUrl("https://skills.sh", {
       formats: ["markdown"],
+      timeout: 300_000, // 5 minutes
       actions: [
         { type: "wait", milliseconds: 2000 },
         { type: "scroll", direction: "down" },
