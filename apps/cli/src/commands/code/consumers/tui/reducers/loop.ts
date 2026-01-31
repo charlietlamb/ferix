@@ -17,6 +17,7 @@ const loopStartedReducer: StateReducer<"LoopStarted"> = {
     startTime: event.timestamp,
     yolo: event.config.yolo ?? false,
     debug: event.config.debug ?? false,
+    provider: event.config.provider ?? "claude",
   }),
 };
 

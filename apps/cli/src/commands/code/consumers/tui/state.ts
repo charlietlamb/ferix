@@ -20,6 +20,7 @@ export function createInitialState(): TUIState {
     gitPushed: false,
     yolo: false,
     debug: false,
+    provider: "claude",
   };
 }
 
