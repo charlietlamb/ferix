@@ -117,6 +117,9 @@ const TUIStateSchema = S.Struct({
   // Debug mode (logging enabled)
   debug: S.Boolean,
 
+  // PR mode (create PR after completion)
+  pr: S.Boolean,
+
   // Current provider/agent (claude, cursor, opencode)
   provider: TUIProviderSchema,
 });
