@@ -1,17 +1,23 @@
-import { Effect, Layer, Stream } from "effect";
+import { Effect, Stream } from "effect";
 import { humanId } from "human-id";
 import {
   createHeadlessConsumer,
   createTUIConsumer,
 } from "./consumers/index.js";
+import type { ConsumerContext } from "./consumers/types.js";
+import {
+  createDaemonClient,
+  type DaemonCommandError,
+  type DaemonConnectionError,
+  ensureDaemonRunning,
+} from "./daemon/index.js";
 import type { DomainEvent, LoopConfig } from "./domain/index.js";
 import type { ConsumerType } from "./domain/schemas/program.js";
-import {
-  createLoggerLayer,
-  createProductionLayers,
-  ProductionLayers,
-} from "./layers/index.js";
-import { runLoop } from "./orchestrator/index.js";
+
+/**
+ * Union of all possible errors from running via daemon.
+ */
+type RunError = DaemonConnectionError | DaemonCommandError;
 
 /**
  * Generates a human-readable session ID with timestamp for uniqueness.
@@ -23,7 +29,14 @@ function generateSessionId(): string {
 }
 
 /**
- * Options for running the ralph loop program.
+ * Result from running the loop.
+ * - "completed": Loop finished normally or user pressed Ctrl+C
+ * - "back_to_launcher": User pressed Escape to go back to launcher
+ */
+export type MainResult = "completed" | "back_to_launcher";
+
+/**
+ * Options for running via the daemon.
  */
 interface RunOptions {
   /**
@@ -49,83 +62,107 @@ interface RunOptions {
 }
 
 /**
- * Run the ralph loop with production layers.
+ * Run a session via the daemon.
  *
- * This is the main entry point for running a ralph loop.
- * It composes all services and consumers into a single Effect program.
+ * This is the core execution function. All sessions run through the daemon,
+ * which manages the actual loop execution. The TUI/consumer is just a viewer
+ * that can attach and detach from the daemon-managed session.
+ *
+ * The daemon is automatically started if not already running.
  *
  * @param options - Run options including config and consumer type
- * @returns Effect that completes when the loop finishes
- *
- * @example Basic usage
- * ```typescript
- * await run({
- *   config: {
- *     task: "Implement the feature",
- *     maxIterations: 3,
- *     verifyCommands: ["bun test"],
- *   },
- *   consumer: "tui",
- * }).pipe(Effect.runPromise);
- * ```
- *
- * @example With event callback
- * ```typescript
- * await run({
- *   config: { task: "Fix the bug", maxIterations: 1, verifyCommands: [] },
- *   consumer: "headless",
- *   onEvent: (event) => {
- *     if (event._tag === "TaskCompleted") {
- *       console.log("Task done:", event.taskId);
- *     }
- *   },
- * }).pipe(Effect.runPromise);
- * ```
+ * @returns Effect that completes when the consumer exits (session may continue in daemon)
  */
-function run(options: RunOptions): Effect.Effect<void, unknown, never> {
+function runViaDaemon(
+  options: RunOptions
+): Effect.Effect<MainResult, RunError, never> {
   const { config, consumer: consumerType = "headless", onEvent } = options;
 
-  // Generate session ID if not provided - used for both logging and the loop
-  const sessionId = config.sessionId ?? generateSessionId();
-  const configWithSession = { ...config, sessionId };
+  return Effect.gen(function* () {
+    // Ensure daemon is running, starting it if necessary
+    yield* ensureDaemonRunning();
 
-  const events = runLoop(configWithSession);
+    // Generate session ID if not provided
+    const sessionId = config.sessionId ?? generateSessionId();
+    const configWithSession = { ...config, sessionId };
 
-  const eventsWithCallback = onEvent
-    ? events.pipe(Stream.tap((event) => Effect.sync(() => onEvent(event))))
-    : events;
+    // Connect to daemon
+    const client = createDaemonClient();
+    yield* client.connect();
 
-  // Use provider-specific layers if a provider is specified in config
-  const baseLayers = config.provider
-    ? createProductionLayers(config.provider)
-    : ProductionLayers;
+    // Start session in daemon
+    yield* client.startSession(sessionId, configWithSession);
 
-  // Add logger layer if debug is enabled - uses same session ID as the loop
-  const loggerLayer = createLoggerLayer(config.debug ?? false, sessionId);
-  const layers = Layer.merge(baseLayers, loggerLayer);
+    // Get event stream (filtered by our session)
+    const eventStream = client
+      .getEventStream(sessionId)
+      .pipe(Stream.catchAll(() => Stream.empty));
 
-  const eventsWithLayers = eventsWithCallback.pipe(Stream.provideLayer(layers));
+    // Add optional event callback
+    const eventsWithCallback = onEvent
+      ? eventStream.pipe(
+          Stream.tap((event) => Effect.sync(() => onEvent(event)))
+        )
+      : eventStream;
 
-  if (consumerType === "none") {
-    return eventsWithLayers.pipe(Stream.runDrain);
-  }
+    // Create consumer context for daemon connection
+    const context: ConsumerContext = {
+      daemonClient: client,
+      sessionId,
+    };
 
-  const consumer =
-    consumerType === "tui" ? createTUIConsumer() : createHeadlessConsumer();
+    // Handle "none" consumer type
+    if (consumerType === "none") {
+      yield* eventsWithCallback.pipe(Stream.runDrain);
+      yield* client.disconnect();
+      return "completed" as MainResult;
+    }
 
-  return consumer.consume(eventsWithLayers);
+    // Create and run consumer
+    const consumer =
+      consumerType === "tui" ? createTUIConsumer() : createHeadlessConsumer();
+
+    const result = yield* consumer.consume(eventsWithCallback, context);
+
+    // Cleanup based on result
+    if (result === "back_to_launcher") {
+      // Session continues in daemon, we detached via consumer
+      // Client should already be unsubscribed by consumer
+      yield* client.disconnect();
+    } else {
+      // Completed normally
+      yield* client.disconnect();
+    }
+
+    return result;
+  });
 }
 
 /**
  * Main CLI entry point.
  *
+ * All sessions run through the daemon. The TUI/consumer is a viewer that can
+ * attach and detach from daemon-managed sessions. The daemon is automatically
+ * started if not already running.
+ *
  * Automatically selects TUI for TTY, headless otherwise.
  *
  * @param config - Loop configuration
- * @returns Promise that resolves when the loop completes
+ * @returns Promise that resolves with the result when the consumer exits
+ * @throws Error if connection to daemon fails
  */
-export function main(config: LoopConfig): Promise<void> {
+export function main(config: LoopConfig): Promise<MainResult> {
   const consumerType: ConsumerType = process.stdout.isTTY ? "tui" : "headless";
 
-  return run({ config, consumer: consumerType }).pipe(Effect.runPromise);
+  return runViaDaemon({ config, consumer: consumerType }).pipe(
+    Effect.catchTag("DaemonConnectionError", (err) => {
+      console.error(`Failed to connect to daemon: ${err.message}`);
+      return Effect.sync(() => process.exit(1));
+    }),
+    Effect.catchTag("DaemonCommandError", (err) => {
+      console.error(`Daemon command failed: ${err.message}`);
+      return Effect.sync(() => process.exit(1));
+    }),
+    Effect.runPromise
+  );
 }

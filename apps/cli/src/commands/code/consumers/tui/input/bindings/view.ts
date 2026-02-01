@@ -7,6 +7,13 @@ keyBindingRegistry.register({
   viewModes: ["logs"],
 });
 
+// Escape - back to launcher (only from logs view)
+keyBindingRegistry.register({
+  key: "\x1b",
+  action: { type: "back_to_launcher" },
+  viewModes: ["logs"],
+});
+
 // Enter - select task (only in tasks view)
 keyBindingRegistry.register({
   key: "\r",

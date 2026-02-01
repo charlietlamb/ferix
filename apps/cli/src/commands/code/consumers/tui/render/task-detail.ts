@@ -243,6 +243,32 @@ function padToHeight(lines: string[], height: number, width: number): string[] {
   return result.slice(0, height);
 }
 
+/**
+ * Calculate the total number of lines that would be rendered for a task detail view.
+ * Used to calculate max scroll offset.
+ */
+export function getTaskDetailTotalLines(
+  state: TUIState,
+  width: number
+): number {
+  const innerWidth = width - 4;
+  const task = state.tasks[state.selectedTaskIndex];
+
+  if (!task) {
+    return 0;
+  }
+
+  const allLines: string[] = [
+    ...renderTaskHeader(task, width, innerWidth),
+    ...renderTaskStatus(task, width),
+    ...renderPhasesSection(task.phases, width),
+    ...renderCriteriaSection(task.criteria, width),
+    ...renderGitSection(state, width, innerWidth),
+  ];
+
+  return allLines.length;
+}
+
 export function renderTaskDetailView(
   state: TUIState,
   height: number,
@@ -255,7 +281,8 @@ export function renderTaskDetailView(
     return renderEmptyState(height, width);
   }
 
-  const lines: string[] = [
+  // Build all content lines
+  const allLines: string[] = [
     ...renderTaskHeader(task, width, innerWidth),
     ...renderTaskStatus(task, width),
     ...renderPhasesSection(task.phases, width),
@@ -263,5 +290,21 @@ export function renderTaskDetailView(
     ...renderGitSection(state, width, innerWidth),
   ];
 
-  return padToHeight(lines, height, width);
+  // Apply scroll offset if content exceeds height
+  const totalLines = allLines.length;
+  const maxOffset = Math.max(0, totalLines - height);
+  const { scrollOffset, userScrolled } = state;
+
+  let startIndex: number;
+  if (userScrolled && totalLines > height) {
+    // Manual scroll: respect offset but clamp to valid range
+    startIndex = Math.max(0, Math.min(scrollOffset, maxOffset));
+  } else {
+    // No scroll or content fits: start from top
+    startIndex = 0;
+  }
+
+  const visibleLines = allLines.slice(startIndex, startIndex + height);
+
+  return padToHeight(visibleLines, height, width);
 }

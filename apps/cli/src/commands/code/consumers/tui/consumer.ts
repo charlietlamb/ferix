@@ -1,7 +1,7 @@
 import { Cause, Effect, Fiber, Ref, Stream } from "effect";
 import type { DomainEvent } from "../../domain/index.js";
-import type { Consumer } from "../types.js";
-import { runInputLoop } from "./input.js";
+import type { ConsumeResult, Consumer, ConsumerContext } from "../types.js";
+import { BackToLauncherSignal, runInputLoop } from "./input.js";
 import { ANSIOutput } from "./output/index.js";
 import { appendError, createInitialState, reduce } from "./state.js";
 import { safeRender } from "./utils.js";
@@ -85,6 +85,33 @@ function formatCauseVerbose(cause: Cause.Cause<unknown>): string {
 }
 
 /**
+ * Check if a cause contains a BackToLauncherSignal.
+ */
+function hasBackToLauncherSignal(cause: Cause.Cause<unknown>): boolean {
+  const failures = Cause.failures(cause);
+  for (const failure of failures) {
+    if (failure instanceof BackToLauncherSignal) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Unsubscribe from daemon session if context is provided.
+ */
+function unsubscribeFromDaemon(
+  context: ConsumerContext | undefined
+): Effect.Effect<void, never, never> {
+  if (!context) {
+    return Effect.void;
+  }
+  return context.daemonClient
+    .unsubscribeFromSession(context.sessionId)
+    .pipe(Effect.ignore);
+}
+
+/**
  * Creates a TUI consumer that renders events to a full-screen terminal interface.
  *
  * The TUI provides:
@@ -96,6 +123,9 @@ function formatCauseVerbose(cause: Cause.Cause<unknown>): string {
  * - Mouse wheel support
  * - Context-sensitive footer with keyboard hints
  *
+ * When connected to a daemon (via context), pressing Escape detaches from the
+ * session and returns to the launcher. The session continues running in the daemon.
+ *
  * Uses ANSI escape codes for terminal control (alternate buffer, cursor hiding, etc).
  *
  * @returns A Consumer that renders to the terminal
@@ -106,10 +136,20 @@ function formatCauseVerbose(cause: Cause.Cause<unknown>): string {
  * const events = runLoop(config).pipe(Stream.provideLayer(layers));
  * await consumer.consume(events).pipe(Effect.runPromise);
  * ```
+ *
+ * @example With daemon context (enables detach on Escape)
+ * ```typescript
+ * const consumer = createTUIConsumer();
+ * const context = { daemonClient: client, sessionId: "session-123" };
+ * await consumer.consume(eventStream, context).pipe(Effect.runPromise);
+ * ```
  */
 export function createTUIConsumer(): Consumer {
   return {
-    consume: (events: Stream.Stream<DomainEvent, unknown, never>) =>
+    consume: (
+      events: Stream.Stream<DomainEvent, unknown, never>,
+      context?: ConsumerContext
+    ) =>
       Effect.gen(function* () {
         // Initialize state
         const stateRef = yield* Ref.make(createInitialState());
@@ -128,8 +168,10 @@ export function createTUIConsumer(): Consumer {
           removeSignalHandlers();
         };
 
-        // Setup terminal
+        // Setup terminal - enter alternate buffer and clear it
         output.enterAlternateBuffer();
+        output.clearScreen();
+        output.cursorHome();
         output.hideCursor();
         output.enableMouse();
 
@@ -158,77 +200,104 @@ export function createTUIConsumer(): Consumer {
           )
         );
 
-        // Process events stream
-        const processEvents = events.pipe(
-          Stream.runForEach((event) =>
-            Effect.gen(function* () {
-              const state = yield* Ref.updateAndGet(stateRef, (s) =>
-                reduce(s, event)
-              );
-              yield* Effect.sync(() => safeRender(state, output));
+        // Fork event processing so we can interrupt it on detach
+        const processingFiber = yield* Effect.fork(
+          events.pipe(
+            Stream.runForEach((event) =>
+              Effect.gen(function* () {
+                const state = yield* Ref.updateAndGet(stateRef, (s) =>
+                  reduce(s, event)
+                );
+                yield* Effect.sync(() => safeRender(state, output));
+              })
+            )
+          )
+        );
+
+        // Track exit reason
+        let exitResult: ConsumeResult = "completed";
+
+        // Wait for either:
+        // 1. Event processing to complete (stream ends)
+        // 2. User presses Escape (BackToLauncherSignal from input fiber)
+        // 3. User presses Ctrl+C (interrupt from input fiber)
+        //
+        // We use raceFirst which does NOT interrupt the loser, so the input
+        // fiber keeps running after events finish.
+        type RaceResult =
+          | { winner: "events" }
+          | { winner: "input"; action: "back_to_launcher" | "quit" };
+
+        const raceResult = yield* Effect.raceFirst(
+          Fiber.join(processingFiber).pipe(
+            Effect.map(() => ({ winner: "events" }) as RaceResult),
+            Effect.catchAllCause((cause) => {
+              // Event stream errors - display in TUI but don't exit
+              if (!Cause.isInterruptedOnly(cause)) {
+                const errorText = formatCauseVerbose(cause);
+                Effect.runSync(
+                  Ref.update(stateRef, (s) => appendError(s, errorText))
+                );
+                const state = Effect.runSync(Ref.get(stateRef));
+                safeRender(state, output);
+              }
+              return Effect.succeed({ winner: "events" } as RaceResult);
+            })
+          ),
+          Fiber.join(inputFiber).pipe(
+            Effect.map(
+              () => ({ winner: "input", action: "quit" }) as RaceResult
+            ),
+            Effect.catchAllCause((cause) => {
+              // Check for BackToLauncherSignal
+              if (hasBackToLauncherSignal(cause)) {
+                return Effect.succeed({
+                  winner: "input",
+                  action: "back_to_launcher",
+                } as RaceResult);
+              }
+              // Ctrl+C or other interrupt
+              return Effect.succeed({
+                winner: "input",
+                action: "quit",
+              } as RaceResult);
             })
           )
         );
 
-        // Track if Ctrl+C was pressed during event processing
-        let ctrlCPressed = false;
-
-        // Race event processing against input fiber (Ctrl+C exits immediately)
-        // Use Either to determine which completed first
-        yield* Effect.race(
-          processEvents.pipe(Effect.as("events" as const)),
-          Fiber.join(inputFiber).pipe(Effect.as("input" as const))
-        ).pipe(
-          Effect.tap((winner) =>
-            Effect.sync(() => {
-              if (winner === "input") {
-                ctrlCPressed = true;
-              }
-            })
-          ),
-          Effect.catchAllCause((cause) => {
-            // Skip interrupt-only causes (normal Ctrl+C exit)
-            if (Cause.isInterruptedOnly(cause)) {
-              ctrlCPressed = true;
-              return Effect.void;
-            }
-
-            // Format the error verbosely and display in TUI
-            const errorText = formatCauseVerbose(cause);
-
-            // Update state with error and re-render
-            return Effect.gen(function* () {
-              const state = yield* Ref.updateAndGet(stateRef, (s) =>
-                appendError(s, errorText)
-              );
-              yield* Effect.sync(() => safeRender(state, output));
-
-              // Also log to stderr for visibility after TUI exits
-              process.stderr.write(`\n${errorText}\n`);
-            });
-          })
-        );
-
-        // If events finished (not Ctrl+C), wait for user to press Ctrl+C
-        // The input fiber handles Ctrl+C and interrupts itself
-        // User can still scroll, change views, etc. while waiting
-        if (!ctrlCPressed) {
+        // Handle based on race result
+        if (raceResult.winner === "input") {
+          if (raceResult.action === "back_to_launcher") {
+            exitResult = "back_to_launcher";
+            // Interrupt event processing and unsubscribe from daemon
+            yield* Fiber.interrupt(processingFiber).pipe(Effect.ignore);
+            yield* unsubscribeFromDaemon(context);
+          }
+          // For "quit", exitResult stays "completed"
+        } else {
+          // Events finished - wait for user to press Escape or Ctrl+C
+          // The input fiber is still running (raceFirst doesn't interrupt loser)
           yield* Fiber.join(inputFiber).pipe(
             Effect.catchAllCause((cause) => {
-              // Ignore interrupt (expected from Ctrl+C)
-              if (Cause.isInterruptedOnly(cause)) {
-                return Effect.void;
+              // Check for BackToLauncherSignal
+              if (hasBackToLauncherSignal(cause)) {
+                exitResult = "back_to_launcher";
+                return unsubscribeFromDaemon(context);
               }
-              // Ignore other errors from input
+              // Ignore interrupt (expected from Ctrl+C) and other errors
               return Effect.void;
             })
           );
         }
 
-        // Cleanup: interrupt clock fiber and restore terminal state
+        // Cleanup: interrupt fibers and restore terminal state
         yield* Fiber.interrupt(clockFiber);
+        yield* Fiber.interrupt(inputFiber).pipe(Effect.ignore);
+        yield* Fiber.interrupt(processingFiber).pipe(Effect.ignore);
         unsubscribeResize();
         cleanup();
+
+        return exitResult;
       }),
   };
 }

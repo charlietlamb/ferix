@@ -63,6 +63,13 @@ export interface SessionStoreService {
     sessionId: string,
     session: Session
   ) => Effect.Effect<void, SessionStoreError>;
+
+  /**
+   * List all sessions.
+   *
+   * @returns All sessions sorted by createdAt descending (most recent first)
+   */
+  readonly list: () => Effect.Effect<readonly Session[], SessionStoreError>;
 }
 
 /**

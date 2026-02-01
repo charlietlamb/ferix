@@ -5,15 +5,28 @@ import "./bindings/view.js";
 // Re-export registry and types
 
 // Re-export parsing and handling logic
-import { Effect, Ref, Stream } from "effect";
+import { Data, Effect, Ref, Stream } from "effect";
 import type { TUIState, ViewMode } from "../../../domain/schemas/tui.js";
 import { FIXED_ROWS, MOUSE_SCROLL_DELTA } from "../constants.js";
 import type { TerminalOutput } from "../output/index.js";
 import { getMaxOutputOffset } from "../render/output-area.js";
+import { getTaskDetailTotalLines } from "../render/task-detail.js";
 import { navigate, scroll, scrollTo } from "../state.js";
 import { safeRender } from "../utils.js";
 import type { KeyAction } from "./registry.js";
 import { keyBindingRegistry } from "./registry.js";
+
+/**
+ * Result from the input loop.
+ */
+export type InputLoopResult = "quit" | "back_to_launcher";
+
+/**
+ * Signal error for back to launcher.
+ */
+export class BackToLauncherSignal extends Data.TaggedError(
+  "BackToLauncherSignal"
+)<Record<string, never>> {}
 
 // Mouse wheel regex (top-level for performance)
 // biome-ignore lint/suspicious/noControlCharactersInRegex: Required for mouse parsing
@@ -72,16 +85,14 @@ function parseKey(data: Buffer, viewMode: ViewMode): KeyAction {
   // Check registry first
   const registeredAction = keyBindingRegistry.getAction(key, viewMode);
   if (registeredAction) {
-    // Handle single escape (not part of sequence) - check length
-    if (key === "\x1b" && data.length > 1) {
-      // This is an escape sequence, not bare escape
-    } else if (registeredAction.type === "scroll" && viewMode === "tasks") {
+    // Convert scroll actions to navigate in tasks view
+    if (registeredAction.type === "scroll" && viewMode === "tasks") {
       return scrollToNavigate(registeredAction);
-    } else if (registeredAction.type === "scroll_to" && viewMode === "tasks") {
-      return scrollToNavigate(registeredAction);
-    } else {
-      return registeredAction;
     }
+    if (registeredAction.type === "scroll_to" && viewMode === "tasks") {
+      return scrollToNavigate(registeredAction);
+    }
+    return registeredAction;
   }
 
   // Mouse wheel
@@ -94,14 +105,39 @@ function parseKey(data: Buffer, viewMode: ViewMode): KeyAction {
 }
 
 /**
+ * Calculate max scroll offset based on view mode.
+ */
+function getMaxOffsetForView(
+  state: TUIState,
+  viewHeight: number,
+  terminalWidth: number
+): number {
+  switch (state.viewMode) {
+    case "logs":
+      return getMaxOutputOffset(state.outputLines.length, viewHeight);
+    case "detail":
+      return Math.max(
+        0,
+        getTaskDetailTotalLines(state, terminalWidth) - viewHeight
+      );
+    case "tasks":
+      // Tasks view uses navigation, not scrolling
+      return 0;
+    default:
+      return 0;
+  }
+}
+
+/**
  * Apply action to state.
  */
 function applyAction(
   state: TUIState,
   action: KeyAction,
-  outputHeight: number
+  outputHeight: number,
+  terminalWidth: number
 ): TUIState {
-  const maxOffset = getMaxOutputOffset(state.outputLines.length, outputHeight);
+  const maxOffset = getMaxOffsetForView(state, outputHeight, terminalWidth);
 
   switch (action.type) {
     case "scroll":
@@ -115,19 +151,39 @@ function applyAction(
 
     case "select":
       if (state.viewMode === "tasks" && state.tasks.length > 0) {
-        return { ...state, viewMode: "detail" };
+        return {
+          ...state,
+          viewMode: "detail",
+          scrollOffset: 0,
+          userScrolled: false,
+        };
       }
       return state;
 
     case "switch_view":
-      return { ...state, viewMode: action.view };
+      return {
+        ...state,
+        viewMode: action.view,
+        scrollOffset: 0,
+        userScrolled: false,
+      };
 
     case "back":
       if (state.viewMode === "detail") {
-        return { ...state, viewMode: "tasks" };
+        return {
+          ...state,
+          viewMode: "tasks",
+          scrollOffset: 0,
+          userScrolled: false,
+        };
       }
       if (state.viewMode === "tasks") {
-        return { ...state, viewMode: "logs" };
+        return {
+          ...state,
+          viewMode: "logs",
+          scrollOffset: 0,
+          userScrolled: false,
+        };
       }
       return state;
 
@@ -185,13 +241,12 @@ function createStdinStream(): Stream.Stream<Buffer, never, never> {
 
 /**
  * Main input loop.
+ * Returns the reason for exiting: "quit" (Ctrl+C) or "back_to_launcher" (Escape from logs).
  */
 export function runInputLoop(
   stateRef: Ref.Ref<TUIState>,
   output: TerminalOutput
-): Effect.Effect<void, never, never> {
-  const outputHeight = output.getHeight() - FIXED_ROWS;
-
+): Effect.Effect<InputLoopResult, BackToLauncherSignal, never> {
   return Effect.gen(function* () {
     yield* enableRawMode();
 
@@ -207,13 +262,27 @@ export function runInputLoop(
             yield* Effect.interrupt;
           }
 
+          if (action.type === "back_to_launcher") {
+            yield* Effect.fail(new BackToLauncherSignal({}));
+          }
+
           if (action.type !== "none") {
-            const newState = applyAction(currentState, action, outputHeight);
+            // Calculate dimensions dynamically to handle terminal resizes
+            const outputHeight = output.getHeight() - FIXED_ROWS;
+            const terminalWidth = output.getWidth();
+            const newState = applyAction(
+              currentState,
+              action,
+              outputHeight,
+              terminalWidth
+            );
             yield* Ref.set(stateRef, newState);
             yield* Effect.sync(() => safeRender(newState, output));
           }
         })
       )
     );
+
+    return "quit" as InputLoopResult;
   }).pipe(Effect.ensuring(disableRawMode()));
 }

@@ -1,7 +1,7 @@
 import { Cause, Effect, Stream } from "effect";
 import pc from "picocolors";
 import type { DomainEvent } from "../../domain/index.js";
-import type { Consumer } from "../types.js";
+import type { Consumer, ConsumerContext } from "../types.js";
 import { formatEvent } from "./formatters/index.js";
 
 /**
@@ -84,7 +84,10 @@ function formatCauseVerbose(cause: Cause.Cause<unknown>): string {
  */
 export function createHeadlessConsumer(): Consumer {
   return {
-    consume: (events: Stream.Stream<DomainEvent, unknown, never>) =>
+    consume: (
+      events: Stream.Stream<DomainEvent, unknown, never>,
+      _context?: ConsumerContext
+    ) =>
       events
         .pipe(
           Stream.runForEach((event) =>
@@ -101,17 +104,18 @@ export function createHeadlessConsumer(): Consumer {
           )
         )
         .pipe(
+          Effect.map(() => "completed" as const),
           Effect.catchAllCause((cause) => {
             // Skip interrupt-only causes (normal Ctrl+C exit)
             if (Cause.isInterruptedOnly(cause)) {
-              return Effect.void;
+              return Effect.succeed("completed" as const);
             }
 
             // Format and print the error verbosely
             const errorText = formatCauseVerbose(cause);
             console.error(errorText);
 
-            return Effect.void;
+            return Effect.succeed("completed" as const);
           })
         ),
   };

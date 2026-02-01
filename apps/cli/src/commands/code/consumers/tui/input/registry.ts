@@ -5,6 +5,7 @@ import type { ViewMode } from "../../../domain/schemas/tui.js";
  */
 export type KeyAction =
   | { readonly type: "quit" }
+  | { readonly type: "back_to_launcher" }
   | {
       readonly type: "scroll";
       readonly direction: "up" | "down";

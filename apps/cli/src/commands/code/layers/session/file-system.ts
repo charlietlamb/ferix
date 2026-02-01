@@ -1,4 +1,5 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { DateTime, Effect, Layer } from "effect";
 import { humanId } from "human-id";
@@ -10,7 +11,7 @@ import {
 } from "../../services/session-store.js";
 
 /**
- * Base directory for session storage.
+ * Base directory for session storage (global, in user's home directory).
  */
 const SESSIONS_DIR = ".ferix/sessions";
 
@@ -49,7 +50,7 @@ function ensureDir(dirPath: string): Effect.Effect<void, SessionStoreError> {
  * Gets the file path for a session.
  */
 function getSessionPath(sessionId: string): string {
-  return join(process.cwd(), SESSIONS_DIR, `${sessionId}.json`);
+  return join(homedir(), SESSIONS_DIR, `${sessionId}.json`);
 }
 
 /**
@@ -103,7 +104,7 @@ const make: SessionStoreService = {
     providedSessionId?: string
   ): Effect.Effect<Session, SessionStoreError> =>
     Effect.gen(function* () {
-      const sessionsDir = join(process.cwd(), SESSIONS_DIR);
+      const sessionsDir = join(homedir(), SESSIONS_DIR);
       yield* ensureDir(sessionsDir);
 
       const now = yield* DateTime.now;
@@ -165,6 +166,74 @@ const make: SessionStoreService = {
             cause: error,
           }),
       });
+    }),
+
+  list: (): Effect.Effect<readonly Session[], SessionStoreError> =>
+    Effect.gen(function* () {
+      const sessionsDir = join(homedir(), SESSIONS_DIR);
+
+      // Read directory entries, return empty array if directory doesn't exist
+      const entries = yield* Effect.tryPromise({
+        try: async () => {
+          try {
+            return await readdir(sessionsDir);
+          } catch (error) {
+            // Return empty if directory doesn't exist
+            if (
+              error instanceof Error &&
+              "code" in error &&
+              error.code === "ENOENT"
+            ) {
+              return [];
+            }
+            throw error;
+          }
+        },
+        catch: (error) =>
+          new SessionStoreError({
+            message: `Failed to read sessions directory: ${sessionsDir}`,
+            operation: "list",
+            cause: error,
+          }),
+      });
+
+      // Filter for .json files
+      const jsonFiles = entries.filter((entry) => entry.endsWith(".json"));
+
+      // Parse each session file, skipping invalid ones
+      const sessions: Session[] = [];
+      for (const file of jsonFiles) {
+        const filePath = join(sessionsDir, file);
+        const fileContent = yield* Effect.tryPromise({
+          try: () => readFile(filePath, "utf-8"),
+          catch: () =>
+            new SessionStoreError({
+              message: `Failed to read session file: ${filePath}`,
+              operation: "list",
+            }),
+        }).pipe(Effect.option);
+
+        if (fileContent._tag === "None") {
+          continue;
+        }
+
+        const parseResult = yield* deserializeSession(fileContent.value).pipe(
+          Effect.option
+        );
+
+        if (parseResult._tag === "Some") {
+          sessions.push(parseResult.value);
+        }
+      }
+
+      // Sort by createdAt descending (most recent first)
+      sessions.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+
+      return sessions;
     }),
 };
 

@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { Effect, Layer } from "effect";
 import { StateStoreError } from "../../domain/errors.js";
@@ -12,7 +13,7 @@ import {
 } from "../../services/state-store.js";
 
 /**
- * Base directory for plan storage (state lives alongside plans).
+ * Base directory for plan storage (global, in user's home directory).
  */
 const PLANS_DIR = ".ferix/plans";
 
@@ -35,7 +36,7 @@ function ensureDir(dirPath: string): Effect.Effect<void, StateStoreError> {
  * Gets the directory path for a session's plans.
  */
 function getSessionDir(sessionId: string): string {
-  return join(process.cwd(), PLANS_DIR, sessionId);
+  return join(homedir(), PLANS_DIR, sessionId);
 }
 
 /**

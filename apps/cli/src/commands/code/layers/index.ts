@@ -3,16 +3,13 @@ import type { ProviderName } from "../domain/schemas/config.js";
 import { FileSystemGit } from "./git/file-system.js";
 import { FileSystemGuardrails } from "./guardrails/file-system.js";
 import { ClaudeCLI, createProviderLayer } from "./llm/providers/index.js";
+import { FileSystemOutput } from "./output/file-system.js";
 import { FileSystemPlan } from "./plan/file-system.js";
 import { FileSystemProgress } from "./progress/file-system.js";
 import { FileSystemPrompt } from "./prompt/file-system.js";
 import { FileSystemSession } from "./session/file-system.js";
 import { FerixParser } from "./signal/ferix-parser.js";
 import { FileSystemState } from "./state/file-system.js";
-
-// Re-export logger layer factory
-export { createLoggerLayer } from "./logger.js";
-// Re-export types
 
 /**
  * Production layer bundle.
@@ -43,7 +40,8 @@ export const ProductionLayers = Layer.mergeAll(
   FileSystemGuardrails.Live,
   FileSystemGit.Live,
   FileSystemState.Live,
-  FileSystemPrompt.Live
+  FileSystemPrompt.Live,
+  FileSystemOutput.Live
 );
 
 /**
@@ -77,6 +75,7 @@ export function createProductionLayers(provider: ProviderName = "claude") {
     FileSystemGuardrails.Live,
     FileSystemGit.Live,
     FileSystemState.Live,
-    FileSystemPrompt.Live
+    FileSystemPrompt.Live,
+    FileSystemOutput.Live
   );
 }

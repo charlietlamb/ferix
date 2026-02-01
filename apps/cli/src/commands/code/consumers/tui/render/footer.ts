@@ -38,6 +38,7 @@ export function renderFooter(
         hints.push(scrollPos);
       }
       hints.push(hint("t", "tasks"));
+      hints.push(hint("Esc", "launcher"));
       hints.push(hint("^C", "quit"));
       break;
     }

@@ -1,6 +1,5 @@
 import type { Command } from "commander";
-import { main } from "./action.js";
-import type { LoopConfig, ProviderName } from "./domain/index.js";
+import { launchSelector } from "./launcher.js";
 
 /**
  * Register the code command (default command for running RALPH loops).
@@ -8,7 +7,10 @@ import type { LoopConfig, ProviderName } from "./domain/index.js";
 export const registerCodeCommand = (program: Command): void => {
   program
     .command("run", { isDefault: true })
-    .argument("<task>", "Task description or path to PRD file")
+    .argument(
+      "[task]",
+      "Task description or path to PRD file (omit to see sessions)"
+    )
     .option("-i, --iterations <n>", "Maximum iterations", "1")
     .option("-c, --verify <commands...>", "Verification commands to run")
     .option("--branch <name>", "Git branch to create")
@@ -24,21 +26,10 @@ export const registerCodeCommand = (program: Command): void => {
       "Require permission prompts (default runs in yolo mode on isolated worktree)"
     )
     .option("-d, --debug", "Enable debug logging to .ferix/logs/<session>.log")
-    .action(async (task: string, options) => {
-      const config: LoopConfig = {
-        task,
-        maxIterations: Number.parseInt(options.iterations, 10),
-        verifyCommands: options.verify || [],
-        branch: options.branch,
-        push: options.push,
-        pr: options.pr,
-        provider: options.provider as ProviderName,
-        yolo: options.yolo ?? true,
-        debug: options.debug,
-      };
-
+    .action(async (task: string | undefined, options) => {
       try {
-        await main(config);
+        const trimmedTask = task?.trim() || undefined;
+        await launchSelector(options, trimmedTask);
       } catch (error) {
         console.error("Error:", error);
         process.exit(1);
@@ -49,6 +40,7 @@ export const registerCodeCommand = (program: Command): void => {
 // Re-export everything from action for library usage
 export * from "./action.js";
 export * from "./consumers/index.js";
+export * from "./daemon/index.js";
 export * from "./domain/index.js";
 export * from "./layers/index.js";
 export * from "./orchestrator/index.js";

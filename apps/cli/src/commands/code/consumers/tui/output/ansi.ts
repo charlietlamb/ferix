@@ -6,6 +6,15 @@ import type { TerminalOutput } from "./types.js";
 
 /**
  * ANSI escape codes for terminal control.
+ *
+ * Mouse tracking modes:
+ * - ?1000h: X10 mouse tracking (basic click reporting)
+ * - ?1002h: Button event tracking (track button presses during drags)
+ * - ?1006h: SGR extended mode (better coordinate reporting)
+ *
+ * The alternate screen buffer (?1049h) should prevent terminal scrollback
+ * from being visible/scrollable. Mouse tracking captures scroll wheel events
+ * and sends them to the application as SGR sequences.
  */
 const ANSI = {
   CLEAR_SCREEN: "\x1b[2J",
@@ -15,8 +24,10 @@ const ANSI = {
   ALTERNATE_BUFFER_ON: "\x1b[?1049h",
   ALTERNATE_BUFFER_OFF: "\x1b[?1049l",
   CLEAR_LINE: "\x1b[2K",
-  MOUSE_ON: "\x1b[?1000h\x1b[?1006h",
-  MOUSE_OFF: "\x1b[?1000l\x1b[?1006l",
+  // Enable mouse tracking with SGR extended mode for scroll wheel support
+  MOUSE_ON: "\x1b[?1000h\x1b[?1002h\x1b[?1006h",
+  // Disable in reverse order
+  MOUSE_OFF: "\x1b[?1002l\x1b[?1006l\x1b[?1000l",
 } as const;
 
 /**

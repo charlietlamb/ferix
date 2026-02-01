@@ -81,6 +81,21 @@ function createMemorySessionStore(
         state.set(sessionId, session);
         yield* Ref.set(stateRef, state);
       }),
+
+    list: (): Effect.Effect<readonly Session[], SessionStoreError> =>
+      Effect.gen(function* () {
+        const state = yield* Ref.get(stateRef);
+        const sessions = Array.from(state.values());
+
+        // Sort by createdAt descending (most recent first)
+        sessions.sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateB - dateA;
+        });
+
+        return sessions;
+      }),
   };
 }
 

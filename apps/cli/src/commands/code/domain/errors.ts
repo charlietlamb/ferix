@@ -30,7 +30,7 @@ export class PlanStoreError extends Data.TaggedError("PlanStoreError")<{
  */
 export class SessionStoreError extends Data.TaggedError("SessionStoreError")<{
   readonly message: string;
-  readonly operation: "create" | "get" | "update";
+  readonly operation: "create" | "get" | "update" | "list";
   readonly cause?: unknown;
 }> {}
 
@@ -125,5 +125,14 @@ export class StateStoreError extends Data.TaggedError("StateStoreError")<{
 export class PromptStoreError extends Data.TaggedError("PromptStoreError")<{
   readonly message: string;
   readonly operation: "copy" | "read";
+  readonly cause?: unknown;
+}> {}
+
+/**
+ * Error that occurs during output storage operations.
+ */
+export class OutputStoreError extends Data.TaggedError("OutputStoreError")<{
+  readonly message: string;
+  readonly operation: "append" | "read";
   readonly cause?: unknown;
 }> {}
