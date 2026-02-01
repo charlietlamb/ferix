@@ -9,7 +9,8 @@ const program = new Command();
 program
   .name("ferix-code")
   .description("Composable RALPH loops for AI coding agents")
-  .version(packageJson.version, "-v, --version", "Output the version number");
+  .version(packageJson.version, "-v, --version", "Output the version number")
+  .option("--dev", "Use local development server");
 
 registerAuthCommand(program);
 registerCodeCommand(program);

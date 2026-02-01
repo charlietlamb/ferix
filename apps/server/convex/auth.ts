@@ -90,12 +90,9 @@ export const createAuthOptions = (
       admin(),
       deviceAuthorization({
         verificationUri: "/device",
-        expiresIn: 1800,
-        interval: 5,
-        validateClient: ({ clientId }) => {
-          const validClientIds = env.CLI_CLIENT_IDS?.split(",") ?? [];
-          return validClientIds.includes(clientId);
-        },
+        expiresIn: "30m",
+        interval: "5s",
+        validateClient: (clientId) => clientId === "ferix-cli",
       }),
     ],
   };

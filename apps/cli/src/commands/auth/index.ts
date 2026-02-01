@@ -12,8 +12,12 @@ export const registerAuthCommand = (program: Command): void => {
   auth
     .command("login")
     .description("Authenticate with Ferix using device authorization")
-    .action(async () => {
-      await runLogin();
+    .action(async (_options: Record<string, unknown>, cmd: Command) => {
+      // Read --dev from root program options
+      const rootOpts = cmd.parent?.parent?.opts() as
+        | { dev?: boolean }
+        | undefined;
+      await runLogin(rootOpts?.dev ?? false);
     });
 
   auth

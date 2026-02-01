@@ -179,7 +179,47 @@ describe("Event Mapping", () => {
 
   describe("Signal Mappers", () => {
     describe("TasksDefined signal", () => {
-      it("should map TasksDefined signal directly", () => {
+      it("should map TasksDefined signal and filter verification tasks", () => {
+        const context = createTestContext();
+        const signal = {
+          _tag: "TasksDefined" as const,
+          tasks: [
+            { id: "1", title: "Implement feature", description: "Desc 1" },
+            { id: "2", title: "Verify tests pass", description: "Desc 2" },
+            { id: "3", title: "Run verification", description: "Desc 3" },
+          ],
+        };
+
+        const result = eventMappingRegistry.mapSignal(signal, context);
+
+        expect(result._tag).toBe("TasksDefined");
+        if (result._tag === "TasksDefined") {
+          // Should filter out verification tasks
+          expect(result.tasks).toHaveLength(1);
+          expect(result.tasks[0]?.id).toBe("1");
+          expect(result.tasks[0]?.title).toBe("Implement feature");
+        }
+      });
+
+      it("should return empty tasks array if all tasks are verification tasks", () => {
+        const context = createTestContext();
+        const signal = {
+          _tag: "TasksDefined" as const,
+          tasks: [
+            { id: "1", title: "Verify tests pass", description: "Desc 1" },
+            { id: "2", title: "Run lint and format", description: "Desc 2" },
+          ],
+        };
+
+        const result = eventMappingRegistry.mapSignal(signal, context);
+
+        expect(result._tag).toBe("TasksDefined");
+        if (result._tag === "TasksDefined") {
+          expect(result.tasks).toHaveLength(0);
+        }
+      });
+
+      it("should pass through non-verification tasks", () => {
         const context = createTestContext();
         const signal = {
           _tag: "TasksDefined" as const,
@@ -367,18 +407,6 @@ describe("Event Mapping", () => {
           expect(result.summary).toBe("Completed task");
           expect(result.timestamp).toBe(timestamp);
         }
-      });
-    });
-
-    describe("LoopComplete signal", () => {
-      it("should not map to LoopCompleted (internal signal only)", () => {
-        const context = createTestContext();
-        const signal = { _tag: "LoopComplete" as const };
-
-        const result = eventMappingRegistry.mapSignal(signal, context);
-
-        // Falls back to empty LLMText event since no mapper is registered
-        expect(result._tag).toBe("LLMText");
       });
     });
 

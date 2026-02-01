@@ -5,7 +5,7 @@
     "clean:branches": "git branch --format='%(refname:short)' --list 'ferix/*' | xargs git branch -D",
     "build": "turbo run build",
     "build:cli": "bun run --filter=ferix-code build",
-    "cli": "bun build:cli && node apps/cli/dist/index.js",
+    "cli": "bun build:cli && node apps/cli/dist/index.js --dev",
     "dev": "turbo run dev --filter=@ferix/web --filter=@ferix/server",
     "prod": "turbo run prod --filter=@ferix/web",
     "lint": "bunx biome lint",

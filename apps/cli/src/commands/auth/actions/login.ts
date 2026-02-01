@@ -8,6 +8,7 @@ import {
 } from "../config.js";
 import {
   DeviceAuthError,
+  fetchUserInfo,
   pollForToken,
   requestDeviceCode,
   waitInterval,
@@ -18,8 +19,8 @@ const MAX_POLL_ATTEMPTS = 360;
 /**
  * Run the device authorization login flow.
  */
-export const runLogin = async (): Promise<void> => {
-  const result = await Effect.runPromise(loginEffect().pipe(Effect.either));
+export const runLogin = async (dev: boolean): Promise<void> => {
+  const result = await Effect.runPromise(loginEffect(dev).pipe(Effect.either));
 
   if (result._tag === "Left") {
     const error = result.left;
@@ -32,7 +33,7 @@ export const runLogin = async (): Promise<void> => {
   }
 };
 
-const loginEffect = () =>
+const loginEffect = (dev: boolean) =>
   Effect.gen(function* () {
     const existingCredentials = yield* readCredentials().pipe(
       Effect.catchAll(() => Effect.succeed(undefined))
@@ -56,7 +57,7 @@ const loginEffect = () =>
     const spinner = createSpinner("Requesting device code...");
     spinner.start();
 
-    const deviceCode = yield* requestDeviceCode().pipe(
+    const deviceCode = yield* requestDeviceCode(dev).pipe(
       Effect.tapError(() => Effect.sync(() => spinner.stop()))
     );
 
@@ -77,32 +78,39 @@ const loginEffect = () =>
     const tokenResponse = yield* pollForTokenWithRetry(
       deviceCode.deviceCode,
       deviceCode.interval,
-      pollSpinner
+      pollSpinner,
+      dev
+    );
+
+    // Fetch user info using the access token
+    const user = yield* fetchUserInfo(tokenResponse.accessToken, dev).pipe(
+      Effect.tapError(() => Effect.sync(() => pollSpinner.stop()))
     );
 
     pollSpinner.stop();
 
     const credentials: StoredCredentials = {
       accessToken: tokenResponse.accessToken,
-      refreshToken: tokenResponse.refreshToken ?? null,
+      refreshToken: tokenResponse.refreshToken,
       expiresAt: tokenResponse.expiresIn
         ? Date.now() + tokenResponse.expiresIn * 1000
-        : null,
-      userId: tokenResponse.user.id,
-      email: tokenResponse.user.email,
+        : undefined,
+      userId: user.id,
+      email: user.email,
     };
 
     yield* writeCredentials(credentials);
 
     console.log();
-    printSuccess(`Logged in as ${pc.bold(tokenResponse.user.email)}`);
+    printSuccess(`Logged in as ${pc.bold(user.email)}`);
     console.log();
   });
 
 const pollForTokenWithRetry = (
   deviceCode: string,
   interval: number,
-  spinner: ReturnType<typeof createSpinner>
+  spinner: ReturnType<typeof createSpinner>,
+  dev: boolean
 ) =>
   Effect.gen(function* () {
     let attempts = 0;
@@ -111,7 +119,7 @@ const pollForTokenWithRetry = (
     while (attempts < MAX_POLL_ATTEMPTS) {
       yield* waitInterval(currentInterval);
 
-      const result = yield* pollForToken(deviceCode).pipe(Effect.either);
+      const result = yield* pollForToken(deviceCode, dev).pipe(Effect.either);
 
       if (result._tag === "Right") {
         return result.right;

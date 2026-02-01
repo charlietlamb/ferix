@@ -1,9 +1,14 @@
+import { isVerificationTask } from "../plan-updates/helpers.js";
 import { eventMappingRegistry } from "./registry.js";
 
-// Direct mappings - signals that map directly to events with same structure
+// TasksDefined - filter out verification tasks before mapping to event
+// This ensures both TUI and Plan receive the same filtered task list
 eventMappingRegistry.registerSignalMapper({
   tag: "TasksDefined",
-  map: (signal, _context) => signal,
+  map: (signal, _context) => ({
+    ...signal,
+    tasks: signal.tasks.filter((task) => !isVerificationTask(task.title)),
+  }),
 });
 
 eventMappingRegistry.registerSignalMapper({

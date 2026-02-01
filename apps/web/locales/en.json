@@ -553,6 +553,24 @@
       "error": "Failed to reset password",
       "invalidToken": "Invalid or expired reset link",
       "backToSignIn": "Back to sign in"
+    },
+    "device": {
+      "title": "Authorize Device",
+      "description": "Enter the code displayed on your device",
+      "codeLabel": "Device Code",
+      "codePlaceholder": "XXXX-XXXX",
+      "continue": "Continue",
+      "verifying": "Verifying...",
+      "approveTitle": "Authorize this device?",
+      "approveDescription": "This will allow the CLI to access your account",
+      "approve": "Authorize",
+      "deny": "Deny",
+      "processing": "Processing...",
+      "success": "Device authorized! You can close this window.",
+      "denied": "Authorization denied",
+      "invalidCode": "Invalid or expired code",
+      "alreadyProcessed": "This code has already been used",
+      "error": "An error occurred"
     }
   }
 }

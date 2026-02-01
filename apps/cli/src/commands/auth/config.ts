@@ -9,9 +9,14 @@ import { Data, Effect, Schema } from "effect";
 export const CLI_CLIENT_ID = "ferix-cli";
 
 /**
- * Default base URL for the auth server.
+ * Production auth server URL.
  */
-export const DEFAULT_AUTH_BASE_URL = "https://ferix.dev/api/auth";
+export const PROD_AUTH_BASE_URL = "https://ferix.ai/api/auth";
+
+/**
+ * Development auth server URL (local).
+ */
+export const DEV_AUTH_BASE_URL = "http://localhost:3003/api/auth";
 
 /**
  * Path to the credentials file in the user's home directory.
@@ -22,7 +27,7 @@ export const getCredentialsPath = (): string =>
 /**
  * Error that occurs during credential storage operations.
  */
-export class CredentialError extends Data.TaggedError("CredentialError")<{
+class CredentialError extends Data.TaggedError("CredentialError")<{
   readonly message: string;
   readonly operation: "read" | "write" | "delete";
   readonly cause?: unknown;
@@ -54,18 +59,18 @@ export const readCredentials = (): Effect.Effect<
 
     const fileContent = yield* Effect.tryPromise({
       try: () => readFile(credentialsPath, "utf-8"),
-      catch: (error) => {
-        const nodeError = error as NodeJS.ErrnoException;
-        if (nodeError.code === "ENOENT") {
-          return undefined;
-        }
-        return new CredentialError({
+      catch: (error) =>
+        new CredentialError({
           message: `Failed to read credentials: ${String(error)}`,
           operation: "read",
           cause: error,
-        });
-      },
-    });
+        }),
+    }).pipe(
+      Effect.catchIf(
+        (error) => (error.cause as NodeJS.ErrnoException)?.code === "ENOENT",
+        () => Effect.succeed(undefined)
+      )
+    );
 
     if (fileContent === undefined) {
       return undefined;
@@ -136,33 +141,15 @@ export const deleteCredentials = (): Effect.Effect<void, CredentialError> =>
       const credentialsPath = getCredentialsPath();
       await unlink(credentialsPath);
     },
-    catch: (error) => {
-      const nodeError = error as NodeJS.ErrnoException;
-      if (nodeError.code === "ENOENT") {
-        return undefined;
-      }
-      return new CredentialError({
+    catch: (error) =>
+      new CredentialError({
         message: `Failed to delete credentials: ${String(error)}`,
         operation: "delete",
         cause: error,
-      });
-    },
-  }).pipe(Effect.map(() => undefined));
-
-/**
- * Check if credentials exist and are not expired.
- */
-export const hasValidCredentials = (): Effect.Effect<
-  boolean,
-  CredentialError
-> =>
-  Effect.gen(function* () {
-    const credentials = yield* readCredentials();
-    if (!credentials) {
-      return false;
-    }
-    if (credentials.expiresAt && credentials.expiresAt < Date.now()) {
-      return false;
-    }
-    return true;
-  });
+      }),
+  }).pipe(
+    Effect.catchIf(
+      (error) => (error.cause as NodeJS.ErrnoException)?.code === "ENOENT",
+      () => Effect.void
+    )
+  );
