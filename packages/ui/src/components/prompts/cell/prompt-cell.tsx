@@ -56,11 +56,16 @@ export function PromptCell({ prompt }: PromptCellProps) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           {firstTag ? (
-            <TypeIcon className="text-foreground" size={16} />
+            <TypeIcon
+              className="shrink-0 text-muted-foreground transition-colors duration-200 group-hover:text-primary"
+              size={16}
+            />
           ) : (
-            <TypeIcon className="size-4 shrink-0 text-muted-foreground" />
+            <TypeIcon className="size-4 shrink-0 text-muted-foreground transition-colors duration-200 group-hover:text-primary" />
           )}
-          <span className="line-clamp-1 text-sm">{prompt.title}</span>
+          <span className="line-clamp-1 font-medium text-sm tracking-tight transition-colors duration-200 group-hover:text-foreground">
+            {prompt.title}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <TypeBadge type={prompt.type} />
@@ -68,7 +73,7 @@ export function PromptCell({ prompt }: PromptCellProps) {
             {copied ? (
               <CheckIcon className="size-4 text-green-500" />
             ) : (
-              <CopyIcon className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              <CopyIcon className="size-4 text-muted-foreground opacity-0 transition-all duration-200 group-hover:text-foreground group-hover:opacity-100" />
             )}
           </button>
         </div>
@@ -93,9 +98,11 @@ export function PromptCell({ prompt }: PromptCellProps) {
       <div className="flex items-center justify-between text-muted-foreground text-xs">
         <PromptCellSource prompt={prompt} />
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <DownloadIcon className="size-3" />
-            <span>{downloads.toLocaleString()}</span>
+          <div className="flex items-center gap-1.5 tabular-nums">
+            <DownloadIcon className="size-3 transition-colors duration-200 group-hover:text-foreground/60" />
+            <span className="transition-colors duration-200 group-hover:text-foreground/60">
+              {downloads.toLocaleString()}
+            </span>
           </div>
           <SaveButton
             isSaved={isSaved}
