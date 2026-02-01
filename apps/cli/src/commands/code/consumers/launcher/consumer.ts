@@ -1,3 +1,4 @@
+import { exec } from "node:child_process";
 import { Effect, Layer, Ref, Stream } from "effect";
 import {
   createDaemonClient,
@@ -87,10 +88,8 @@ function getOpenCommand(url: string): string {
 function openInBrowser(url: string): void {
   const command = getOpenCommand(url);
   // Fire and forget - don't need to wait for browser to open
-  import("node:child_process").then(({ exec }) => {
-    exec(command, () => {
-      // Ignore any errors
-    });
+  exec(command, () => {
+    // Ignore any errors
   });
 }
 

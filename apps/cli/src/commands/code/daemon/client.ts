@@ -442,33 +442,3 @@ export class DaemonClient {
 export function createDaemonClient(): DaemonClient {
   return new DaemonClient();
 }
-
-/**
- * Run a session via the daemon.
- * Connects to daemon, starts session, returns event stream.
- */
-export function runSessionViaDaemon(
-  sessionId: string,
-  config: LoopConfig
-): Effect.Effect<
-  Stream.Stream<DomainEvent, never, never>,
-  DaemonConnectionError | DaemonCommandError,
-  never
-> {
-  return Effect.gen(function* () {
-    const client = createDaemonClient();
-
-    // Connect to daemon
-    yield* client.connect();
-
-    // Start session
-    yield* client.startSession(sessionId, config);
-
-    // Return event stream
-    // Note: The stream will need to be consumed and the client
-    // should be disconnected when done
-    return client
-      .getEventStream(sessionId)
-      .pipe(Stream.catchAll(() => Stream.empty));
-  });
-}

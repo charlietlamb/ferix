@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { Effect, type Layer } from "effect";
 import { LLMError } from "../../../domain/errors.js";
 import type { LLM } from "../../../services/llm.js";
@@ -18,15 +19,10 @@ const OpenCodeCLI = _OpenCodeCLI;
  * @returns Effect that succeeds with true if available, false otherwise
  */
 function isCommandAvailable(command: string): Effect.Effect<boolean, never> {
-  return Effect.tryPromise({
-    try: async () => {
-      const { execSync } = await import("node:child_process");
-      try {
-        execSync(`which ${command}`, { stdio: "ignore" });
-        return true;
-      } catch {
-        return false;
-      }
+  return Effect.try({
+    try: () => {
+      execSync(`which ${command}`, { stdio: "ignore" });
+      return true;
     },
     catch: () => false,
   }).pipe(Effect.orElseSucceed(() => false));

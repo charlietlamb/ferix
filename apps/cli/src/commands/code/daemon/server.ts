@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import {
   appendFileSync,
   existsSync,
@@ -14,6 +15,7 @@ import { Effect, Fiber, Ref, Stream } from "effect";
 import type { DomainEvent, LoopConfig } from "../domain/index.js";
 import { createProductionLayers, ProductionLayers } from "../layers/index.js";
 import { runLoop } from "../orchestrator/index.js";
+import { createDaemonClient } from "./client.js";
 import {
   type DaemonCommand,
   type DaemonDomainEvent,
@@ -1163,11 +1165,6 @@ function checkDaemonVersionMismatch(): Effect.Effect<boolean, never, never> {
       return false;
     }
 
-    // Dynamic import to avoid circular dependency
-    const { createDaemonClient } = yield* Effect.promise(
-      () => import("./client.js")
-    );
-
     const client = createDaemonClient();
 
     // Try to connect and get version
@@ -1193,9 +1190,6 @@ function checkDaemonVersionMismatch(): Effect.Effect<boolean, never, never> {
  */
 function spawnDaemon(): Effect.Effect<void, never, never> {
   return Effect.gen(function* () {
-    // Dynamic import to avoid issues with module resolution
-    const { spawn } = yield* Effect.promise(() => import("node:child_process"));
-
     // Spawn the CLI itself with the hidden __daemon command
     // process.execPath = path to node executable
     // process.argv[1] = path to the CLI script (dist/index.js)
