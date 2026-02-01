@@ -6,8 +6,10 @@ import {
 } from "../../daemon/index.js";
 import type { Session } from "../../domain/index.js";
 import type { SessionState } from "../../domain/schemas/state.js";
+import type { GeneratedTask } from "../../domain/schemas/task-generation.js";
 import type { TUIState, TUITask } from "../../domain/schemas/tui.js";
 import { FileSystemOutput } from "../../layers/output/index.js";
+import { readTasksJson } from "../../layers/plan/task-generation.js";
 import { FileSystemSession } from "../../layers/session/file-system.js";
 import { FileSystemState } from "../../layers/state/file-system.js";
 import { OutputStore } from "../../services/output-store.js";
@@ -105,9 +107,9 @@ function mapSessionStatus(status: Session["status"]): TUIState["status"] {
 }
 
 /**
- * Convert stored task to TUI task format.
+ * Convert stored task to TUI task format with full details.
  */
-function convertToTUITask(
+function convertCurrentTaskToTUITask(
   currentTask: NonNullable<SessionState["currentTask"]>
 ): TUITask {
   return {
@@ -128,11 +130,43 @@ function convertToTUITask(
 }
 
 /**
- * Build TUIState from stored session, state data, and persisted output.
+ * Convert a generated task from tasks.json to TUI task format.
+ * For non-active tasks, phases and criteria are empty.
+ */
+function convertGeneratedTaskToTUITask(task: GeneratedTask): TUITask {
+  return {
+    id: task.id,
+    title: task.title,
+    status: task.status,
+    phases: [],
+    criteria: [],
+  };
+}
+
+/**
+ * Build tasks array from tasks.json, merging currentTask details for the active task.
+ */
+function buildTasksArray(
+  generatedTasks: readonly GeneratedTask[],
+  currentTask: SessionState["currentTask"]
+): TUITask[] {
+  return generatedTasks.map((task) => {
+    // If this is the current task being worked on, use the detailed version
+    if (currentTask && task.id === currentTask.id) {
+      return convertCurrentTaskToTUITask(currentTask);
+    }
+    // Otherwise use the basic task info from tasks.json
+    return convertGeneratedTaskToTUITask(task);
+  });
+}
+
+/**
+ * Build TUIState from stored session, state data, tasks, and persisted output.
  */
 function buildTUIStateFromSession(
   session: Session,
   sessionState: SessionState | null,
+  tasks: TUITask[],
   persistedOutput: readonly string[]
 ): TUIState {
   // Use persisted output if available, otherwise fall back to recentProgress
@@ -152,9 +186,7 @@ function buildTUIStateFromSession(
     executionMode: "idle",
     outputLines,
     partialLine: "",
-    tasks: sessionState?.currentTask
-      ? [convertToTUITask(sessionState.currentTask)]
-      : [],
+    tasks,
     viewMode: "logs",
     selectedTaskIndex: 0,
     scrollOffset: 0,
@@ -480,10 +512,29 @@ export function createSessionViewConsumer(sessionId: string): {
           .read(sessionId)
           .pipe(Effect.catchAll(() => Effect.succeed([] as readonly string[])));
 
+        // Load tasks from tasks.json
+        const tasksFile = yield* readTasksJson(sessionId).pipe(
+          Effect.catchAll(() => Effect.succeed(null))
+        );
+
+        // Build tasks array from tasks.json, merging currentTask details
+        let tasks: TUITask[];
+        if (tasksFile) {
+          tasks = buildTasksArray(
+            tasksFile.tasks,
+            sessionState?.currentTask ?? null
+          );
+        } else if (sessionState?.currentTask) {
+          tasks = [convertCurrentTaskToTUITask(sessionState.currentTask)];
+        } else {
+          tasks = [];
+        }
+
         // Build initial TUI state
         const initialState = buildTUIStateFromSession(
           session,
           sessionState,
+          tasks,
           persistedOutput
         );
         const stateRef = yield* Ref.make(initialState);
