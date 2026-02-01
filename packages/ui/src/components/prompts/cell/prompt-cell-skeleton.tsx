@@ -14,13 +14,13 @@ export function PromptCellSkeleton() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden rounded border border-border/50 bg-muted">
-        <div className="flex items-center gap-1.5 border-border/50 border-b px-3 py-2">
-          <div className="size-2 rounded-full bg-red-500/60" />
-          <div className="size-2 rounded-full bg-yellow-500/60" />
-          <div className="size-2 rounded-full bg-green-500/60" />
+      <div className="flex-1 overflow-hidden rounded border border-foreground/[0.06] bg-foreground/[0.02] dark:border-foreground/[0.08] dark:bg-foreground/[0.03]">
+        <div className="flex items-center gap-1.5 border-foreground/[0.06] border-b px-3 py-2 dark:border-foreground/[0.08]">
+          <div className="size-2 rounded-full bg-foreground/20" />
+          <div className="size-2 rounded-full bg-foreground/20" />
+          <div className="size-2 rounded-full bg-foreground/20" />
         </div>
-        <div className="h-20 space-y-2 p-2">
+        <div className="h-20 space-y-2 p-3">
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-4/5" />
           <Skeleton className="h-3 w-3/4" />
