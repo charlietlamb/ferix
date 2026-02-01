@@ -74,17 +74,20 @@ export function PromptCell({ prompt }: PromptCellProps) {
         </div>
       </div>
 
-      <div className="w-full flex-1 overflow-hidden rounded border border-border/50 bg-muted">
-        <div className="flex items-center gap-1.5 border-border/50 border-b px-3 py-2">
-          <div className="size-2 rounded-full bg-red-500/60" />
-          <div className="size-2 rounded-full bg-yellow-500/60" />
-          <div className="size-2 rounded-full bg-green-500/60" />
+      <div className="relative w-full flex-1 overflow-hidden rounded border border-border/50 bg-muted transition-colors duration-200 group-hover:border-border/70">
+        <div className="flex items-center gap-1.5 border-border/50 border-b bg-gradient-to-r from-background/50 to-transparent px-3 py-2">
+          <div className="size-2 rounded-full bg-red-500/70 transition-colors duration-200 group-hover:bg-red-500/90" />
+          <div className="size-2 rounded-full bg-yellow-500/70 transition-colors duration-200 group-hover:bg-yellow-500/90" />
+          <div className="size-2 rounded-full bg-green-500/70 transition-colors duration-200 group-hover:bg-green-500/90" />
         </div>
-        <pre className="h-20 overflow-hidden p-2 font-mono text-xs">
-          <code className="line-clamp-4 whitespace-pre-wrap text-muted-foreground">
-            {stripFrontmatter(prompt.content)}
-          </code>
-        </pre>
+        <div className="relative h-20 overflow-hidden">
+          <pre className="h-full overflow-hidden p-2 font-mono text-xs">
+            <code className="line-clamp-4 whitespace-pre-wrap text-muted-foreground transition-colors duration-200 group-hover:text-foreground/70">
+              {stripFrontmatter(prompt.content)}
+            </code>
+          </pre>
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-muted to-transparent" />
+        </div>
       </div>
 
       <div className="flex items-center justify-between text-muted-foreground text-xs">
