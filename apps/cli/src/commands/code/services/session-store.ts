@@ -1,6 +1,6 @@
 import { Context, type Effect } from "effect";
 import type { SessionStoreError } from "../domain/errors.js";
-import type { Session } from "../domain/index.js";
+import type { Provider, Session } from "../domain/index.js";
 
 /**
  * Service interface for session persistence.
@@ -36,11 +36,13 @@ export interface SessionStoreService {
    *
    * @param originalTask - The task that initiated this session
    * @param sessionId - Optional pre-generated session ID (generates one if not provided)
+   * @param provider - Optional LLM/agent provider used for this session
    * @returns The created session with the provided or generated ID
    */
   readonly create: (
     originalTask: string,
-    sessionId?: string
+    sessionId?: string,
+    provider?: Provider
   ) => Effect.Effect<Session, SessionStoreError>;
 
   /**

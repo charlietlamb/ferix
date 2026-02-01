@@ -60,9 +60,30 @@ function renderDaemonStatus(state: LauncherState): string {
 }
 
 /**
+ * Get the currently selected session (if any).
+ */
+function getSelectedSession(
+  state: LauncherState
+): { prUrl?: string } | undefined {
+  if (state.selectedIndex === 0) {
+    return undefined;
+  }
+  return state.sessions[state.selectedIndex - 1];
+}
+
+/**
  * Render the footer with keyboard hints.
+ * When a session with a PR URL is selected, shows the PR link.
  */
 function renderFooter(state: LauncherState, width: number): string {
+  const selectedSession = getSelectedSession(state);
+  const hasPrUrl = selectedSession?.prUrl;
+
+  // If selected session has a PR URL, show special PR footer
+  if (state.viewMode === "sessions" && hasPrUrl) {
+    return renderPrFooter(selectedSession.prUrl, width);
+  }
+
   const hints: string[] = [];
 
   if (state.viewMode === "sessions") {
@@ -83,6 +104,21 @@ function renderFooter(state: LauncherState, width: number): string {
   const hintsContent = hints.join("  ");
 
   const content = `${daemonStatus}   ${hintsContent}`;
+  const stripped = stripAnsi(content);
+  const padding = Math.max(0, width - stripped.length - 4);
+
+  return `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${content}${pc.cyan(box.horizontal.repeat(Math.max(1, padding)))}${pc.cyan(box.bottomRight)}`;
+}
+
+/**
+ * Render the footer when a session with a PR URL is selected.
+ * Shows the PR URL with an 'o' keybind hint to open it.
+ */
+function renderPrFooter(prUrl: string, width: number): string {
+  const prLabel = `PR: ${colors.brightCyan(prUrl)}`;
+  const openHint = hint("o", "open");
+
+  const content = `${prLabel}  ${openHint}`;
   const stripped = stripAnsi(content);
   const padding = Math.max(0, width - stripped.length - 4);
 

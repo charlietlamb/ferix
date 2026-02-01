@@ -1,4 +1,12 @@
-import type { Session } from "../../domain/index.js";
+import type { Provider, Session } from "../../domain/index.js";
+
+/**
+ * Constants for row layout in the sessions list.
+ * Sessions take 3 rows: main row + detail row + spacer.
+ * "Create new" takes 2 rows: row + spacer.
+ */
+const ROWS_PER_SESSION = 3;
+const ROWS_PER_CREATE_NEW = 2;
 
 /**
  * Session data for display in the launcher.
@@ -10,6 +18,12 @@ export interface LauncherSession {
   readonly status: "active" | "completed" | "failed" | "paused";
   readonly createdAt: string;
   readonly branchName?: string;
+  /** URL of the PR created for this session (if any) */
+  readonly prUrl?: string;
+  /** The LLM/agent provider used for this session */
+  readonly provider?: Provider;
+  /** Last meaningful output line from the LLM (truncated for display) */
+  readonly lastOutput?: string;
 }
 
 /**
@@ -64,6 +78,7 @@ export type LauncherResult =
 
 /**
  * Convert a Session to a LauncherSession for display.
+ * Note: lastOutput is not included here - it should be enriched separately.
  */
 export function sessionToLauncherSession(session: Session): LauncherSession {
   return {
@@ -73,6 +88,8 @@ export function sessionToLauncherSession(session: Session): LauncherSession {
     status: session.status,
     createdAt: session.createdAt,
     branchName: session.branchName,
+    prUrl: session.prUrl,
+    provider: session.provider,
   };
 }
 
@@ -104,31 +121,64 @@ export function createInitialLauncherState(): LauncherState {
 }
 
 /**
- * Calculate scroll offset to keep selected index visible.
- * Accounts for 1 line of padding at top (empty line before "Create new").
+ * Calculate row position for an item index.
+ * Item 0 = "Create new" (ROWS_PER_CREATE_NEW rows)
+ * Items 1+ = sessions (ROWS_PER_SESSION rows each)
+ */
+function getRowPositionForItem(itemIndex: number): number {
+  if (itemIndex === 0) {
+    return 0;
+  }
+  // "Create new" takes ROWS_PER_CREATE_NEW rows, then each session takes ROWS_PER_SESSION
+  return ROWS_PER_CREATE_NEW + (itemIndex - 1) * ROWS_PER_SESSION;
+}
+
+/**
+ * Get total rows needed for all items.
+ */
+function getTotalRows(sessionCount: number): number {
+  if (sessionCount === 0) {
+    return ROWS_PER_CREATE_NEW;
+  }
+  return ROWS_PER_CREATE_NEW + sessionCount * ROWS_PER_SESSION;
+}
+
+/**
+ * Get the height (in rows) for an item.
+ */
+function getItemHeight(itemIndex: number): number {
+  return itemIndex === 0 ? ROWS_PER_CREATE_NEW : ROWS_PER_SESSION;
+}
+
+/**
+ * Calculate scroll offset (in rows) to keep selected item visible.
+ * Ensures the entire item block is visible when possible.
  */
 function calculateScrollOffset(
   selectedIndex: number,
   currentOffset: number,
   viewportHeight: number,
-  totalItems: number
+  sessionCount: number
 ): number {
-  // Available lines for items (subtract 1 for top padding line)
-  const visibleLines = viewportHeight - 1;
+  const itemRowStart = getRowPositionForItem(selectedIndex, sessionCount);
+  const itemHeight = getItemHeight(selectedIndex);
+  const itemRowEnd = itemRowStart + itemHeight;
+  const totalRows = getTotalRows(sessionCount);
+  const visibleRows = viewportHeight;
 
-  // If selection is above visible area, scroll up
-  if (selectedIndex < currentOffset) {
-    return selectedIndex;
+  // If item starts above visible area, scroll up to show it
+  if (itemRowStart < currentOffset) {
+    return itemRowStart;
   }
 
-  // If selection is below visible area, scroll down
-  if (selectedIndex >= currentOffset + visibleLines) {
-    return Math.max(0, selectedIndex - visibleLines + 1);
+  // If item ends below visible area, scroll down to show it
+  if (itemRowEnd > currentOffset + visibleRows) {
+    return Math.max(0, itemRowEnd - visibleRows);
   }
 
-  // Selection is visible, keep current offset
+  // Item is visible, keep current offset
   // But make sure we don't have unnecessary scroll at the end
-  const maxOffset = Math.max(0, totalItems - visibleLines);
+  const maxOffset = Math.max(0, totalRows - visibleRows);
   return Math.min(currentOffset, maxOffset);
 }
 
@@ -141,7 +191,6 @@ export function navigate(
 ): LauncherState {
   // +1 because index 0 is "Create new"
   const maxIndex = state.sessions.length;
-  const totalItems = maxIndex + 1; // Including "Create new"
   let selectedIndex: number;
 
   switch (direction) {
@@ -166,7 +215,7 @@ export function navigate(
     selectedIndex,
     state.scrollOffset,
     state.viewportHeight,
-    totalItems
+    state.sessions.length
   );
 
   return { ...state, selectedIndex, scrollOffset };
@@ -215,9 +264,8 @@ export function updateViewportHeight(
   }
 
   // Recalculate scroll offset with new viewport height
-  const totalItems = state.sessions.length + 1;
-  const visibleLines = height - 1;
-  const maxOffset = Math.max(0, totalItems - visibleLines);
+  const totalRows = getTotalRows(state.sessions.length);
+  const maxOffset = Math.max(0, totalRows - height);
   const scrollOffset = Math.min(state.scrollOffset, maxOffset);
 
   return { ...state, viewportHeight: height, scrollOffset };
@@ -227,9 +275,8 @@ export function updateViewportHeight(
  * Scroll the list by a delta amount (for mouse wheel).
  */
 export function scrollList(state: LauncherState, delta: number): LauncherState {
-  const totalItems = state.sessions.length + 1;
-  const visibleLines = state.viewportHeight - 1;
-  const maxOffset = Math.max(0, totalItems - visibleLines);
+  const totalRows = getTotalRows(state.sessions.length);
+  const maxOffset = Math.max(0, totalRows - state.viewportHeight);
 
   const newOffset = Math.max(
     0,

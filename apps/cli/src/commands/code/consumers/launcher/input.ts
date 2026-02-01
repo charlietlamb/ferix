@@ -1,13 +1,11 @@
-import type {
-  LauncherResult,
-  LauncherState,
-  LauncherViewMode,
-} from "./state.js";
 import {
   appendTaskInput,
   deleteTaskInputChar,
   enterNewTaskMode,
   exitNewTaskMode,
+  type LauncherResult,
+  type LauncherState,
+  type LauncherViewMode,
   navigate,
   scrollList,
 } from "./state.js";
@@ -23,6 +21,7 @@ export type LauncherKeyAction =
   | { readonly type: "select" }
   | { readonly type: "new_session" }
   | { readonly type: "stop_daemon" }
+  | { readonly type: "open_pr" }
   | { readonly type: "back" }
   | { readonly type: "quit" }
   | { readonly type: "input"; readonly char: string }
@@ -34,9 +33,9 @@ export type LauncherKeyAction =
 /**
  * Side effects that can be triggered by actions.
  */
-interface LauncherSideEffect {
-  readonly type: "stop_daemon";
-}
+type LauncherSideEffect =
+  | { readonly type: "stop_daemon" }
+  | { readonly type: "open_pr"; readonly url: string };
 
 /**
  * Result of applying an action to the launcher state.
@@ -123,6 +122,9 @@ function parseSessionsKey(key: string): LauncherKeyAction {
     // Daemon control
     case "d":
       return { type: "stop_daemon" };
+    // Open PR in browser
+    case "o":
+      return { type: "open_pr" };
     // Selection
     case "\r": // Enter
     case "\n":
@@ -181,6 +183,17 @@ function handleSelect(state: LauncherState): ApplyActionResult {
 }
 
 /**
+ * Get the selected session's PR URL if available.
+ */
+function getSelectedPrUrl(state: LauncherState): string | undefined {
+  if (state.selectedIndex === 0) {
+    return undefined;
+  }
+  const session = state.sessions[state.selectedIndex - 1];
+  return session?.prUrl;
+}
+
+/**
  * Handle actions in sessions view mode.
  */
 function applySessionsAction(
@@ -200,6 +213,17 @@ function applySessionsAction(
         return { type: "effect", state, effect: { type: "stop_daemon" } };
       }
       return unchanged;
+    case "open_pr": {
+      const prUrl = getSelectedPrUrl(state);
+      if (prUrl) {
+        return {
+          type: "effect",
+          state,
+          effect: { type: "open_pr", url: prUrl },
+        };
+      }
+      return unchanged;
+    }
     case "scroll":
       return { type: "state", state: scrollList(state, action.delta) };
     default:

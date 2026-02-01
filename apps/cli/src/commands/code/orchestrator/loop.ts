@@ -89,7 +89,7 @@ export function runLoop(
       const promptStore = yield* PromptStore;
 
       const session = yield* sessionStore
-        .create(config.task, config.sessionId)
+        .create(config.task, config.sessionId, config.provider)
         .pipe(
           Effect.mapError(
             (e) =>
@@ -445,19 +445,22 @@ function performPushAndPR(
 
 /**
  * Updates session status with error logging but no failure.
+ * Optionally includes prUrl if a PR was successfully created.
  */
 function updateSessionStatus(
   sessionStore: {
     update: (id: string, session: Session) => Effect.Effect<void, unknown>;
   },
   session: Session,
-  completed: boolean
+  completed: boolean,
+  prUrl?: string
 ): Effect.Effect<void, never, never> {
   return sessionStore
     .update(session.id, {
       ...session,
       status: completed ? "completed" : "paused",
       worktreePath: undefined,
+      ...(prUrl ? { prUrl } : {}),
     })
     .pipe(
       Effect.tapError((error) =>
@@ -603,8 +606,8 @@ function createCompletionStream(
         prUrl: prUrl || undefined,
       };
 
-      // Session update is best-effort
-      yield* updateSessionStatus(sessionStore, session, completed);
+      // Session update is best-effort - includes prUrl if PR was created
+      yield* updateSessionStatus(sessionStore, session, completed, prUrl);
 
       // Build events
       const branchName = session.branchName ?? git.getBranchName(session.id);

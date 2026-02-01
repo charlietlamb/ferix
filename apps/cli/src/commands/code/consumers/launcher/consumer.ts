@@ -5,7 +5,9 @@ import {
   isDaemonRunning,
   stopDaemon,
 } from "../../daemon/index.js";
+import { FileSystemOutput } from "../../layers/output/file-system.js";
 import { FileSystemSession } from "../../layers/session/file-system.js";
+import { OutputStore } from "../../services/output-store.js";
 import { SessionStore } from "../../services/session-store.js";
 import { ANSIOutput } from "../tui/output/index.js";
 import { applyAction, parseKey } from "./input.js";
@@ -14,6 +16,7 @@ import {
   createInitialLauncherState,
   type DaemonInfo,
   type LauncherResult,
+  type LauncherSession,
   type LauncherState,
   sessionToLauncherSession,
   updateViewportHeight,
@@ -63,8 +66,119 @@ function handleStopDaemon(): DaemonInfo {
   return { running: false, pid: null, activeSessions: 0 };
 }
 
+/**
+ * Get the platform-specific command to open a URL in the browser.
+ */
+function getOpenCommand(url: string): string {
+  if (process.platform === "darwin") {
+    return `open "${url}"`;
+  }
+  if (process.platform === "win32") {
+    return `start "${url}"`;
+  }
+  return `xdg-open "${url}"`;
+}
+
+/**
+ * Open a URL in the default browser.
+ */
+function openInBrowser(url: string): void {
+  const command = getOpenCommand(url);
+  // Fire and forget - don't need to wait for browser to open
+  import("node:child_process").then(({ exec }) => {
+    exec(command, () => {
+      // Ignore any errors
+    });
+  });
+}
+
 /** Fixed rows: header (3) + separator + footer (1) */
 const FIXED_ROWS = 5;
+
+/** Maximum line length for last output preview */
+const MAX_OUTPUT_LENGTH = 80;
+
+/** Regex to match separator lines (box drawing characters) */
+const SEPARATOR_LINE_REGEX = /^[-=─═│║┌┐└┘├┤┬┴┼╔╗╚╝╠╣╦╩╬]+$/;
+
+/**
+ * Check if a line is a skip-worthy line (empty, separator, or tool output).
+ */
+function isSkipLine(trimmed: string): boolean {
+  if (trimmed === "") {
+    return true;
+  }
+  if (SEPARATOR_LINE_REGEX.test(trimmed)) {
+    return true;
+  }
+  if (trimmed.startsWith("Tool:")) {
+    return true;
+  }
+  if (trimmed.startsWith("Reading:")) {
+    return true;
+  }
+  if (trimmed.startsWith("Writing:")) {
+    return true;
+  }
+  if (trimmed.startsWith("Searching:")) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Find the last meaningful LLM output line from output lines.
+ * Skips empty lines, separators, and tool-related output.
+ */
+function findLastMeaningfulOutput(
+  lines: readonly string[]
+): string | undefined {
+  // Check last 20 lines for meaningful content
+  const searchLines = lines.slice(-20);
+  for (let i = searchLines.length - 1; i >= 0; i--) {
+    const line = searchLines[i];
+    if (!line) {
+      continue;
+    }
+
+    const trimmed = line.trim();
+    if (isSkipLine(trimmed)) {
+      continue;
+    }
+
+    // Found a meaningful line
+    return trimmed.length > MAX_OUTPUT_LENGTH
+      ? `${trimmed.slice(0, MAX_OUTPUT_LENGTH - 3)}...`
+      : trimmed;
+  }
+  return undefined;
+}
+
+/**
+ * Enrich a LauncherSession with the last output line.
+ * Uses OutputStore to load the session's output.log and find the last meaningful line.
+ */
+function enrichSessionWithOutput(
+  session: LauncherSession,
+  outputStore: OutputStoreService
+): Effect.Effect<LauncherSession, never, never> {
+  return outputStore.read(session.id).pipe(
+    Effect.map((lines) => {
+      const lastOutput = findLastMeaningfulOutput(lines);
+      return lastOutput ? { ...session, lastOutput } : session;
+    }),
+    Effect.catchAll(() => Effect.succeed(session))
+  );
+}
+
+/**
+ * Interface for OutputStore service.
+ */
+interface OutputStoreService {
+  readonly read: (
+    sessionId: string
+  ) => Effect.Effect<readonly string[], unknown>;
+}
 
 /**
  * Safe render wrapper that updates viewport height before rendering.
@@ -88,6 +202,23 @@ function safeRender(
   } catch {
     // Ignore render errors
   }
+}
+
+/**
+ * Handle side effects from launcher actions.
+ */
+function handleSideEffect(
+  effect: { type: "stop_daemon" } | { type: "open_pr"; url: string },
+  state: LauncherState
+): LauncherState {
+  if (effect.type === "stop_daemon") {
+    const newDaemonInfo = handleStopDaemon();
+    return { ...state, daemon: newDaemonInfo };
+  }
+  if (effect.type === "open_pr") {
+    openInBrowser(effect.url);
+  }
+  return state;
 }
 
 /**
@@ -139,11 +270,20 @@ export function createLauncherConsumer(options: LauncherConsumerOptions = {}): {
         const initialState = yield* Ref.get(stateRef);
         safeRender(initialState, output, stateRef);
 
-        // Load sessions
+        // Load sessions and enrich with last output
         const sessionStore = yield* SessionStore;
-        const sessionsResult = yield* sessionStore.list().pipe(
+        const outputStore = yield* OutputStore;
+        const baseSessions = yield* sessionStore.list().pipe(
           Effect.map((sessions) => sessions.map(sessionToLauncherSession)),
-          Effect.catchAll(() => Effect.succeed([]))
+          Effect.catchAll(() => Effect.succeed([] as LauncherSession[]))
+        );
+
+        // Enrich each session with last output (in parallel)
+        const sessionsResult = yield* Effect.all(
+          baseSessions.map((session) =>
+            enrichSessionWithOutput(session, outputStore)
+          ),
+          { concurrency: 5 }
         );
 
         // Load daemon info
@@ -185,23 +325,18 @@ export function createLauncherConsumer(options: LauncherConsumerOptions = {}): {
 
               // Handle side effects
               if (actionResult.type === "effect") {
-                let newState = actionResult.state;
-                if (actionResult.effect.type === "stop_daemon") {
-                  const newDaemonInfo = handleStopDaemon();
-                  newState = { ...newState, daemon: newDaemonInfo };
-                }
-                yield* Ref.set(stateRef, newState);
-                yield* Effect.sync(() =>
-                  safeRender(newState, output, stateRef)
+                const newState = handleSideEffect(
+                  actionResult.effect,
+                  actionResult.state
                 );
+                yield* Ref.set(stateRef, newState);
+                safeRender(newState, output, stateRef);
                 return null;
               }
 
               // Update state and render
               yield* Ref.set(stateRef, actionResult.state);
-              yield* Effect.sync(() =>
-                safeRender(actionResult.state, output, stateRef)
-              );
+              safeRender(actionResult.state, output, stateRef);
               return null;
             })
           ),
@@ -222,7 +357,9 @@ export function createLauncherConsumer(options: LauncherConsumerOptions = {}): {
 
         return result;
       }).pipe(
-        Effect.provide(Layer.merge(FileSystemSession.Live, Layer.empty)),
+        Effect.provide(
+          Layer.merge(FileSystemSession.Live, FileSystemOutput.Live)
+        ),
         Effect.ensuring(disableRawMode())
       ),
   };

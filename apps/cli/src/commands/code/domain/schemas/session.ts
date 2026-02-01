@@ -11,6 +11,12 @@ const SessionStatusSchema = S.Literal(
 );
 
 /**
+ * Provider schema - the LLM/agent provider used for this session.
+ */
+const ProviderSchema = S.Literal("claude", "cursor", "opencode");
+export type Provider = typeof ProviderSchema.Type;
+
+/**
  * Session schema.
  */
 const SessionSchema = S.Struct({
@@ -26,6 +32,10 @@ const SessionSchema = S.Struct({
   displayName: S.optional(S.String),
   /** The branch ferix was started from - used as PR base branch */
   baseBranch: S.optional(S.String),
+  /** URL of the PR created for this session (if any) */
+  prUrl: S.optional(S.String),
+  /** The LLM/agent provider used for this session */
+  provider: S.optional(ProviderSchema),
 });
 export type Session = typeof SessionSchema.Type;
 

@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { DateTime, Effect, Layer } from "effect";
 import { humanId } from "human-id";
 import { SessionStoreError } from "../../domain/errors.js";
-import { decodeSession, type Session } from "../../domain/index.js";
+import {
+  decodeSession,
+  type Provider,
+  type Session,
+} from "../../domain/index.js";
 import {
   SessionStore,
   type SessionStoreService,
@@ -101,7 +105,8 @@ function deserializeSession(
 const make: SessionStoreService = {
   create: (
     originalTask: string,
-    providedSessionId?: string
+    providedSessionId?: string,
+    provider?: Provider
   ): Effect.Effect<Session, SessionStoreError> =>
     Effect.gen(function* () {
       const sessionsDir = join(homedir(), SESSIONS_DIR);
@@ -116,6 +121,7 @@ const make: SessionStoreService = {
         status: "active",
         originalTask,
         completedTasks: [],
+        provider,
       };
 
       const sessionPath = getSessionPath(sessionId);

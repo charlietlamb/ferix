@@ -52,32 +52,23 @@ function getStatusIcon(status: LauncherSession["status"]): string {
 }
 
 /**
- * Render a single session row.
+ * Get provider badge for display.
  */
-function renderSessionRow(
-  session: LauncherSession,
-  isSelected: boolean,
+function getProviderBadge(
+  provider: LauncherSession["provider"],
   width: number
 ): string {
-  const prefix = isSelected ? colors.brand(symbols.arrow) : " ";
-  const icon = getStatusIcon(session.status);
-  const name = session.displayName || truncateTask(session.originalTask);
-  const time = formatRelativeTime(session.createdAt);
+  // Skip provider badge for narrow terminals
+  if (width < 60) {
+    return "";
+  }
 
-  // Calculate available width for name
-  // Format: "  ▸ [icon] name                time"
-  // prefix(2) + space(1) + icon(1) + space(1) + name + space(2) + time
-  const fixedWidth = 2 + 1 + 1 + 1 + 2 + stripAnsi(time).length;
-  const nameWidth = Math.max(10, width - fixedWidth - 8); // 8 for borders and padding
+  if (!provider) {
+    return "";
+  }
 
-  const displayName = truncate(name, nameWidth);
-  const paddedName = displayName.padEnd(
-    nameWidth + (stripAnsi(displayName).length - displayName.length),
-    " "
-  );
-
-  const content = `${prefix} ${icon} ${paddedName}  ${colors.muted(time)}`;
-  return borderedLine(content, width);
+  const badge = `[${provider}]`;
+  return colors.muted(badge);
 }
 
 /**
@@ -90,61 +81,150 @@ function truncateTask(task: string): string {
 }
 
 /**
- * Render the "Create new session" row.
+ * Render the main row of a session block.
+ * Format: "▸ ● session-name                    [provider]  2h ago"
  */
-function renderCreateNewRow(isSelected: boolean, width: number): string {
+function renderSessionMainRow(
+  session: LauncherSession,
+  isSelected: boolean,
+  width: number
+): string {
   const prefix = isSelected ? colors.brand(symbols.arrow) : " ";
-  const icon = colors.brightGreen("+");
-  const text = "Create new session";
-  const content = `${prefix} [${icon}] ${colors.brightWhite(text)}`;
+  const icon = getStatusIcon(session.status);
+  const name = session.displayName || truncateTask(session.originalTask);
+  const time = formatRelativeTime(session.createdAt);
+  const providerBadge = getProviderBadge(session.provider, width);
+
+  // Calculate available width for name
+  // Format: "  ▸ [icon] name                [provider]  time"
+  const providerWidth = providerBadge ? stripAnsi(providerBadge).length + 2 : 0;
+  const fixedWidth = 2 + 1 + 1 + 1 + providerWidth + 2 + stripAnsi(time).length;
+  const nameWidth = Math.max(10, width - fixedWidth - 8); // 8 for borders and padding
+
+  const displayName = truncate(name, nameWidth);
+  const paddedName = displayName.padEnd(
+    nameWidth + (displayName.length - stripAnsi(displayName).length),
+    " "
+  );
+
+  const providerPart = providerBadge ? `${providerBadge}  ` : "";
+  const content = `${prefix} ${icon} ${paddedName}${providerPart}${colors.muted(time)}`;
   return borderedLine(content, width);
 }
 
 /**
- * Render the sessions list view with viewport scrolling.
+ * Render the detail row of a session block.
+ * Format: "   └─ ✓ PR • Last LLM output text truncated..."
+ */
+function renderSessionDetailRow(
+  session: LauncherSession,
+  isSelected: boolean,
+  width: number
+): string {
+  // Tree connector with selection-aware coloring
+  const connector = isSelected
+    ? colors.brand(`   ${symbols.treeLast} `)
+    : colors.muted(`   ${symbols.treeLast} `);
+
+  // PR status indicator
+  let prIndicator = "";
+  if (session.prUrl) {
+    // Shorten indicator for narrow terminals
+    prIndicator =
+      width < 60
+        ? `${colors.success(symbols.checkmark)} `
+        : `${colors.success(symbols.checkmark)} PR ${colors.muted(symbols.separator)} `;
+  }
+
+  // Last output preview
+  const lastOutput = session.lastOutput || colors.muted("No output yet");
+
+  // Calculate available width for output preview
+  const connectorWidth = stripAnsi(connector).length;
+  const prWidth = stripAnsi(prIndicator).length;
+  const maxOutputWidth = width - connectorWidth - prWidth - 8; // 8 for borders and padding
+
+  const truncatedOutput =
+    stripAnsi(lastOutput).length > maxOutputWidth
+      ? truncate(lastOutput, maxOutputWidth)
+      : lastOutput;
+
+  const content = `${connector}${prIndicator}${truncatedOutput}`;
+  return borderedLine(content, width);
+}
+
+/**
+ * Render a complete session block (main row + detail row + spacer).
+ * Returns an array of lines for this session block.
+ */
+function renderSessionBlock(
+  session: LauncherSession,
+  isSelected: boolean,
+  width: number
+): string[] {
+  return [
+    renderSessionMainRow(session, isSelected, width),
+    renderSessionDetailRow(session, isSelected, width),
+    emptyBorderedLine(width), // Spacer line between sessions
+  ];
+}
+
+/**
+ * Render the "Create new session" block (row + spacer).
+ */
+function renderCreateNewBlock(isSelected: boolean, width: number): string[] {
+  const prefix = isSelected ? colors.brand(symbols.arrow) : " ";
+  const icon = colors.brightGreen("+");
+  const text = "Create new session";
+  const content = `${prefix} [${icon}] ${colors.brightWhite(text)}`;
+
+  return [
+    borderedLine(content, width),
+    emptyBorderedLine(width), // Spacer line after create new
+  ];
+}
+
+/**
+ * Render the sessions list view with multi-row session blocks.
+ * Each session takes 3 rows: main row + detail row + spacer.
+ * "Create new" takes 2 rows: row + spacer.
  */
 export function renderSessionsList(
   state: LauncherState,
   width: number,
   availableHeight: number
 ): string[] {
-  const lines: string[] = [];
   const { scrollOffset, selectedIndex, sessions } = state;
 
-  // Empty line for spacing at top
-  lines.push(emptyBorderedLine(width));
+  // Build all rows for all items
+  const allRows: string[] = [];
 
-  // Calculate which items are visible in the viewport
-  // We have availableHeight - 1 lines for items (1 line for top padding)
-  const visibleLines = availableHeight - 1;
-  const totalItems = sessions.length + 1; // +1 for "Create new"
+  // "Create new" block (item index 0)
+  const createNewRows = renderCreateNewBlock(selectedIndex === 0, width);
+  allRows.push(...createNewRows);
 
-  // Render visible items based on scroll offset
-  for (let viewIndex = 0; viewIndex < visibleLines; viewIndex++) {
-    const itemIndex = scrollOffset + viewIndex;
-
-    if (itemIndex >= totalItems) {
-      // Past the end of items, render empty line
-      lines.push(emptyBorderedLine(width));
-      continue;
-    }
-
-    if (itemIndex === 0) {
-      // "Create new session" option
-      lines.push(renderCreateNewRow(selectedIndex === 0, width));
-    } else {
-      // Session row (itemIndex - 1 because index 0 is "Create new")
-      const session = sessions[itemIndex - 1];
-      if (session) {
-        const isSelected = selectedIndex === itemIndex;
-        lines.push(renderSessionRow(session, isSelected, width));
-      } else {
-        lines.push(emptyBorderedLine(width));
-      }
+  // Session blocks (item indices 1+)
+  for (let i = 0; i < sessions.length; i++) {
+    const session = sessions[i];
+    if (session) {
+      const isSelected = selectedIndex === i + 1;
+      const sessionRows = renderSessionBlock(session, isSelected, width);
+      allRows.push(...sessionRows);
     }
   }
 
-  return lines.slice(0, availableHeight);
+  // Apply scroll offset and slice to available height
+  const visibleRows = allRows.slice(
+    scrollOffset,
+    scrollOffset + availableHeight
+  );
+
+  // Pad with empty lines if we don't have enough content
+  while (visibleRows.length < availableHeight) {
+    visibleRows.push(emptyBorderedLine(width));
+  }
+
+  return visibleRows;
 }
 
 /**
