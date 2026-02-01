@@ -1,8 +1,10 @@
 import {
   appendTaskInput,
   deleteTaskInputChar,
+  deleteTaskInputLine,
   enterNewTaskMode,
   exitNewTaskMode,
+  insertNewline,
   type LauncherResult,
   type LauncherState,
   type LauncherViewMode,
@@ -270,6 +272,10 @@ function applyInputAction(
       return { type: "state", state: appendTaskInput(state, action.char) };
     case "backspace":
       return { type: "state", state: deleteTaskInputChar(state) };
+    case "newline":
+      return { type: "state", state: insertNewline(state) };
+    case "delete_line":
+      return { type: "state", state: deleteTaskInputLine(state) };
     case "submit":
       if (state.taskInput.trim()) {
         return {
