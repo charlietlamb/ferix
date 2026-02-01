@@ -50,7 +50,7 @@ export function PromptCell({ prompt }: PromptCellProps) {
 
   return (
     <Link
-      className="group relative flex h-full w-full flex-col gap-3 p-4 text-left transition-all duration-200 ease-out hover:bg-foreground/[0.02] dark:hover:bg-foreground/[0.03]"
+      className="group relative flex h-full w-full flex-col gap-3 p-4 text-left transition-all duration-200 ease-out hover:-translate-y-px hover:bg-foreground/[0.02] dark:hover:bg-foreground/[0.03]"
       href={`/prompt/${prompt.slug}`}
     >
       {/* Subtle hover glow effect */}
@@ -62,11 +62,11 @@ export function PromptCell({ prompt }: PromptCellProps) {
         <div className="flex min-w-0 items-center gap-2">
           {firstTag ? (
             <TypeIcon
-              className="text-foreground/70 transition-colors duration-150 group-hover:text-foreground"
+              className="text-foreground/70 transition-all duration-150 group-hover:scale-105 group-hover:text-foreground"
               size={16}
             />
           ) : (
-            <TypeIcon className="size-4 shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-foreground/70" />
+            <TypeIcon className="size-4 shrink-0 text-muted-foreground transition-all duration-150 group-hover:scale-105 group-hover:text-foreground/70" />
           )}
           <span className="line-clamp-1 font-medium text-foreground/90 text-sm transition-colors duration-150 group-hover:text-foreground">
             {prompt.title}
@@ -75,12 +75,12 @@ export function PromptCell({ prompt }: PromptCellProps) {
         <div className="flex items-center gap-2">
           <TypeBadge type={prompt.type} />
           <button
-            className="rounded p-0.5 transition-all duration-150 hover:bg-foreground/5"
+            className="rounded p-0.5 transition-all duration-150 hover:scale-110 hover:bg-foreground/5 active:scale-95"
             onClick={handleCopy}
             type="button"
           >
             {copied ? (
-              <CheckIcon className="size-4 text-green-500" />
+              <CheckIcon className="size-4 text-green-500 transition-transform duration-150" />
             ) : (
               <CopyIcon className="size-4 text-muted-foreground opacity-0 transition-all duration-150 hover:text-foreground group-hover:opacity-100" />
             )}

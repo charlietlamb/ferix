@@ -44,12 +44,15 @@ export function SaveButton({
   if (variant === "icon") {
     return (
       <button
-        className={cn("cursor-pointer hover:text-foreground", className)}
+        className={cn(
+          "cursor-pointer rounded p-0.5 transition-all duration-150 hover:scale-110 hover:bg-foreground/5 hover:text-foreground active:scale-95",
+          className
+        )}
         onClick={handleSave}
         type="button"
       >
         <BookmarkSimpleIcon
-          className="size-4"
+          className="size-4 transition-transform duration-150"
           weight={isSaved ? "fill" : "regular"}
         />
       </button>
