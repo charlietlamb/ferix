@@ -346,7 +346,7 @@ export function renderNewTaskInput(
   const prefixWidth = stripAnsi(inputPrefix).length;
   const cursor = pc.inverse(" ");
   const innerWidth = width - 4;
-  const maxLineWidth = innerWidth - prefixWidth;
+  const maxLineWidth = Math.max(1, innerWidth - prefixWidth);
 
   const { taskInput, taskInputCursor: cursorPos } = state;
 
