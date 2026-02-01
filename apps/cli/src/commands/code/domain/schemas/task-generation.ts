@@ -39,3 +39,13 @@ export type TasksFile = typeof TasksFileSchema.Type;
 export function formatTasksJson(tasksFile: TasksFile): string {
   return JSON.stringify(tasksFile, null, 2);
 }
+
+/**
+ * Decode and validate a tasks file from unknown input.
+ * Returns an Effect that succeeds with TasksFile or fails with ParseError.
+ */
+export function decodeTasksFile(
+  input: unknown
+): S.decodeUnknown.Result<TasksFile> {
+  return S.decodeUnknown(TasksFileSchema)(input);
+}
