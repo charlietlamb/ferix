@@ -15,7 +15,7 @@ function getModeDisplay(mode: ExecutionMode, taskId?: string): string {
 
   switch (mode) {
     case "breakdown":
-      return colors.brightMagenta(`BREAKDOWN${taskSuffix}`);
+      return colors.brightWhite(`BREAKDOWN${taskSuffix}`);
     case "planning":
       return colors.brightCyan(`PLAN${taskSuffix}`);
     case "working":
@@ -25,7 +25,7 @@ function getModeDisplay(mode: ExecutionMode, taskId?: string): string {
     case "verifying":
       return colors.warning(`VERIFY${taskSuffix}`);
     case "reviewing":
-      return colors.brightMagenta(`REVIEW${taskSuffix}`);
+      return colors.brightWhite(`REVIEW${taskSuffix}`);
     default:
       return colors.muted("IDLE");
   }
@@ -35,9 +35,7 @@ export function renderStatusBar(state: TUIState, width: number): string {
   const parts: string[] = [];
 
   // Brand
-  parts.push(
-    `${colors.brand(symbols.diamond)} ${colors.brightWhite("FERIX")} ${colors.brand(symbols.diamond)}`
-  );
+  parts.push(`${colors.brand(symbols.arrow)} ${colors.brightWhite("FERIX")}`);
 
   // YOLO mode indicator (prominent warning)
   if (state.yolo) {
@@ -46,7 +44,7 @@ export function renderStatusBar(state: TUIState, width: number): string {
 
   // Debug mode indicator
   if (state.debug) {
-    parts.push(colors.brightMagenta("DEBUG"));
+    parts.push(colors.warning("DEBUG"));
   }
 
   // PR mode indicator

@@ -3,6 +3,7 @@ import {
   borderedLine,
   colors,
   emptyBorderedLine,
+  statusText,
   stripAnsi,
   symbols,
   truncate,
@@ -34,20 +35,20 @@ function formatRelativeTime(isoDate: string): string {
 }
 
 /**
- * Get status icon for a session.
+ * Get status display for a session (muted text).
  */
-function getStatusIcon(status: LauncherSession["status"]): string {
+function getStatusDisplay(status: LauncherSession["status"]): string {
   switch (status) {
     case "active":
-      return colors.warning(symbols.bulletFilled);
+      return statusText.active;
     case "completed":
-      return colors.success(symbols.checkmark);
+      return statusText.completed;
     case "failed":
-      return colors.error(symbols.cross);
+      return statusText.failed;
     case "paused":
-      return colors.muted(symbols.bulletEmpty);
+      return statusText.paused;
     default:
-      return colors.muted(symbols.bulletEmpty);
+      return statusText.pending;
   }
 }
 
@@ -90,7 +91,7 @@ function renderSessionMainRow(
   width: number
 ): string {
   const prefix = isSelected ? colors.brand(symbols.arrow) : " ";
-  const icon = getStatusIcon(session.status);
+  const statusDisplay = getStatusDisplay(session.status);
   const name = session.displayName || truncateTask(session.originalTask);
   const time = formatRelativeTime(session.createdAt);
   const providerBadge = getProviderBadge(session.provider, width);
@@ -101,14 +102,15 @@ function renderSessionMainRow(
   const fixedWidth = 2 + 1 + 1 + 1 + providerWidth + 2 + stripAnsi(time).length;
   const nameWidth = Math.max(10, width - fixedWidth - 8); // 8 for borders and padding
 
-  const displayName = truncate(name, nameWidth);
+  const truncatedName = truncate(name, nameWidth);
+  const displayName = isSelected ? colors.brand(truncatedName) : truncatedName;
   const paddedName = displayName.padEnd(
     nameWidth + (displayName.length - stripAnsi(displayName).length),
     " "
   );
 
   const providerPart = providerBadge ? `${providerBadge}  ` : "";
-  const content = `${prefix} ${icon} ${paddedName}${providerPart}${colors.muted(time)}`;
+  const content = `${prefix} ${paddedName}  ${statusDisplay}  ${providerPart}${colors.muted(time)}`;
   return borderedLine(content, width);
 }
 

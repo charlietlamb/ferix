@@ -7,7 +7,7 @@ import {
 } from "./primitives.js";
 
 export function renderTaskBar(task: string, width: number): string {
-  const label = `${colors.brand(symbols.diamond)} ${colors.brightWhite("TASK")} ${colors.muted(symbols.separator)}`;
+  const label = `${colors.brand(symbols.arrow)} ${colors.brightWhite("TASK")} ${colors.muted(symbols.separator)}`;
   const labelLen = stripAnsi(label).length;
   const maxTaskLen = width - labelLen - 6; // Account for borders and spacing
 

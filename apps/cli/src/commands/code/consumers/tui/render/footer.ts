@@ -1,9 +1,8 @@
-import pc from "picocolors";
 import type { TUIState } from "../../../domain/schemas/tui.js";
-import { box, colors, stripAnsi, symbols } from "./primitives.js";
+import { box, colors, stripAnsi } from "./primitives.js";
 
 function hint(key: string, description: string): string {
-  return `${colors.brand(symbols.diamond)} ${colors.brightWhite(key)} ${colors.muted(description)}`;
+  return `[${colors.brightWhite(key)}] ${colors.muted(description)}`;
 }
 
 function scrollPosition(offset: number, total: number, height: number): string {
@@ -67,5 +66,5 @@ export function renderFooter(
   const stripped = stripAnsi(content);
   const padding = Math.max(0, width - stripped.length - 4);
 
-  return `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${content}${pc.cyan(box.horizontal.repeat(Math.max(1, padding)))}${pc.cyan(box.bottomRight)}`;
+  return `${colors.border(box.bottomLeft)}${colors.border(box.horizontal)} ${content}${colors.border(box.horizontal.repeat(Math.max(1, padding)))}${colors.border(box.bottomRight)}`;
 }

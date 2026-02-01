@@ -124,6 +124,10 @@ function isSkipLine(trimmed: string): boolean {
   if (trimmed.startsWith("Searching:")) {
     return true;
   }
+  // Skip ferix XML tags
+  if (trimmed.includes("<ferix:") || trimmed.includes("</ferix:")) {
+    return true;
+  }
   return false;
 }
 

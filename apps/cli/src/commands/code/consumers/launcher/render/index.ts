@@ -1,4 +1,3 @@
-import pc from "picocolors";
 import type { TerminalOutput } from "../../tui/output/index.js";
 import {
   borderedLine,
@@ -19,7 +18,7 @@ const FIXED_ROWS = 5;
  * Create a hint string for the footer.
  */
 function hint(key: string, description: string): string {
-  return `${colors.brand(symbols.diamond)} ${colors.brightWhite(key)} ${colors.muted(description)}`;
+  return `[${colors.brightWhite(key)}] ${colors.muted(description)}`;
 }
 
 /**
@@ -31,8 +30,8 @@ function renderHeader(state: LauncherState, width: number): string[] {
 
   const title =
     state.viewMode === "new_task_input"
-      ? `  ${colors.brand(symbols.diamond)} ${colors.brightMagenta("NEW SESSION")} ${colors.brand(symbols.diamond)}`
-      : `  ${colors.brand(symbols.diamond)} ${colors.brightMagenta("FERIX")} ${colors.brand(symbols.diamond)}`;
+      ? `  ${colors.brand(symbols.arrow)} ${colors.brightWhite("NEW SESSION")}`
+      : `  ${colors.brand(symbols.arrow)} ${colors.brightWhite("FERIX")}`;
 
   lines.push(borderedLine(title, width));
   lines.push(separator(width));
@@ -147,7 +146,7 @@ function renderFooter(state: LauncherState, width: number): string {
   const stripped = stripAnsi(content);
   const padding = Math.max(0, width - stripped.length - 4);
 
-  return `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${content}${pc.cyan(box.horizontal.repeat(Math.max(1, padding)))}${pc.cyan(box.bottomRight)}`;
+  return `${colors.border(box.bottomLeft)}${colors.border(box.horizontal)} ${content}${colors.border(box.horizontal.repeat(Math.max(1, padding)))}${colors.border(box.bottomRight)}`;
 }
 
 /**
@@ -162,7 +161,7 @@ function renderPrFooter(prUrl: string, width: number): string {
   const stripped = stripAnsi(content);
   const padding = Math.max(0, width - stripped.length - 4);
 
-  return `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${content}${pc.cyan(box.horizontal.repeat(Math.max(1, padding)))}${pc.cyan(box.bottomRight)}`;
+  return `${colors.border(box.bottomLeft)}${colors.border(box.horizontal)} ${content}${colors.border(box.horizontal.repeat(Math.max(1, padding)))}${colors.border(box.bottomRight)}`;
 }
 
 /**
@@ -177,7 +176,7 @@ function renderCreatePrFooter(width: number): string {
   const stripped = stripAnsi(content);
   const padding = Math.max(0, width - stripped.length - 4);
 
-  return `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${content}${pc.cyan(box.horizontal.repeat(Math.max(1, padding)))}${pc.cyan(box.bottomRight)}`;
+  return `${colors.border(box.bottomLeft)}${colors.border(box.horizontal)} ${content}${colors.border(box.horizontal.repeat(Math.max(1, padding)))}${colors.border(box.bottomRight)}`;
 }
 
 /**
@@ -209,7 +208,7 @@ function renderPrCreationFooter(
   const stripped = stripAnsi(statusText);
   const padding = Math.max(0, width - stripped.length - 4);
 
-  return `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${statusText}${pc.cyan(box.horizontal.repeat(Math.max(1, padding)))}${pc.cyan(box.bottomRight)}`;
+  return `${colors.border(box.bottomLeft)}${colors.border(box.horizontal)} ${statusText}${colors.border(box.horizontal.repeat(Math.max(1, padding)))}${colors.border(box.bottomRight)}`;
 }
 
 /**
@@ -220,7 +219,7 @@ function renderLoading(width: number, height: number): string[] {
   lines.push(topBorder(width));
   lines.push(
     borderedLine(
-      `  ${colors.brand(symbols.diamond)} ${colors.brightMagenta("FERIX")} ${colors.brand(symbols.diamond)}`,
+      `  ${colors.brand(symbols.arrow)} ${colors.brightWhite("FERIX")}`,
       width
     )
   );
@@ -239,7 +238,7 @@ function renderLoading(width: number, height: number): string[] {
   }
 
   // Footer
-  const footer = `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${hint("^C", "quit")}${pc.cyan(box.horizontal.repeat(Math.max(1, width - 15)))}${pc.cyan(box.bottomRight)}`;
+  const footer = `${colors.border(box.bottomLeft)}${colors.border(box.horizontal)} ${hint("^C", "quit")}${colors.border(box.horizontal.repeat(Math.max(1, width - 15)))}${colors.border(box.bottomRight)}`;
   lines.push(footer);
 
   return lines;
@@ -253,7 +252,7 @@ function renderError(error: string, width: number, height: number): string[] {
   lines.push(topBorder(width));
   lines.push(
     borderedLine(
-      `  ${colors.brand(symbols.diamond)} ${colors.brightMagenta("FERIX")} ${colors.brand(symbols.diamond)}`,
+      `  ${colors.brand(symbols.arrow)} ${colors.brightWhite("FERIX")}`,
       width
     )
   );
@@ -267,7 +266,7 @@ function renderError(error: string, width: number, height: number): string[] {
     lines.push(i === 1 ? errorMsg : emptyLine);
   }
 
-  const footer = `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${hint("^C", "quit")}${pc.cyan(box.horizontal.repeat(Math.max(1, width - 15)))}${pc.cyan(box.bottomRight)}`;
+  const footer = `${colors.border(box.bottomLeft)}${colors.border(box.horizontal)} ${hint("^C", "quit")}${colors.border(box.horizontal.repeat(Math.max(1, width - 15)))}${colors.border(box.bottomRight)}`;
   lines.push(footer);
 
   return lines;

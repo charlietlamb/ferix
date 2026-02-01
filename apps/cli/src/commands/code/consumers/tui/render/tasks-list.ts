@@ -1,4 +1,3 @@
-import pc from "picocolors";
 import type { TUIState, TUITask } from "../../../domain/schemas/tui.js";
 import {
   borderedLine,
@@ -21,10 +20,10 @@ function renderTaskLine(
   const parts: string[] = [];
 
   // Selection indicator
-  parts.push(isSelected ? colors.brightMagenta(symbols.arrow) : " ");
+  parts.push(isSelected ? colors.brightWhite(symbols.arrow) : " ");
 
   // Task ID
-  parts.push(colors.brightMagenta(`[${task.id}]`));
+  parts.push(colors.brightWhite(`[${task.id}]`));
 
   // Status icon
   parts.push(statusIcon(task.status));
@@ -78,7 +77,7 @@ function renderGitInfo(state: TUIState, width: number): string[] {
 
     lines.push(
       borderedLine(
-        `${colors.brand(symbols.diamond)} ${colors.brightWhite("GIT")} ${colors.muted(symbols.separator)} ${colors.brightWhite(state.gitBranch)} ${pushStatus}`,
+        `${colors.brand(symbols.arrow)} ${colors.brightWhite("GIT")} ${colors.muted(symbols.separator)} ${colors.brightWhite(state.gitBranch)} ${pushStatus}`,
         width
       )
     );
@@ -90,7 +89,7 @@ function renderGitInfo(state: TUIState, width: number): string[] {
     const url = truncate(state.prUrl, maxUrlLen);
     lines.push(
       borderedLine(
-        `${colors.brand(symbols.diamond)} ${colors.brightWhite("PR")}  ${colors.muted(symbols.separator)} ${colors.info(url)}`,
+        `${colors.brand(symbols.arrow)} ${colors.brightWhite("PR")}  ${colors.muted(symbols.separator)} ${colors.info(url)}`,
         width
       )
     );
@@ -109,11 +108,11 @@ export function renderTasksListView(
 
   // Header
   lines.push(emptyBorderedLine(width));
-  const headerText = `${colors.brand(symbols.diamond)} ${colors.brightWhite("TASKS")} ${colors.brand(symbols.diamond)}`;
+  const headerText = `${colors.brand(symbols.arrow)} ${colors.brightWhite("TASKS")}`;
   lines.push(borderedLine(headerText, width));
 
   // Separator
-  const sepLine = pc.cyan(box.horizontal.repeat(innerWidth));
+  const sepLine = colors.border(box.horizontal.repeat(innerWidth));
   lines.push(borderedLine(sepLine, width));
   lines.push(emptyBorderedLine(width));
 

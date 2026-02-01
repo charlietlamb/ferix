@@ -1,4 +1,3 @@
-import pc from "picocolors";
 import type {
   TUICriterion,
   TUIPhase,
@@ -106,11 +105,11 @@ function renderTaskHeader(
   width: number,
   innerWidth: number
 ): string[] {
-  const sepLine = pc.cyan(box.horizontal.repeat(innerWidth));
+  const sepLine = colors.border(box.horizontal.repeat(innerWidth));
   return [
     emptyBorderedLine(width),
     borderedLine(
-      `${colors.brand(symbols.diamond)} ${colors.brightWhite(`TASK #${task.id}`)} ${colors.brand(symbols.diamond)}`,
+      `${colors.brand(symbols.arrow)} ${colors.brightWhite(`TASK #${task.id}`)}`,
       width
     ),
     borderedLine(task.title, width),
@@ -210,7 +209,7 @@ function renderGitSection(
   }
 
   const lines: string[] = [];
-  const sepLine = pc.cyan(box.horizontal.repeat(innerWidth));
+  const sepLine = colors.border(box.horizontal.repeat(innerWidth));
   const pushStatus = state.gitPushed
     ? colors.success(symbols.checkmark)
     : colors.muted("Not pushed");
@@ -218,7 +217,7 @@ function renderGitSection(
   lines.push(borderedLine(sepLine, width));
   lines.push(
     borderedLine(
-      `${colors.brand(symbols.diamond)} ${colors.brightWhite("GIT")} ${colors.muted(symbols.separator)} ${state.gitBranch} ${pushStatus}`,
+      `${colors.brand(symbols.arrow)} ${colors.brightWhite("GIT")} ${colors.muted(symbols.separator)} ${state.gitBranch} ${pushStatus}`,
       width
     )
   );
@@ -226,7 +225,7 @@ function renderGitSection(
   if (state.prUrl) {
     lines.push(
       borderedLine(
-        `${colors.brand(symbols.diamond)} ${colors.brightWhite("PR")}  ${colors.muted(symbols.separator)} ${colors.info(state.prUrl)}`,
+        `${colors.brand(symbols.arrow)} ${colors.brightWhite("PR")}  ${colors.muted(symbols.separator)} ${colors.info(state.prUrl)}`,
         width
       )
     );

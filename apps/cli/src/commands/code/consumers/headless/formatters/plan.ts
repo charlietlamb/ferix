@@ -9,13 +9,13 @@ import { headlessFormatterRegistry } from "./registry.js";
 const planCreatedFormatter: EventFormatter<"PlanCreated"> = {
   tag: "PlanCreated",
   format: (event: PlanCreatedEvent) =>
-    pc.magenta(`[PLAN] Created: ${event.plan.id}`),
+    pc.white(`[PLAN] Created: ${event.plan.id}`),
 };
 
 const planUpdatedFormatter: EventFormatter<"PlanUpdated"> = {
   tag: "PlanUpdated",
   format: (event: PlanUpdatedEvent) =>
-    pc.magenta(`[PLAN] Updated: ${event.plan.id}`),
+    pc.white(`[PLAN] Updated: ${event.plan.id}`),
 };
 
 headlessFormatterRegistry.register(planCreatedFormatter);

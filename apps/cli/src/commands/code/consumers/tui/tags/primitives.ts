@@ -1,4 +1,3 @@
-import pc from "picocolors";
 import { box, colors, getToolColor, symbols } from "../render/primitives.js";
 
 /**
@@ -6,16 +5,16 @@ import { box, colors, getToolColor, symbols } from "../render/primitives.js";
  */
 export function toolUseLine(tool: string, detail: string): string {
   const toolColor = getToolColor(tool);
-  const arrow = colors.muted(">>");
+  const arrow = colors.muted(symbols.prompt);
   const toolName = toolColor(tool);
   const detailText = detail ? ` ${colors.muted(detail)}` : "";
   return `${arrow} ${toolName}${detailText}`;
 }
 
 /**
- * Helper to create diamond banner.
+ * Helper to create a header banner with lines.
  */
-function diamondBanner(
+function headerBanner(
   text: string,
   width: number,
   borderColor: (s: string) => string,
@@ -29,7 +28,7 @@ function diamondBanner(
   const textLen = text.length;
   const sideLen = Math.max(1, Math.floor((innerWidth - textLen - 2) / 2));
   const line = box.singleHorizontal.repeat(sideLen);
-  return `${borderColor(symbols.diamond)}${borderColor(line)} ${textColor(text)} ${borderColor(line)}${borderColor(symbols.diamond)}`;
+  return `${borderColor(line)} ${textColor(text)} ${borderColor(line)}`;
 }
 
 /**
@@ -41,23 +40,23 @@ export function taskListHeader(width: number): string {
   if (innerWidth < 10) {
     return colors.brand("TASKS");
   }
-  const label = ` ${symbols.diamond} TASKS ${symbols.diamond} `;
+  const label = " TASKS ";
   const sideLen = Math.max(1, Math.floor((innerWidth - label.length) / 2));
-  return `${pc.cyan("┌")}${pc.cyan(box.singleHorizontal.repeat(sideLen))}${colors.brand(label)}${pc.cyan(box.singleHorizontal.repeat(sideLen))}`;
+  return `${colors.border("┌")}${colors.border(box.singleHorizontal.repeat(sideLen))}${colors.brand(label)}${colors.border(box.singleHorizontal.repeat(sideLen))}`;
 }
 
 /**
  * Task list footer.
  */
 export function taskListFooter(): string {
-  return pc.cyan("└────────────────────────────────┘");
+  return colors.border("└────────────────────────────────┘");
 }
 
 /**
  * Task line.
  */
 export function taskLine(id: string, description: string): string {
-  return `${pc.cyan("│")} ${colors.brightMagenta(`[${id}]`)} ${description}`;
+  return `${colors.border("│")} ${colors.brightWhite(`[${id}]`)} ${description}`;
 }
 
 /**
@@ -71,35 +70,35 @@ export function taskDone(id: string): string {
  * Phases header.
  */
 export function phasesHeader(taskId: string): string {
-  return `${pc.cyan("│")}   ${colors.muted(`Phases for task ${taskId}:`)}`;
+  return `${colors.border("│")}   ${colors.muted(`Phases for task ${taskId}:`)}`;
 }
 
 /**
  * Phase line (tree structure).
  */
 export function phaseLine(id: string, description: string): string {
-  return `${pc.cyan("│")}   ${colors.muted(symbols.treeMiddle)} ${colors.muted(symbols.bulletEmpty)} ${colors.muted(`[${id}]`)} ${description}`;
+  return `${colors.border("│")}   ${colors.muted(symbols.treeMiddle)} ${colors.muted(symbols.bulletEmpty)} ${colors.muted(`[${id}]`)} ${description}`;
 }
 
 /**
  * Phase start.
  */
 export function phaseStart(id: string): string {
-  return `${pc.cyan("│")}   ${colors.warning(symbols.bulletFilled)} ${colors.muted(`Phase ${id} started`)}`;
+  return `${colors.border("│")}   ${colors.warning(symbols.bulletFilled)} ${colors.muted(`Phase ${id} started`)}`;
 }
 
 /**
  * Phase done.
  */
 export function phaseDone(id: string): string {
-  return `${pc.cyan("│")}   ${colors.success(symbols.checkmark)} ${colors.muted(`Phase ${id} complete`)}`;
+  return `${colors.border("│")}   ${colors.success(symbols.checkmark)} ${colors.muted(`Phase ${id} complete`)}`;
 }
 
 /**
  * Phase failed.
  */
 export function phaseFailed(id: string, reason: string): string {
-  return `${pc.cyan("│")}   ${colors.error(symbols.cross)} ${colors.muted(`Phase ${id} failed:`)} ${colors.error(reason)}`;
+  return `${colors.border("│")}   ${colors.error(symbols.cross)} ${colors.muted(`Phase ${id} failed:`)} ${colors.error(reason)}`;
 }
 
 /**
@@ -120,7 +119,7 @@ export function criterionFailed(id: string, reason: string): string {
  * Complete banner.
  */
 export function completeBanner(width: number): string {
-  return diamondBanner(
+  return headerBanner(
     `${symbols.checkmark} ALL TASKS COMPLETE`,
     width,
     colors.brightCyan,
@@ -132,14 +131,14 @@ export function completeBanner(width: number): string {
  * Error line.
  */
 export function errorLine(message: string): string {
-  return `${colors.brand(symbols.diamond)} ${colors.error("ERROR")} ${colors.muted(symbols.separator)} ${colors.error(message)}`;
+  return `${colors.brand(symbols.arrow)} ${colors.error("ERROR")} ${colors.muted(symbols.separator)} ${colors.error(message)}`;
 }
 
 /**
  * Review passed banner.
  */
 export function reviewPassedBanner(width: number): string {
-  return diamondBanner(
+  return headerBanner(
     `${symbols.checkmark} REVIEW PASSED`,
     width,
     colors.brightCyan,
@@ -151,7 +150,7 @@ export function reviewPassedBanner(width: number): string {
  * Review failed banner.
  */
 export function reviewFailedBanner(width: number): string {
-  return diamondBanner(
+  return headerBanner(
     `${symbols.cross} REVIEW FAILED`,
     width,
     colors.brightCyan,
@@ -163,12 +162,12 @@ export function reviewFailedBanner(width: number): string {
  * Criteria header.
  */
 export function criteriaHeader(taskId: string): string {
-  return `${pc.cyan("│")}   ${colors.muted(`Success criteria for task ${taskId}:`)}`;
+  return `${colors.border("│")}   ${colors.muted(`Success criteria for task ${taskId}:`)}`;
 }
 
 /**
  * Criterion line (tree structure).
  */
 export function criterionLine(id: string, description: string): string {
-  return `${pc.cyan("│")}   ${colors.muted(symbols.treeMiddle)} ${colors.muted(symbols.bulletEmpty)} ${colors.muted(`[${id}]`)} ${description}`;
+  return `${colors.border("│")}   ${colors.muted(symbols.treeMiddle)} ${colors.muted(symbols.bulletEmpty)} ${colors.muted(`[${id}]`)} ${description}`;
 }

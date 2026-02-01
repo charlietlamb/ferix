@@ -4,17 +4,18 @@ import pc from "picocolors";
 // biome-ignore lint/suspicious/noControlCharactersInRegex: Required for ANSI detection
 const ANSI_PATTERN = /\x1b\[[0-9;]*m/g;
 
-// Colors
+// Colors - DOS/BIOS inspired palette
 export const colors = {
-  brand: pc.magenta,
+  brand: pc.white,
+  brandDim: pc.gray,
   success: pc.green,
   warning: pc.yellow,
   error: pc.red,
   info: pc.cyan,
   muted: pc.dim,
   highlight: pc.bold,
+  border: pc.blue,
   brightWhite: (s: string) => pc.bold(pc.white(s)),
-  brightMagenta: (s: string) => pc.bold(pc.magenta(s)),
   brightCyan: (s: string) => pc.bold(pc.cyan(s)),
   brightGreen: (s: string) => pc.bold(pc.green(s)),
   brightYellow: (s: string) => pc.bold(pc.yellow(s)),
@@ -27,7 +28,7 @@ const toolColors: Record<string, (s: string) => string> = {
   Read: pc.cyan,
   Edit: pc.yellow,
   Write: pc.green,
-  Bash: pc.magenta,
+  Bash: pc.cyan,
   Glob: pc.blue,
   Grep: pc.blue,
   Task: colors.brightWhite,
@@ -39,10 +40,10 @@ export function getToolColor(tool: string): (s: string) => string {
   return toolColors[tool] || pc.white;
 }
 
-// Symbols
+// Symbols - Clean retro style
 export const symbols = {
-  diamond: "◆",
-  arrow: "▸",
+  arrow: ">",
+  prompt: ">>",
   bulletEmpty: "○",
   bulletFilled: "●",
   checkmark: "✓",
@@ -51,6 +52,17 @@ export const symbols = {
   treeMiddle: "├─",
   treeLast: "└─",
   treeVertical: "│  ",
+};
+
+// Status text (muted words)
+export const statusText = {
+  done: colors.muted("done"),
+  active: colors.muted("active"),
+  paused: colors.muted("paused"),
+  failed: colors.muted("failed"),
+  running: colors.muted("running"),
+  pending: colors.muted("pending"),
+  completed: colors.muted("completed"),
 };
 
 // Box drawing
@@ -68,14 +80,14 @@ export const box = {
 
 export function topBorder(width: number): string {
   const repeatCount = Math.max(0, width - 2);
-  return pc.cyan(
+  return colors.border(
     `${box.topLeft}${box.horizontal.repeat(repeatCount)}${box.topRight}`
   );
 }
 
 export function separator(width: number): string {
   const repeatCount = Math.max(0, width - 2);
-  return pc.cyan(
+  return colors.border(
     `${box.teeRight}${box.horizontal.repeat(repeatCount)}${box.teeLeft}`
   );
 }
@@ -92,12 +104,12 @@ export function borderedLine(content: string, width: number): string {
   const finalStripped = stripAnsi(finalContent);
   const padding = Math.max(0, innerWidth - finalStripped.length);
 
-  return `${pc.cyan(box.vertical)} ${finalContent}${" ".repeat(padding)} ${pc.cyan(box.vertical)}`;
+  return `${colors.border(box.vertical)} ${finalContent}${" ".repeat(padding)} ${colors.border(box.vertical)}`;
 }
 
 export function emptyBorderedLine(width: number): string {
   const repeatCount = Math.max(0, width - 2);
-  return `${pc.cyan(box.vertical)}${" ".repeat(repeatCount)}${pc.cyan(box.vertical)}`;
+  return `${colors.border(box.vertical)}${" ".repeat(repeatCount)}${colors.border(box.vertical)}`;
 }
 
 // Text utilities
@@ -120,10 +132,12 @@ export function truncate(str: string, maxWidth: number): string {
   let visible = 0;
   let result = "";
   let inEscape = false;
+  let hasAnsi = false;
 
   for (const char of str) {
     if (char === "\x1b") {
       inEscape = true;
+      hasAnsi = true;
       result += char;
     } else if (inEscape) {
       result += char;
@@ -138,6 +152,11 @@ export function truncate(str: string, maxWidth: number): string {
       result += char;
       visible++;
     }
+  }
+
+  // Reset ANSI styling if we truncated a string with escape codes
+  if (hasAnsi) {
+    result += "\x1b[0m";
   }
 
   return result;

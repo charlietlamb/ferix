@@ -172,7 +172,7 @@ toolDisplayRegistry.register({
 toolDisplayRegistry.register({
   tool: "Bash",
   inputKey: "command",
-  color: pc.magenta,
+  color: pc.cyan,
 });
 
 toolDisplayRegistry.register({

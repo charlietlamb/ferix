@@ -9,7 +9,7 @@ import { headlessFormatterRegistry } from "./registry.js";
 const tasksDefinedFormatter: EventFormatter<"TasksDefined"> = {
   tag: "TasksDefined",
   format: (event: TasksDefinedEvent) =>
-    pc.magenta(
+    pc.white(
       `[TASKS] Defined ${event.tasks.length} tasks: ${event.tasks.map((t: { title: string }) => t.title).join(", ")}`
     ),
 };

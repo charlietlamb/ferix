@@ -10,7 +10,7 @@ import { headlessFormatterRegistry } from "./registry.js";
 const criteriaDefinedFormatter: EventFormatter<"CriteriaDefined"> = {
   tag: "CriteriaDefined",
   format: (event: CriteriaDefinedEvent) =>
-    pc.magenta(
+    pc.white(
       `[CRITERIA] Task ${event.taskId}: ${event.criteria.length} criteria defined`
     ),
 };

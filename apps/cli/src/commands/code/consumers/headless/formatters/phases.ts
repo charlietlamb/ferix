@@ -11,7 +11,7 @@ import { headlessFormatterRegistry } from "./registry.js";
 const phasesDefinedFormatter: EventFormatter<"PhasesDefined"> = {
   tag: "PhasesDefined",
   format: (event: PhasesDefinedEvent) =>
-    pc.magenta(
+    pc.white(
       `[PHASES] Task ${event.taskId}: ${event.phases.length} phases defined`
     ),
 };
