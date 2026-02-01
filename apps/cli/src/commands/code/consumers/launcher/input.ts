@@ -1,8 +1,10 @@
 import {
   appendTaskInput,
   deleteTaskInputChar,
+  deleteTaskInputLine,
   enterNewTaskMode,
   exitNewTaskMode,
+  insertNewline,
   type LauncherResult,
   type LauncherSession,
   type LauncherState,
@@ -28,6 +30,8 @@ export type LauncherKeyAction =
   | { readonly type: "input"; readonly char: string }
   | { readonly type: "backspace" }
   | { readonly type: "submit" }
+  | { readonly type: "newline" }
+  | { readonly type: "delete_line" }
   | { readonly type: "scroll"; readonly delta: number }
   | { readonly type: "none" };
 
@@ -136,6 +140,10 @@ function parseSessionsKey(key: string): LauncherKeyAction {
   }
 }
 
+/** CSI u format pattern for modified Enter key: ESC [ 13 ; modifier u */
+// biome-ignore lint/suspicious/noControlCharactersInRegex: Required for key sequence parsing
+const MODIFIED_ENTER_REGEX = /\x1b\[13;(\d+)u/;
+
 /**
  * Parse key for new task input view.
  */
@@ -143,6 +151,24 @@ function parseInputKey(key: string, data: Buffer): LauncherKeyAction {
   // Escape - go back
   if (key === "\x1b" && data.length === 1) {
     return { type: "back" };
+  }
+
+  // Check for CSI u format modified Enter keys
+  const modifiedEnterMatch = key.match(MODIFIED_ENTER_REGEX);
+  if (modifiedEnterMatch) {
+    const modifier = Number.parseInt(modifiedEnterMatch[1] ?? "0", 10);
+    // Modifier 2 = Shift, Modifier 9 = Cmd/Super (macOS)
+    if (modifier === 2) {
+      return { type: "newline" };
+    }
+    if (modifier === 9) {
+      return { type: "delete_line" };
+    }
+  }
+
+  // Alt+Enter / Option+Enter (ESC followed by Enter) - also used for newline
+  if (key === "\x1b\r" || key === "\x1b\n") {
+    return { type: "newline" };
   }
 
   // Enter - submit
@@ -274,6 +300,10 @@ function applyInputAction(
       return { type: "state", state: appendTaskInput(state, action.char) };
     case "backspace":
       return { type: "state", state: deleteTaskInputChar(state) };
+    case "newline":
+      return { type: "state", state: insertNewline(state) };
+    case "delete_line":
+      return { type: "state", state: deleteTaskInputLine(state) };
     case "submit":
       if (state.taskInput.trim()) {
         return {

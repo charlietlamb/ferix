@@ -227,8 +227,108 @@ export function renderSessionsList(
   return visibleRows;
 }
 
+/** Visual line representation for multi-line input */
+interface VisualLine {
+  readonly text: string;
+  readonly startIndex: number;
+}
+
 /**
- * Render the new task input view.
+ * Split text into visual lines, handling line wrapping.
+ */
+function splitIntoVisualLines(
+  text: string,
+  maxLineWidth: number
+): VisualLine[] {
+  const result: VisualLine[] = [];
+  const logicalLines = text.split("\n");
+  let currentIndex = 0;
+
+  for (const logicalLine of logicalLines) {
+    if (logicalLine.length === 0) {
+      result.push({ text: "", startIndex: currentIndex });
+      currentIndex++;
+    } else if (logicalLine.length <= maxLineWidth) {
+      result.push({ text: logicalLine, startIndex: currentIndex });
+      currentIndex += logicalLine.length + 1;
+    } else {
+      let pos = 0;
+      while (pos < logicalLine.length) {
+        const chunk = logicalLine.slice(pos, pos + maxLineWidth);
+        result.push({ text: chunk, startIndex: currentIndex + pos });
+        pos += maxLineWidth;
+      }
+      currentIndex += logicalLine.length + 1;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Find which visual line contains the cursor.
+ */
+function findCursorLine(
+  visualLines: VisualLine[],
+  cursorPos: number
+): { lineIndex: number; columnInLine: number } {
+  for (let i = 0; i < visualLines.length; i++) {
+    const vLine = visualLines[i];
+    if (!vLine) {
+      continue;
+    }
+    const lineEndIndex = vLine.startIndex + vLine.text.length;
+    if (cursorPos <= lineEndIndex) {
+      return { lineIndex: i, columnInLine: cursorPos - vLine.startIndex };
+    }
+  }
+  const lastLine = visualLines.at(-1);
+  if (lastLine) {
+    return {
+      lineIndex: visualLines.length - 1,
+      columnInLine: cursorPos - lastLine.startIndex,
+    };
+  }
+  return { lineIndex: 0, columnInLine: 0 };
+}
+
+/**
+ * Render input lines for a visual line array.
+ */
+function renderInputLines(
+  visualLines: VisualLine[],
+  cursorLineIndex: number,
+  columnInLine: number,
+  inputPrefix: string,
+  continuationPrefix: string,
+  cursor: string,
+  width: number
+): string[] {
+  const result: string[] = [];
+
+  for (let i = 0; i < visualLines.length; i++) {
+    const vLine = visualLines[i];
+    if (!vLine) {
+      continue;
+    }
+
+    const prefix = i === 0 ? inputPrefix : continuationPrefix;
+    if (i === cursorLineIndex) {
+      const beforeCursor = vLine.text.slice(0, columnInLine);
+      const afterCursor = vLine.text.slice(columnInLine);
+      result.push(
+        borderedLine(`${prefix}${beforeCursor}${cursor}${afterCursor}`, width)
+      );
+    } else {
+      result.push(borderedLine(`${prefix}${vLine.text}`, width));
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Render the new task input view with multi-line support.
  */
 export function renderNewTaskInput(
   state: LauncherState,
@@ -241,13 +341,38 @@ export function renderNewTaskInput(
   lines.push(borderedLine("  Enter task description:", width));
   lines.push(emptyBorderedLine(width));
 
-  // Input line with cursor
   const inputPrefix = `  ${colors.brand(symbols.arrow)} `;
+  const continuationPrefix = "    ";
+  const prefixWidth = stripAnsi(inputPrefix).length;
   const cursor = pc.inverse(" ");
-  const inputContent = `${inputPrefix}${state.taskInput}${cursor}`;
-  lines.push(borderedLine(inputContent, width));
+  const innerWidth = width - 4;
+  const maxLineWidth = Math.max(1, innerWidth - prefixWidth);
 
-  // Fill remaining space
+  const { taskInput, taskInputCursor: cursorPos } = state;
+
+  if (taskInput.length === 0) {
+    lines.push(borderedLine(`${inputPrefix}${cursor}`, width));
+  } else {
+    const visualLines = splitIntoVisualLines(taskInput, maxLineWidth);
+    const { lineIndex, columnInLine } = findCursorLine(visualLines, cursorPos);
+
+    const inputLines = renderInputLines(
+      visualLines,
+      lineIndex,
+      columnInLine,
+      inputPrefix,
+      continuationPrefix,
+      cursor,
+      width
+    );
+    lines.push(...inputLines);
+
+    const endsWithNewline = taskInput.at(-1) === "\n";
+    if (endsWithNewline && cursorPos === taskInput.length) {
+      lines.push(borderedLine(`${continuationPrefix}${cursor}`, width));
+    }
+  }
+
   while (lines.length < availableHeight) {
     lines.push(emptyBorderedLine(width));
   }

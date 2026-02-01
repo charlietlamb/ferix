@@ -65,6 +65,8 @@ export interface LauncherState {
   readonly viewMode: LauncherViewMode;
   /** Task input for new session mode */
   readonly taskInput: string;
+  /** Cursor position within taskInput (character index) */
+  readonly taskInputCursor: number;
   /** Error message to display */
   readonly error?: string;
   /** Whether sessions are loading */
@@ -128,6 +130,7 @@ export function createInitialLauncherState(): LauncherState {
     scrollOffset: 0,
     viewMode: "sessions",
     taskInput: "",
+    taskInputCursor: 0,
     isLoading: true,
     daemon: createInitialDaemonInfo(),
     viewportHeight: 20, // Default, will be updated on render
@@ -237,33 +240,105 @@ export function navigate(
 
 /**
  * Handle text input for new task.
+ * Inserts character at cursor position.
  */
 export function appendTaskInput(
   state: LauncherState,
   char: string
 ): LauncherState {
-  return { ...state, taskInput: state.taskInput + char };
+  const before = state.taskInput.slice(0, state.taskInputCursor);
+  const after = state.taskInput.slice(state.taskInputCursor);
+  return {
+    ...state,
+    taskInput: before + char + after,
+    taskInputCursor: state.taskInputCursor + 1,
+  };
 }
 
 /**
- * Delete last character from task input.
+ * Delete character before cursor (backspace behavior).
  */
 export function deleteTaskInputChar(state: LauncherState): LauncherState {
-  return { ...state, taskInput: state.taskInput.slice(0, -1) };
+  if (state.taskInputCursor === 0) {
+    return state;
+  }
+  const before = state.taskInput.slice(0, state.taskInputCursor - 1);
+  const after = state.taskInput.slice(state.taskInputCursor);
+  return {
+    ...state,
+    taskInput: before + after,
+    taskInputCursor: state.taskInputCursor - 1,
+  };
+}
+
+/**
+ * Insert a newline at cursor position (Shift+Enter).
+ */
+export function insertNewline(state: LauncherState): LauncherState {
+  const before = state.taskInput.slice(0, state.taskInputCursor);
+  const after = state.taskInput.slice(state.taskInputCursor);
+  return {
+    ...state,
+    taskInput: `${before}\n${after}`,
+    taskInputCursor: state.taskInputCursor + 1,
+  };
+}
+
+/**
+ * Delete the current line at cursor position (Cmd+Enter).
+ * Removes the entire line where the cursor is located.
+ */
+export function deleteTaskInputLine(state: LauncherState): LauncherState {
+  const { taskInput, taskInputCursor } = state;
+
+  // Find the start of the current line (after previous newline or start of string)
+  let lineStart = taskInputCursor;
+  while (lineStart > 0 && taskInput[lineStart - 1] !== "\n") {
+    lineStart--;
+  }
+
+  // Find the end of the current line (before next newline or end of string)
+  let lineEnd = taskInputCursor;
+  while (lineEnd < taskInput.length && taskInput[lineEnd] !== "\n") {
+    lineEnd++;
+  }
+
+  // Include the newline character in deletion if present
+  if (lineEnd < taskInput.length && taskInput[lineEnd] === "\n") {
+    lineEnd++;
+  } else if (lineStart > 0) {
+    // If no newline after, include the newline before (if exists)
+    lineStart--;
+  }
+
+  const before = taskInput.slice(0, lineStart);
+  const after = taskInput.slice(lineEnd);
+  const newCursor = Math.min(lineStart, before.length + after.length);
+
+  return {
+    ...state,
+    taskInput: before + after,
+    taskInputCursor: Math.max(0, newCursor),
+  };
 }
 
 /**
  * Switch to new task input mode.
  */
 export function enterNewTaskMode(state: LauncherState): LauncherState {
-  return { ...state, viewMode: "new_task_input", taskInput: "" };
+  return {
+    ...state,
+    viewMode: "new_task_input",
+    taskInput: "",
+    taskInputCursor: 0,
+  };
 }
 
 /**
  * Switch back to sessions view.
  */
 export function exitNewTaskMode(state: LauncherState): LauncherState {
-  return { ...state, viewMode: "sessions", taskInput: "" };
+  return { ...state, viewMode: "sessions", taskInput: "", taskInputCursor: 0 };
 }
 
 /**
