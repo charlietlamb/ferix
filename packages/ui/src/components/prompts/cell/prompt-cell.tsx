@@ -88,17 +88,21 @@ export function PromptCell({ prompt }: PromptCellProps) {
         </div>
       </div>
 
-      <div className="relative w-full flex-1 overflow-hidden rounded border border-foreground/[0.06] bg-foreground/[0.02] transition-all duration-200 group-hover:border-foreground/10 group-hover:bg-foreground/[0.03] dark:border-foreground/[0.08] dark:bg-foreground/[0.03] dark:group-hover:border-foreground/12 dark:group-hover:bg-foreground/[0.05]">
-        <div className="flex items-center gap-1.5 border-foreground/[0.06] border-b px-3 py-2 dark:border-foreground/[0.08]">
-          <div className="size-2 rounded-full bg-foreground/20 transition-colors duration-200 group-hover:bg-red-500/50" />
-          <div className="size-2 rounded-full bg-foreground/20 transition-colors duration-200 group-hover:bg-yellow-500/50" />
-          <div className="size-2 rounded-full bg-foreground/20 transition-colors duration-200 group-hover:bg-green-500/50" />
+      <div className="relative w-full flex-1 overflow-hidden rounded border border-foreground/[0.06] bg-foreground/[0.02] shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 group-hover:border-foreground/10 group-hover:bg-foreground/[0.03] group-hover:shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)] dark:border-foreground/[0.08] dark:bg-foreground/[0.03] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:group-hover:border-foreground/12 dark:group-hover:bg-foreground/[0.05] dark:group-hover:shadow-[inset_0_1px_4px_rgba(0,0,0,0.15)]">
+        <div className="flex items-center gap-1.5 border-foreground/[0.06] border-b bg-foreground/[0.01] px-3 py-1.5 dark:border-foreground/[0.08] dark:bg-foreground/[0.02]">
+          <div className="size-2 rounded-full bg-foreground/15 transition-colors duration-200 group-hover:bg-red-500/60" />
+          <div className="size-2 rounded-full bg-foreground/15 transition-colors duration-200 group-hover:bg-yellow-500/60" />
+          <div className="size-2 rounded-full bg-foreground/15 transition-colors duration-200 group-hover:bg-green-500/60" />
         </div>
-        <pre className="h-20 overflow-hidden p-3 font-mono text-xs">
-          <code className="line-clamp-4 whitespace-pre-wrap text-foreground/50 transition-colors duration-200 group-hover:text-foreground/60">
-            {stripFrontmatter(prompt.content)}
-          </code>
-        </pre>
+        <div className="relative">
+          <pre className="h-20 overflow-hidden p-3 font-mono text-[11px] leading-relaxed tracking-tight">
+            <code className="line-clamp-4 whitespace-pre-wrap text-foreground/45 transition-colors duration-200 group-hover:text-foreground/55">
+              {stripFrontmatter(prompt.content)}
+            </code>
+          </pre>
+          {/* Fade overlay to indicate overflow */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-foreground/[0.02] to-transparent transition-colors duration-200 group-hover:from-foreground/[0.03] dark:from-foreground/[0.03] dark:group-hover:from-foreground/[0.05]" />
+        </div>
       </div>
 
       <div className="flex items-center justify-between text-foreground/50 text-xs transition-colors duration-150 group-hover:text-foreground/60">
