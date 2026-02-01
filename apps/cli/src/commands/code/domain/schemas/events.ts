@@ -290,6 +290,26 @@ const PRCreatedEventSchema = taggedEvent("PRCreated", {
 export type PRCreatedEvent = typeof PRCreatedEventSchema.Type;
 
 /**
+ * Push failed event - signals that pushing to remote failed.
+ */
+const PushFailedEventSchema = taggedEvent("PushFailed", {
+  sessionId: S.String,
+  error: S.String,
+  timestamp: S.Number,
+});
+export type PushFailedEvent = typeof PushFailedEventSchema.Type;
+
+/**
+ * PR creation failed event - signals that PR creation failed.
+ */
+const PRCreationFailedEventSchema = taggedEvent("PRCreationFailed", {
+  sessionId: S.String,
+  error: S.String,
+  timestamp: S.Number,
+});
+export type PRCreationFailedEvent = typeof PRCreationFailedEventSchema.Type;
+
+/**
  * Session name generated event - signals that the LLM generated a descriptive name for the session.
  * Emitted during the discovery phase after the session name signal is parsed.
  */
@@ -352,4 +372,6 @@ export type DomainEvent =
   | WorktreeRemovedEvent
   | BranchPushedEvent
   | PRCreatedEvent
+  | PushFailedEvent
+  | PRCreationFailedEvent
   | SessionNameGeneratedEvent;

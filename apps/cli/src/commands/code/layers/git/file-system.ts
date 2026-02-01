@@ -489,6 +489,26 @@ const make: GitService = {
         );
       }
 
+      // Check if there are commits that differ from the base branch
+      // This prevents the GitHub API error "No commits between X and Y"
+      const baseRef = baseBranch || "origin/HEAD";
+      const commitCount = yield* gitExec(
+        `git rev-list --count ${baseRef}..HEAD`,
+        worktreeDir
+      ).pipe(
+        Effect.map((output) => Number.parseInt(output.trim(), 10)),
+        Effect.catchAll(() => Effect.succeed(0))
+      );
+
+      if (commitCount === 0) {
+        return yield* Effect.fail(
+          new GitError({
+            message: `No commits to create PR from. The branch has no changes compared to ${baseBranch || "the default branch"}. Make sure there are actual file changes committed.`,
+            operation: "createPR",
+          })
+        );
+      }
+
       // Escape title and body for shell
       const escapedTitle = title.replace(/"/g, '\\"');
       const escapedBody = body.replace(/"/g, '\\"');
