@@ -49,6 +49,11 @@ export function renderStatusBar(state: TUIState, width: number): string {
     parts.push(colors.brightMagenta("DEBUG"));
   }
 
+  // PR mode indicator
+  if (state.pr) {
+    parts.push(colors.brightCyan("PR"));
+  }
+
   // Provider/agent indicator with themed colors
   const providerConfig: Record<
     string,
