@@ -13,11 +13,11 @@ import { extractDescription } from "@ferix/ui/lib/markdown";
 import { formatTitle } from "@ferix/ui/lib/repositories";
 import { cn } from "@ferix/ui/lib/utils";
 import {
-  ArrowRight,
-  CaretRight,
-  DownloadSimple,
-  FolderOpen,
-  FolderSimple,
+  ArrowRightIcon,
+  CaretRightIcon,
+  DownloadSimpleIcon,
+  FolderOpenIcon,
+  FolderSimpleIcon,
 } from "@phosphor-icons/react";
 import type { PaginationStatus } from "convex/browser";
 import { useTranslations } from "next-intl";
@@ -135,11 +135,11 @@ function FileRow({ node, depth, isLast }: FileRowProps) {
         <div className="flex shrink-0 items-center gap-3">
           {prompt.downloads > 0 && (
             <div className="flex items-center gap-1 text-muted-foreground text-xs">
-              <DownloadSimple className="size-3" />
+              <DownloadSimpleIcon className="size-3" />
               <span>{prompt.downloads}</span>
             </div>
           )}
-          <ArrowRight className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+          <ArrowRightIcon className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
         </div>
       </Link>
     </div>
@@ -160,19 +160,19 @@ function FolderRow({ node, depth, isLast }: FolderRowProps) {
     <Collapsible onOpenChange={setIsOpen} open={isOpen}>
       <div className={cn("border-border", (isOpen || !isLast) && "border-b")}>
         <CollapsibleTrigger
-          className="flex h-12 w-full cursor-pointer items-center gap-2 bg-muted/30 px-4 transition-colors hover:bg-muted/50"
+          className="flex h-10 w-full cursor-pointer items-center gap-2 bg-muted/30 px-4 transition-colors hover:bg-muted/50"
           style={{ paddingLeft: `${depth * 24 + 16}px` }}
         >
-          <CaretRight
+          <CaretRightIcon
             className={cn(
               "size-4 shrink-0 text-muted-foreground transition-transform",
               isOpen && "rotate-90"
             )}
           />
           {isOpen ? (
-            <FolderOpen className="size-4 shrink-0 text-muted-foreground" />
+            <FolderOpenIcon className="size-4 shrink-0 text-muted-foreground" />
           ) : (
-            <FolderSimple className="size-4 shrink-0 text-muted-foreground" />
+            <FolderSimpleIcon className="size-4 shrink-0 text-muted-foreground" />
           )}
           <span className="truncate font-medium text-sm">{displayName}</span>
           <span className="ml-auto text-muted-foreground text-xs">
@@ -266,7 +266,7 @@ function FolderRowSkeleton({ depth }: { depth: number }) {
   return (
     <div className="border-border border-b">
       <div
-        className="flex h-12 items-center gap-2 bg-muted/30 px-4"
+        className="flex h-10 items-center gap-2 bg-muted/30 px-4"
         style={{ paddingLeft: `${depth * 24 + 16}px` }}
       >
         <Skeleton className="size-4" />
@@ -304,11 +304,22 @@ export function RepositoryFileTreeSkeleton() {
       <FileRowSkeleton depth={1} />
       <FileRowSkeleton depth={1} />
       <FileRowSkeleton depth={1} />
-
       <FolderRowSkeleton depth={0} />
       <FileRowSkeleton depth={1} />
       <FileRowSkeleton depth={1} />
-
+      <FolderRowSkeleton depth={0} />
+      <FolderRowSkeleton depth={1} />
+      <FileRowSkeleton depth={2} />
+      <FileRowSkeleton depth={2} />
+      <FileRowSkeleton depth={1} />
+      <FileRowSkeleton depth={1} />
+      <FolderRowSkeleton depth={0} />
+      <FileRowSkeleton depth={1} />
+      <FileRowSkeleton depth={1} />
+      <FileRowSkeleton depth={1} />
+      <FolderRowSkeleton depth={0} />
+      <FileRowSkeleton depth={1} />
+      <FileRowSkeleton depth={1} />
       <FileRowSkeleton depth={0} />
       <FileRowSkeleton depth={0} />
     </div>

@@ -204,11 +204,89 @@ function RepositoryHeaderSkeleton() {
   );
 }
 
+function SidebarSectionSkeleton({
+  children,
+  border = true,
+}: {
+  children: React.ReactNode;
+  border?: boolean;
+}) {
+  return (
+    <div
+      className={`flex flex-col gap-2 p-4 ${border ? "border-border border-b" : ""}`}
+    >
+      <Skeleton className="h-3 w-20" />
+      {children}
+    </div>
+  );
+}
+
+function RepositorySidebarSkeleton() {
+  return (
+    <aside className="flex flex-col overflow-auto border-border border-t md:w-[320px] md:shrink-0 md:border-t-0 md:border-l">
+      <SidebarSectionSkeleton>
+        <div className="flex items-center gap-2">
+          <Skeleton className="size-5 rounded-full" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="ml-auto size-4" />
+        </div>
+      </SidebarSectionSkeleton>
+      <SidebarSectionSkeleton>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-4" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <Skeleton className="h-4 w-12" />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-4" />
+              <Skeleton className="h-4 w-14" />
+            </div>
+            <Skeleton className="h-4 w-8" />
+          </div>
+        </div>
+      </SidebarSectionSkeleton>
+      <SidebarSectionSkeleton>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-4" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-4" />
+              <Skeleton className="h-4 w-14" />
+            </div>
+            <Skeleton className="h-4 w-20" />
+          </div>
+        </div>
+      </SidebarSectionSkeleton>
+      <SidebarSectionSkeleton>
+        <Skeleton className="h-6 w-12 rounded-full" />
+      </SidebarSectionSkeleton>
+      <SidebarSectionSkeleton border={false}>
+        <Skeleton className="h-9 w-full rounded-md" />
+      </SidebarSectionSkeleton>
+    </aside>
+  );
+}
+
 export function RepositoryContentSkeleton() {
   return (
     <div className="flex h-full flex-col">
       <RepositoryHeaderSkeleton />
-      <RepositoryFileTreeSkeleton />
+      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+        <div className="flex-1 overflow-y-auto">
+          <RepositoryFileTreeSkeleton />
+        </div>
+        <RepositorySidebarSkeleton />
+      </div>
     </div>
   );
 }
