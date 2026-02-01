@@ -18,6 +18,8 @@ export interface LauncherSession {
   readonly status: "active" | "completed" | "failed" | "paused";
   readonly createdAt: string;
   readonly branchName?: string;
+  /** The branch ferix was started from - used as PR base branch */
+  readonly baseBranch?: string;
   /** URL of the PR created for this session (if any) */
   readonly prUrl?: string;
   /** The LLM/agent provider used for this session */
@@ -41,6 +43,15 @@ export interface DaemonInfo {
 export type LauncherViewMode = "sessions" | "new_task_input";
 
 /**
+ * PR creation status for tracking async PR creation.
+ */
+export interface PrCreationStatus {
+  readonly sessionId: string;
+  readonly status: "pushing" | "creating" | "success" | "error";
+  readonly error?: string;
+}
+
+/**
  * State for the launcher TUI.
  */
 export interface LauncherState {
@@ -62,6 +73,8 @@ export interface LauncherState {
   readonly daemon: DaemonInfo;
   /** Terminal height for viewport calculations */
   readonly viewportHeight: number;
+  /** PR creation progress (if in progress) */
+  readonly prCreation?: PrCreationStatus;
 }
 
 /**
@@ -88,6 +101,7 @@ export function sessionToLauncherSession(session: Session): LauncherSession {
     status: session.status,
     createdAt: session.createdAt,
     branchName: session.branchName,
+    baseBranch: session.baseBranch,
     prUrl: session.prUrl,
     provider: session.provider,
   };
@@ -160,7 +174,7 @@ function calculateScrollOffset(
   viewportHeight: number,
   sessionCount: number
 ): number {
-  const itemRowStart = getRowPositionForItem(selectedIndex, sessionCount);
+  const itemRowStart = getRowPositionForItem(selectedIndex);
   const itemHeight = getItemHeight(selectedIndex);
   const itemRowEnd = itemRowStart + itemHeight;
   const totalRows = getTotalRows(sessionCount);

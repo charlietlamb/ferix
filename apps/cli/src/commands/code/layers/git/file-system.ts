@@ -591,6 +591,95 @@ const make: GitService = {
     }),
 
   getBranchName,
+
+  pushBranchByName: (branchName: string): Effect.Effect<void, GitError> =>
+    Effect.gen(function* () {
+      // Check if branch exists
+      const exists = yield* branchExists(branchName);
+      if (!exists) {
+        return yield* Effect.fail(
+          new GitError({
+            message: `Branch not found: ${branchName}`,
+            operation: "push",
+          })
+        );
+      }
+
+      // Push branch to origin from main repository
+      yield* gitExec(`git push -u origin "${branchName}"`).pipe(
+        Effect.mapError(
+          (error) =>
+            new GitError({
+              message: `Failed to push branch: ${error.message}`,
+              operation: "push",
+              cause: error,
+            })
+        )
+      );
+    }),
+
+  createPRByBranchName: (
+    branchName: string,
+    title: string,
+    body: string,
+    baseBranch?: string
+  ): Effect.Effect<PrUrl, GitError> =>
+    Effect.gen(function* () {
+      // Check if branch exists
+      const exists = yield* branchExists(branchName);
+      if (!exists) {
+        return yield* Effect.fail(
+          new GitError({
+            message: `Branch not found: ${branchName}`,
+            operation: "createPR",
+          })
+        );
+      }
+
+      // Check if there are commits that differ from the base branch
+      const baseRef =
+        baseBranch && !baseBranch.startsWith("origin/")
+          ? `origin/${baseBranch}`
+          : baseBranch || "origin/HEAD";
+      const commitCount = yield* gitExec(
+        `git rev-list --count ${baseRef}..${branchName}`
+      ).pipe(
+        Effect.map((output) => Number.parseInt(output.trim(), 10)),
+        Effect.catchAll(() => Effect.succeed(0))
+      );
+
+      if (commitCount === 0) {
+        return yield* Effect.fail(
+          new GitError({
+            message: `No commits to create PR from. The branch has no changes compared to ${baseBranch || "the default branch"}.`,
+            operation: "createPR",
+          })
+        );
+      }
+
+      // Escape title and body for shell
+      const escapedTitle = title.replace(/"/g, '\\"');
+      const escapedBody = body.replace(/"/g, '\\"');
+
+      // Build command with --head flag to specify the branch
+      const baseFlag = baseBranch ? ` --base "${baseBranch}"` : "";
+
+      // Create PR using gh CLI with explicit --head flag
+      const prUrl = yield* gitExec(
+        `gh pr create --head "${branchName}" --title "${escapedTitle}" --body "${escapedBody}"${baseFlag}`
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new GitError({
+              message: `Failed to create PR: ${error.message}`,
+              operation: "createPR",
+              cause: error,
+            })
+        )
+      );
+
+      return prUrl as PrUrl;
+    }),
 };
 
 /**

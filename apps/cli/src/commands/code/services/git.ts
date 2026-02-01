@@ -155,6 +155,37 @@ export interface GitService {
     sessionId: string,
     displayName: string
   ) => Effect.Effect<string, GitError>;
+
+  /**
+   * Push a branch to the remote by branch name.
+   *
+   * Unlike pushBranch which requires a worktree, this works directly
+   * with the branch name from the main repository.
+   *
+   * @param branchName - Full branch name (e.g., "ferix/add-dark-mode")
+   */
+  readonly pushBranchByName: (
+    branchName: string
+  ) => Effect.Effect<void, GitError>;
+
+  /**
+   * Create a pull request for a branch by branch name.
+   *
+   * Unlike createPR which requires a worktree, this works directly
+   * with the branch name from the main repository.
+   *
+   * @param branchName - Full branch name (e.g., "ferix/add-dark-mode")
+   * @param title - PR title
+   * @param body - PR body/description
+   * @param baseBranch - Optional base branch for the PR (defaults to repo default)
+   * @returns URL of the created PR
+   */
+  readonly createPRByBranchName: (
+    branchName: string,
+    title: string,
+    body: string,
+    baseBranch?: string
+  ) => Effect.Effect<PrUrl, GitError>;
 }
 
 /**

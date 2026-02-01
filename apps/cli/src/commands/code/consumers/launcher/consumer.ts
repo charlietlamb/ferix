@@ -5,8 +5,10 @@ import {
   isDaemonRunning,
   stopDaemon,
 } from "../../daemon/index.js";
+import { FileSystemGit } from "../../layers/git/file-system.js";
 import { FileSystemOutput } from "../../layers/output/file-system.js";
 import { FileSystemSession } from "../../layers/session/file-system.js";
+import { Git } from "../../services/git.js";
 import { OutputStore } from "../../services/output-store.js";
 import { SessionStore } from "../../services/session-store.js";
 import { ANSIOutput } from "../tui/output/index.js";
@@ -205,20 +207,288 @@ function safeRender(
 }
 
 /**
- * Handle side effects from launcher actions.
+ * Side effect type union (re-exported for type safety).
  */
-function handleSideEffect(
-  effect: { type: "stop_daemon" } | { type: "open_pr"; url: string },
-  state: LauncherState
+type SideEffect =
+  | { readonly type: "stop_daemon" }
+  | { readonly type: "open_pr"; readonly url: string }
+  | { readonly type: "create_pr"; readonly session: LauncherSession };
+
+/**
+ * Update state with new PR creation status.
+ */
+function updatePrCreationStatus(
+  state: LauncherState,
+  status:
+    | {
+        sessionId: string;
+        status: "pushing" | "creating" | "success" | "error";
+        error?: string;
+      }
+    | undefined
 ): LauncherState {
+  return { ...state, prCreation: status };
+}
+
+/**
+ * Update sessions array with a new PR URL for a specific session.
+ */
+function updateSessionWithPrUrl(
+  state: LauncherState,
+  sessionId: string,
+  prUrl: string
+): LauncherState {
+  const sessions = state.sessions.map((s) =>
+    s.id === sessionId ? { ...s, prUrl } : s
+  );
+  return { ...state, sessions };
+}
+
+/**
+ * Handle creating a PR for a session.
+ * This is an async operation that pushes the branch and creates a PR.
+ * Works with the branch name directly since the worktree is deleted after completion.
+ */
+function handleCreatePR(
+  session: LauncherSession,
+  stateRef: Ref.Ref<LauncherState>,
+  output: ANSIOutput,
+  sessionStore: {
+    update: (
+      id: string,
+      session: {
+        id: string;
+        createdAt: string;
+        status: "active" | "completed" | "failed" | "paused";
+        originalTask: string;
+        completedTasks: readonly string[];
+        prUrl?: string;
+        branchName?: string;
+        baseBranch?: string;
+        displayName?: string;
+      }
+    ) => Effect.Effect<void, unknown>;
+  },
+  git: {
+    pushBranchByName: (branchName: string) => Effect.Effect<void, unknown>;
+    createPRByBranchName: (
+      branchName: string,
+      title: string,
+      body: string,
+      baseBranch?: string
+    ) => Effect.Effect<string, unknown>;
+  }
+): Effect.Effect<void, never, never> {
+  return Effect.gen(function* () {
+    const sessionId = session.id;
+    const branchName = session.branchName;
+
+    // Branch name is required for PR creation
+    if (!branchName) {
+      yield* Ref.update(stateRef, (s) =>
+        updatePrCreationStatus(s, {
+          sessionId,
+          status: "error",
+          error: "No branch name found for session",
+        })
+      );
+      const errorState = yield* Ref.get(stateRef);
+      safeRender(errorState, output, stateRef);
+      return;
+    }
+
+    // Update state to show "pushing" status
+    yield* Ref.update(stateRef, (s) =>
+      updatePrCreationStatus(s, { sessionId, status: "pushing" })
+    );
+    const pushingState = yield* Ref.get(stateRef);
+    safeRender(pushingState, output, stateRef);
+
+    // Push the branch by name
+    const pushResult = yield* git.pushBranchByName(branchName).pipe(
+      Effect.map(() => ({ success: true as const })),
+      Effect.catchAll((error) =>
+        Effect.succeed({
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      )
+    );
+
+    if (!pushResult.success) {
+      yield* Ref.update(stateRef, (s) =>
+        updatePrCreationStatus(s, {
+          sessionId,
+          status: "error",
+          error: `Push failed: ${pushResult.error}`,
+        })
+      );
+      const errorState = yield* Ref.get(stateRef);
+      safeRender(errorState, output, stateRef);
+      return;
+    }
+
+    // Update state to show "creating" status
+    yield* Ref.update(stateRef, (s) =>
+      updatePrCreationStatus(s, { sessionId, status: "creating" })
+    );
+    const creatingState = yield* Ref.get(stateRef);
+    safeRender(creatingState, output, stateRef);
+
+    // Create PR title and body from session info
+    const title = session.displayName
+      ? `${session.displayName}`
+      : session.originalTask.slice(0, 72);
+    const body = `## Summary\n\n${session.originalTask}\n\n---\n*Created by Ferix*`;
+
+    // Create the PR using branch name
+    const prResult = yield* git
+      .createPRByBranchName(branchName, title, body, session.baseBranch)
+      .pipe(
+        Effect.map((prUrl) => ({ success: true as const, prUrl })),
+        Effect.catchAll((error) =>
+          Effect.succeed({
+            success: false as const,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        )
+      );
+
+    if (!prResult.success) {
+      yield* Ref.update(stateRef, (s) =>
+        updatePrCreationStatus(s, {
+          sessionId,
+          status: "error",
+          error: `PR creation failed: ${prResult.error}`,
+        })
+      );
+      const errorState = yield* Ref.get(stateRef);
+      safeRender(errorState, output, stateRef);
+      return;
+    }
+
+    const prUrl = prResult.prUrl;
+
+    // Update session store with new PR URL
+    yield* sessionStore
+      .update(sessionId, {
+        id: session.id,
+        createdAt: session.createdAt,
+        status: session.status,
+        originalTask: session.originalTask,
+        completedTasks: [],
+        prUrl,
+        branchName: session.branchName,
+        baseBranch: session.baseBranch,
+        displayName: session.displayName,
+      })
+      .pipe(Effect.catchAll(() => Effect.succeed(undefined)));
+
+    // Update launcher state with new PR URL and clear prCreation status
+    yield* Ref.update(stateRef, (s) => {
+      const updated = updateSessionWithPrUrl(s, sessionId, prUrl);
+      return updatePrCreationStatus(updated, undefined);
+    });
+    const successState = yield* Ref.get(stateRef);
+    safeRender(successState, output, stateRef);
+
+    // Open PR in browser
+    openInBrowser(prUrl);
+  });
+}
+
+/**
+ * Handle synchronous side effects from launcher actions.
+ * Returns updated state (or null if effect requires async handling).
+ */
+function handleSyncSideEffect(
+  effect: SideEffect,
+  state: LauncherState
+): LauncherState | null {
   if (effect.type === "stop_daemon") {
     const newDaemonInfo = handleStopDaemon();
     return { ...state, daemon: newDaemonInfo };
   }
   if (effect.type === "open_pr") {
     openInBrowser(effect.url);
+    return state;
   }
-  return state;
+  // create_pr requires async handling
+  return null;
+}
+
+/**
+ * Handle a single input action and return a result or null to continue.
+ */
+function handleInputAction(
+  data: Buffer,
+  stateRef: Ref.Ref<LauncherState>,
+  output: ANSIOutput,
+  sessionStore: {
+    update: (
+      id: string,
+      session: {
+        id: string;
+        createdAt: string;
+        status: "active" | "completed" | "failed" | "paused";
+        originalTask: string;
+        completedTasks: readonly string[];
+        prUrl?: string;
+        branchName?: string;
+        baseBranch?: string;
+        displayName?: string;
+      }
+    ) => Effect.Effect<void, unknown>;
+  },
+  git: {
+    pushBranchByName: (branchName: string) => Effect.Effect<void, unknown>;
+    createPRByBranchName: (
+      branchName: string,
+      title: string,
+      body: string,
+      baseBranch?: string
+    ) => Effect.Effect<string, unknown>;
+  }
+): Effect.Effect<LauncherResult | null, never, never> {
+  return Effect.gen(function* () {
+    const currentState = yield* Ref.get(stateRef);
+    const action = parseKey(data, currentState.viewMode);
+    const actionResult = applyAction(currentState, action);
+
+    if (actionResult.type === "result") {
+      return actionResult.result;
+    }
+
+    // Handle side effects
+    if (actionResult.type === "effect") {
+      const effect = actionResult.effect;
+
+      // Handle async create_pr effect
+      if (effect.type === "create_pr") {
+        yield* handleCreatePR(
+          effect.session,
+          stateRef,
+          output,
+          sessionStore,
+          git
+        );
+        return null;
+      }
+
+      // Handle sync effects
+      const newState = handleSyncSideEffect(effect, actionResult.state);
+      if (newState) {
+        yield* Ref.set(stateRef, newState);
+        safeRender(newState, output, stateRef);
+      }
+      return null;
+    }
+
+    // Update state and render
+    yield* Ref.set(stateRef, actionResult.state);
+    safeRender(actionResult.state, output, stateRef);
+    return null;
+  });
 }
 
 /**
@@ -273,6 +543,7 @@ export function createLauncherConsumer(options: LauncherConsumerOptions = {}): {
         // Load sessions and enrich with last output
         const sessionStore = yield* SessionStore;
         const outputStore = yield* OutputStore;
+        const git = yield* Git;
         const baseSessions = yield* sessionStore.list().pipe(
           Effect.map((sessions) => sessions.map(sessionToLauncherSession)),
           Effect.catchAll(() => Effect.succeed([] as LauncherSession[]))
@@ -314,31 +585,7 @@ export function createLauncherConsumer(options: LauncherConsumerOptions = {}): {
         // Process input and return result
         const result = yield* stdinStream.pipe(
           Stream.mapEffect((data) =>
-            Effect.gen(function* () {
-              const currentState = yield* Ref.get(stateRef);
-              const action = parseKey(data, currentState.viewMode);
-              const actionResult = applyAction(currentState, action);
-
-              if (actionResult.type === "result") {
-                return actionResult.result;
-              }
-
-              // Handle side effects
-              if (actionResult.type === "effect") {
-                const newState = handleSideEffect(
-                  actionResult.effect,
-                  actionResult.state
-                );
-                yield* Ref.set(stateRef, newState);
-                safeRender(newState, output, stateRef);
-                return null;
-              }
-
-              // Update state and render
-              yield* Ref.set(stateRef, actionResult.state);
-              safeRender(actionResult.state, output, stateRef);
-              return null;
-            })
+            handleInputAction(data, stateRef, output, sessionStore, git)
           ),
           Stream.filter((r): r is LauncherResult => r !== null),
           Stream.take(1),
@@ -358,7 +605,11 @@ export function createLauncherConsumer(options: LauncherConsumerOptions = {}): {
         return result;
       }).pipe(
         Effect.provide(
-          Layer.merge(FileSystemSession.Live, FileSystemOutput.Live)
+          Layer.mergeAll(
+            FileSystemSession.Live,
+            FileSystemOutput.Live,
+            FileSystemGit.Live
+          )
         ),
         Effect.ensuring(disableRawMode())
       ),

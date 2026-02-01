@@ -209,6 +209,23 @@ function createMemoryGitService(
       }),
 
     getBranchName,
+
+    pushBranchByName: (_branchName: string): Effect.Effect<void, GitError> =>
+      // In memory, push is a no-op
+      Effect.void,
+
+    createPRByBranchName: (
+      _branchName: string,
+      title: string,
+      _body: string,
+      _baseBranch?: string
+    ): Effect.Effect<PrUrl, GitError> => {
+      // Return a fake PR URL based on title
+      const slug = title.toLowerCase().replace(/\s+/g, "-").slice(0, 30);
+      return Effect.succeed(
+        `https://github.com/test/repo/pull/${slug}` as PrUrl
+      );
+    },
   };
 }
 

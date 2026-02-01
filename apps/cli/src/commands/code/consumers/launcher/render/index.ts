@@ -62,9 +62,13 @@ function renderDaemonStatus(state: LauncherState): string {
 /**
  * Get the currently selected session (if any).
  */
-function getSelectedSession(
-  state: LauncherState
-): { prUrl?: string } | undefined {
+function getSelectedSession(state: LauncherState):
+  | {
+      prUrl?: string;
+      branchName?: string;
+      status: "active" | "completed" | "failed" | "paused";
+    }
+  | undefined {
   if (state.selectedIndex === 0) {
     return undefined;
   }
@@ -72,16 +76,52 @@ function getSelectedSession(
 }
 
 /**
+ * Check if a session can have a PR created.
+ * Session must be completed, have a branch name, and not already have a PR.
+ */
+function canCreatePr(
+  session:
+    | {
+        prUrl?: string;
+        branchName?: string;
+        status: "active" | "completed" | "failed" | "paused";
+      }
+    | undefined
+): boolean {
+  if (!session) {
+    return false;
+  }
+  return (
+    session.status === "completed" &&
+    Boolean(session.branchName) &&
+    !session.prUrl
+  );
+}
+
+/**
  * Render the footer with keyboard hints.
  * When a session with a PR URL is selected, shows the PR link.
  */
 function renderFooter(state: LauncherState, width: number): string {
+  // If PR creation is in progress, show progress footer
+  if (state.prCreation) {
+    return renderPrCreationFooter(
+      state.prCreation.status,
+      state.prCreation.error,
+      width
+    );
+  }
+
   const selectedSession = getSelectedSession(state);
-  const hasPrUrl = selectedSession?.prUrl;
 
   // If selected session has a PR URL, show special PR footer
-  if (state.viewMode === "sessions" && hasPrUrl) {
+  if (state.viewMode === "sessions" && selectedSession?.prUrl) {
     return renderPrFooter(selectedSession.prUrl, width);
+  }
+
+  // If selected session can have a PR created, show create PR footer
+  if (state.viewMode === "sessions" && canCreatePr(selectedSession)) {
+    return renderCreatePrFooter(width);
   }
 
   const hints: string[] = [];
@@ -123,6 +163,53 @@ function renderPrFooter(prUrl: string, width: number): string {
   const padding = Math.max(0, width - stripped.length - 4);
 
   return `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${content}${pc.cyan(box.horizontal.repeat(Math.max(1, padding)))}${pc.cyan(box.bottomRight)}`;
+}
+
+/**
+ * Render the footer when a completed session without a PR is selected.
+ * Shows the 'o' keybind hint to create a PR.
+ */
+function renderCreatePrFooter(width: number): string {
+  const createHint = hint("o", "create PR");
+  const quitHint = hint("^C", "quit");
+
+  const content = `${createHint}  ${quitHint}`;
+  const stripped = stripAnsi(content);
+  const padding = Math.max(0, width - stripped.length - 4);
+
+  return `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${content}${pc.cyan(box.horizontal.repeat(Math.max(1, padding)))}${pc.cyan(box.bottomRight)}`;
+}
+
+/**
+ * Render the footer when PR creation is in progress.
+ * Shows status message and any error.
+ */
+function renderPrCreationFooter(
+  status: "pushing" | "creating" | "success" | "error",
+  error: string | undefined,
+  width: number
+): string {
+  let statusText: string;
+
+  switch (status) {
+    case "pushing":
+      statusText = `${colors.warning("⟳")} ${colors.muted("Pushing branch...")}`;
+      break;
+    case "creating":
+      statusText = `${colors.warning("⟳")} ${colors.muted("Creating PR...")}`;
+      break;
+    case "success":
+      statusText = `${colors.success("✓")} ${colors.muted("PR created!")}`;
+      break;
+    default:
+      statusText = `${colors.error("✗")} ${colors.error(error || "Error creating PR")}`;
+      break;
+  }
+
+  const stripped = stripAnsi(statusText);
+  const padding = Math.max(0, width - stripped.length - 4);
+
+  return `${pc.cyan(box.bottomLeft)}${pc.cyan(box.horizontal)} ${statusText}${pc.cyan(box.horizontal.repeat(Math.max(1, padding)))}${pc.cyan(box.bottomRight)}`;
 }
 
 /**

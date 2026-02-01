@@ -4,6 +4,7 @@ import {
   enterNewTaskMode,
   exitNewTaskMode,
   type LauncherResult,
+  type LauncherSession,
   type LauncherState,
   type LauncherViewMode,
   navigate,
@@ -35,7 +36,8 @@ export type LauncherKeyAction =
  */
 type LauncherSideEffect =
   | { readonly type: "stop_daemon" }
-  | { readonly type: "open_pr"; readonly url: string };
+  | { readonly type: "open_pr"; readonly url: string }
+  | { readonly type: "create_pr"; readonly session: LauncherSession };
 
 /**
  * Result of applying an action to the launcher state.
@@ -183,14 +185,31 @@ function handleSelect(state: LauncherState): ApplyActionResult {
 }
 
 /**
- * Get the selected session's PR URL if available.
+ * Get the selected session if one is selected (not "Create new").
  */
-function getSelectedPrUrl(state: LauncherState): string | undefined {
+function getSelectedSession(state: LauncherState): LauncherSession | undefined {
   if (state.selectedIndex === 0) {
     return undefined;
   }
-  const session = state.sessions[state.selectedIndex - 1];
-  return session?.prUrl;
+  return state.sessions[state.selectedIndex - 1];
+}
+
+/**
+ * Check if a session can have a PR created.
+ * Session must be completed, have a branch name, and not already have a PR.
+ * This is a type guard that narrows the type to LauncherSession when true.
+ */
+function canCreatePr(
+  session: LauncherSession | undefined
+): session is LauncherSession {
+  if (!session) {
+    return false;
+  }
+  return (
+    session.status === "completed" &&
+    Boolean(session.branchName) &&
+    !session.prUrl
+  );
 }
 
 /**
@@ -214,12 +233,21 @@ function applySessionsAction(
       }
       return unchanged;
     case "open_pr": {
-      const prUrl = getSelectedPrUrl(state);
-      if (prUrl) {
+      const session = getSelectedSession(state);
+      if (session?.prUrl) {
+        // Session has a PR, open it
         return {
           type: "effect",
           state,
-          effect: { type: "open_pr", url: prUrl },
+          effect: { type: "open_pr", url: session.prUrl },
+        };
+      }
+      if (canCreatePr(session)) {
+        // Session is completed with branch but no PR, create one
+        return {
+          type: "effect",
+          state,
+          effect: { type: "create_pr", session },
         };
       }
       return unchanged;

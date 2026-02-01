@@ -8,3 +8,5 @@ Never use any. Always prefer strong types.
 When working in an app that uses Effect make sure to use Effect schemas to validate data.
 
 When importing from Phospher Icons in apps/web make sure to add the Icon postfix to these icons as without this they're deprecated.
+
+Always import at the top of the file never inline like import("asdf").asdf
