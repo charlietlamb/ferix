@@ -31,6 +31,17 @@ const FERIX_BLOCK_PATTERNS = [
   /<ferix:phase-failed[^>]*>[\s\S]*?<\/ferix:phase-failed>/g,
   /<ferix:learning[^>]*>[\s\S]*?<\/ferix:learning>/g,
   /<ferix:guardrail[^>]*>[\s\S]*?<\/ferix:guardrail>/g,
+  // Nested tags inside ferix:task-complete (strip separately for streaming)
+  /<commit-message>[\s\S]*?<\/commit-message>/g,
+  /<summary>[\s\S]*?<\/summary>/g,
+  /<files-modified>[\s\S]*?<\/files-modified>/g,
+  /<files-created>[\s\S]*?<\/files-created>/g,
+  // Nested tags inside ferix:tasks
+  /<task[^>]*>[\s\S]*?<\/task>/g,
+  // Nested tags inside ferix:phases
+  /<phase[^>]*>[\s\S]*?<\/phase>/g,
+  // Nested tags inside ferix:criteria
+  /<criterion[^>]*>[\s\S]*?<\/criterion>/g,
 ];
 
 // Self-closing tags (single line)
