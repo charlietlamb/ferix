@@ -12,5 +12,12 @@ interface TypeBadgeProps {
 
 export function TypeBadge({ type }: TypeBadgeProps) {
   const config = getPromptTypeConfig(type);
-  return <Badge variant="outline">{config.label}</Badge>;
+  return (
+    <Badge
+      className="transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+      variant="outline"
+    >
+      {config.label}
+    </Badge>
+  );
 }

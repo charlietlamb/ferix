@@ -69,7 +69,11 @@ export function PromptCell({ prompt }: PromptCellProps) {
         </div>
         <div className="flex items-center gap-2">
           <TypeBadge type={prompt.type} />
-          <button onClick={handleCopy} type="button">
+          <button
+            className="relative rounded p-1 transition-all duration-150 hover:scale-110 hover:bg-muted active:scale-95"
+            onClick={handleCopy}
+            type="button"
+          >
             {copied ? (
               <CheckIcon className="size-4 text-green-500" />
             ) : (
