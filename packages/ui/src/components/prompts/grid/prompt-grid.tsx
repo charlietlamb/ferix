@@ -48,11 +48,15 @@ export function PromptGrid({
         <div
           className={cn(
             "-mr-px grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-            !hideBorderTop && "border-border border-t"
+            !hideBorderTop &&
+              "border-foreground/[0.06] border-t dark:border-foreground/[0.08]"
           )}
         >
           {prompts.map((prompt) => (
-            <div className="border-border border-r border-b" key={prompt._id}>
+            <div
+              className="border-foreground/[0.06] border-r border-b transition-colors duration-200 hover:border-foreground/10 dark:border-foreground/[0.08] dark:hover:border-foreground/12"
+              key={prompt._id}
+            >
               <PromptCell prompt={prompt} />
             </div>
           ))}
@@ -60,7 +64,7 @@ export function PromptGrid({
       </div>
       {hasMore && (
         <div
-          className="flex items-center justify-center py-8 text-muted-foreground"
+          className="flex items-center justify-center py-8 text-foreground/50"
           ref={loaderRef}
         >
           {isLoading ? "Loading..." : ""}

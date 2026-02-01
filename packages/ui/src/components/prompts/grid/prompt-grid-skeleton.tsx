@@ -15,12 +15,15 @@ export function PromptGridSkeleton({
       <div className="overflow-hidden">
         <div
           className={cn(
-            "-mr-px grid grid-cols-1 border-border border-t md:grid-cols-2 lg:grid-cols-3",
+            "-mr-px grid grid-cols-1 border-foreground/[0.06] border-t md:grid-cols-2 lg:grid-cols-3 dark:border-foreground/[0.08]",
             className
           )}
         >
           {Array.from({ length: count }).map((_, i) => (
-            <div className="border-border border-r border-b" key={i}>
+            <div
+              className="border-foreground/[0.06] border-r border-b dark:border-foreground/[0.08]"
+              key={i}
+            >
               <PromptCellSkeleton />
             </div>
           ))}
