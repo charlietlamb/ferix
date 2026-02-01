@@ -491,7 +491,10 @@ const make: GitService = {
 
       // Check if there are commits that differ from the base branch
       // This prevents the GitHub API error "No commits between X and Y"
-      const baseRef = baseBranch || "origin/HEAD";
+      const baseRef =
+        baseBranch && !baseBranch.startsWith("origin/")
+          ? `origin/${baseBranch}`
+          : baseBranch || "origin/HEAD";
       const commitCount = yield* gitExec(
         `git rev-list --count ${baseRef}..HEAD`,
         worktreeDir
