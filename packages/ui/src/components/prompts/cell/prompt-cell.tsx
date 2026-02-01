@@ -50,7 +50,7 @@ export function PromptCell({ prompt }: PromptCellProps) {
 
   return (
     <Link
-      className="group flex h-full w-full flex-col gap-3 p-4 text-left transition-colors hover:bg-muted/50"
+      className="group relative flex h-full w-full flex-col gap-3 p-4 text-left transition-all duration-200 ease-out before:pointer-events-none before:absolute before:inset-0 before:bg-gradient-to-br before:from-primary/0 before:to-primary/0 before:opacity-0 before:transition-opacity before:duration-200 hover:bg-muted/30 hover:before:from-primary/[0.02] hover:before:to-primary/[0.06] hover:before:opacity-100"
       href={`/prompt/${prompt.slug}`}
     >
       <div className="flex items-center justify-between gap-2">
