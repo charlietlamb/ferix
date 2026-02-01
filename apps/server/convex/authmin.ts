@@ -1,5 +1,5 @@
 import type { BetterAuthOptions } from "better-auth";
-import { admin, username } from "better-auth/plugins";
+import { admin, deviceAuthorization, username } from "better-auth/plugins";
 
 /**
  * Minimal auth options containing only plugin configuration.
@@ -29,6 +29,12 @@ export const createAuthOptionsMinimal = (): BetterAuthOptions => {
         maxUsernameLength: 30,
       }),
       admin(),
+      deviceAuthorization({
+        verificationUri: "/device",
+        expiresIn: "30m",
+        interval: "5s",
+        validateClient: (clientId) => clientId === "ferix-cli",
+      }),
     ],
   };
 };

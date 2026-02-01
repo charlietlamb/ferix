@@ -78,6 +78,19 @@ export const tables = {
     createdAt: v.number(),
     expiresAt: v.optional(v.union(v.null(), v.number())),
   }),
+  deviceCode: defineTable({
+    deviceCode: v.string(),
+    userCode: v.string(),
+    clientId: v.optional(v.union(v.null(), v.string())),
+    scope: v.optional(v.union(v.null(), v.string())),
+    status: v.string(),
+    expiresAt: v.number(),
+    lastPolledAt: v.optional(v.union(v.null(), v.number())),
+    pollingInterval: v.optional(v.union(v.null(), v.number())),
+    userId: v.optional(v.union(v.null(), v.string())),
+  })
+    .index("deviceCode", ["deviceCode"])
+    .index("userCode", ["userCode"]),
 };
 
 const schema = defineSchema(tables);

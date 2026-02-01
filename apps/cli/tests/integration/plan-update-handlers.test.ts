@@ -85,14 +85,12 @@ describe("Plan Update Handlers", () => {
       expect(result?.plan.tasks[1]?.title).toBe("Task 2");
     });
 
-    it("should filter out verification tasks", () => {
+    it("should handle pre-filtered tasks from event mapping layer", () => {
+      // Note: Verification task filtering now happens at event mapping layer (signal-to-domain.ts)
+      // This test verifies the handler works with already-filtered tasks
       const signal: TasksDefinedSignal = {
         _tag: "TasksDefined",
-        tasks: [
-          { id: "1", title: "Implement feature", description: "Desc" },
-          { id: "2", title: "Verify tests pass", description: "Desc" },
-          { id: "3", title: "Run verification", description: "Desc" },
-        ],
+        tasks: [{ id: "1", title: "Implement feature", description: "Desc" }],
       };
       const context = createTestContext();
 
@@ -106,13 +104,12 @@ describe("Plan Update Handlers", () => {
       expect(result?.plan.tasks[0]?.title).toBe("Implement feature");
     });
 
-    it("should return undefined if all tasks are verification tasks", () => {
+    it("should return undefined if no tasks remain after filtering", () => {
+      // Note: Verification task filtering happens at event mapping layer
+      // This simulates receiving an empty task list after filtering
       const signal: TasksDefinedSignal = {
         _tag: "TasksDefined",
-        tasks: [
-          { id: "1", title: "Verify tests pass", description: "Desc" },
-          { id: "2", title: "Run verification", description: "Desc" },
-        ],
+        tasks: [],
       };
       const context = createTestContext();
 
