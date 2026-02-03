@@ -7,105 +7,94 @@ import type {
   TUITask,
   TUITaskStatus,
 } from "../../../domain/schemas/tui.js";
-import { MAX_OUTPUT_LINES } from "../constants.js";
-import { formatToolInput } from "../tools/index.js";
+
+/** Maximum number of output lines to keep in the buffer */
+const MAX_OUTPUT_LINES = 10_000;
 
 /**
- * Patterns to match ferix signal tags that should be hidden from TUI output.
- * These signals are parsed by the signal parser and displayed via proper UI elements.
+ * Format tool input for display.
+ * Extracts the most relevant detail from tool input for one-line display.
  *
- * Signals come in several forms:
- * 1. Self-closing: <ferix:check-passed/>
- * 2. With content: <ferix:session-name>value</ferix:session-name>
- * 3. Block with nested elements: <ferix:tasks>...<task>...</task>...</ferix:tasks>
- * 4. With attributes: <ferix:phase-start id="1.1"/>
+ * @param tool - Tool name
+ * @param input - Tool input object
+ * @returns Formatted detail string, or empty string if no relevant detail
  */
-
-// Block tags with content (can be multi-line)
-const FERIX_BLOCK_PATTERNS = [
-  /<ferix:session-name>[\s\S]*?<\/ferix:session-name>/g,
-  /<ferix:tasks>[\s\S]*?<\/ferix:tasks>/g,
-  /<ferix:phases[^>]*>[\s\S]*?<\/ferix:phases>/g,
-  /<ferix:criteria[^>]*>[\s\S]*?<\/ferix:criteria>/g,
-  /<ferix:task-complete[^>]*>[\s\S]*?<\/ferix:task-complete>/g,
-  /<ferix:phase-failed[^>]*>[\s\S]*?<\/ferix:phase-failed>/g,
-  /<ferix:learning[^>]*>[\s\S]*?<\/ferix:learning>/g,
-  /<ferix:guardrail[^>]*>[\s\S]*?<\/ferix:guardrail>/g,
-  // Nested tags inside ferix:task-complete (strip separately for streaming)
-  /<commit-message>[\s\S]*?<\/commit-message>/g,
-  /<summary>[\s\S]*?<\/summary>/g,
-  /<files-modified>[\s\S]*?<\/files-modified>/g,
-  /<files-created>[\s\S]*?<\/files-created>/g,
-  // Nested tags inside ferix:tasks
-  /<task[^>]*>[\s\S]*?<\/task>/g,
-  // Nested tags inside ferix:phases
-  /<phase[^>]*>[\s\S]*?<\/phase>/g,
-  // Nested tags inside ferix:criteria
-  /<criterion[^>]*>[\s\S]*?<\/criterion>/g,
-];
-
-// Self-closing tags (single line)
-const FERIX_SELF_CLOSING_PATTERNS = [
-  /<ferix:phase-start[^>]*\/>/g,
-  /<ferix:phase-done[^>]*\/>/g,
-  /<ferix:criterion-passed[^>]*\/>/g,
-  /<ferix:criterion-failed[^>]*\/>/g,
-  /<ferix:check-passed\s*\/>/g,
-  /<ferix:check-failed\s*\/>/g,
-  /<ferix:review-complete\s*\/>/g,
-  /<ferix:review-changes-made\s*\/>/g,
-];
-
-/**
- * Strip ferix signal tags from text for display.
- * These signals are parsed separately and should not appear in the UI output.
- */
-function stripFerixSignals(text: string): string {
-  let result = text;
-
-  // Remove block patterns first (they can be multi-line)
-  for (const pattern of FERIX_BLOCK_PATTERNS) {
-    result = result.replace(pattern, "");
+function formatToolInput(_tool: string, input: unknown): string {
+  if (!input || typeof input !== "object") {
+    return "";
   }
 
-  // Remove self-closing patterns
-  for (const pattern of FERIX_SELF_CLOSING_PATTERNS) {
-    result = result.replace(pattern, "");
+  const record = input as Record<string, unknown>;
+
+  // Common patterns for different tools
+  if ("filePath" in record && typeof record.filePath === "string") {
+    return record.filePath;
+  }
+  if ("path" in record && typeof record.path === "string") {
+    return record.path;
+  }
+  if ("pattern" in record && typeof record.pattern === "string") {
+    return record.pattern;
+  }
+  if ("command" in record && typeof record.command === "string") {
+    // For Bash, show first part of command
+    const cmd = record.command;
+    return cmd.length > 60 ? `${cmd.slice(0, 57)}...` : cmd;
+  }
+  if ("url" in record && typeof record.url === "string") {
+    return record.url;
+  }
+  if ("query" in record && typeof record.query === "string") {
+    return record.query;
+  }
+  if ("description" in record && typeof record.description === "string") {
+    return record.description;
   }
 
-  return result;
+  return "";
 }
 
 /**
  * Append output lines to state.
+ *
+ * NOTE: We no longer strip ferix tags here because the TUI now uses
+ * styleFerixTags() to render them as styled UI elements. The tags
+ * need to be present in the output for proper rendering.
+ *
+ * IMPORTANT: For live streaming display, we always include the partial line
+ * in outputLines. This ensures users see text immediately as it streams,
+ * rather than waiting for a newline character.
  */
 export function appendOutput(state: TUIState, text: string): TUIState {
   if (!text) {
     return state;
   }
 
-  // Strip ferix signals from the text before displaying
-  const cleanedText = stripFerixSignals(text);
-  if (!cleanedText) {
-    return state;
-  }
-
-  const fullText = state.partialLine + cleanedText;
+  const fullText = state.partialLine + text;
   const parts = fullText.split("\n");
-  const partialLine = parts.pop() ?? "";
-  const newLines = parts.filter((line) => line.length > 0);
+  const newPartialLine = parts.pop() ?? "";
+  const completeLines = parts.filter((line) => line.length > 0);
 
-  if (newLines.length === 0) {
-    return { ...state, partialLine };
-  }
+  // Remove the old partial line from outputLines (it was the last line if partialLine was set)
+  const baseOutputLines =
+    state.partialLine && state.outputLines.length > 0
+      ? state.outputLines.slice(0, -1)
+      : state.outputLines;
 
-  const combined = [...state.outputLines, ...newLines];
+  // Add complete lines
+  const withCompleteLines = [...baseOutputLines, ...completeLines];
+
+  // Add the new partial line for live display (if any)
+  const finalLines = newPartialLine
+    ? [...withCompleteLines, newPartialLine]
+    : withCompleteLines;
+
   const outputLines =
-    combined.length > MAX_OUTPUT_LINES
-      ? combined.slice(-MAX_OUTPUT_LINES)
-      : combined;
+    finalLines.length > MAX_OUTPUT_LINES
+      ? finalLines.slice(-MAX_OUTPUT_LINES)
+      : finalLines;
 
-  return { ...state, outputLines, partialLine };
+  return { ...state, outputLines, partialLine: newPartialLine };
 }
 
 /**

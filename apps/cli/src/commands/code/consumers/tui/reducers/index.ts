@@ -8,13 +8,6 @@ import "./progress.js";
 import "./tasks.js";
 import "./worktree.js";
 
-// Re-export formatToolInput from tools
-
-// Re-export helpers
-export { appendError } from "./helpers.js";
-
-// Re-export registry
-
 // Re-export reduce function
 import type { DomainEvent } from "../../../domain/index.js";
 import type { TUIState } from "../../../domain/schemas/tui.js";

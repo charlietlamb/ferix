@@ -8,13 +8,21 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import { createServer, type Socket } from "node:net";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { Effect, Fiber, Ref, Stream } from "effect";
-import type { DomainEvent, LoopConfig } from "../domain/index.js";
+import {
+  type DomainEvent,
+  decodeSession,
+  type LoopConfig,
+  type Session,
+} from "../domain/index.js";
+import { FileSystemGit } from "../layers/git/file-system.js";
 import { createProductionLayers, ProductionLayers } from "../layers/index.js";
 import { runLoop } from "../orchestrator/index.js";
+import { Git } from "../services/git.js";
 import { createDaemonClient } from "./client.js";
 import {
   type DaemonCommand,
@@ -160,7 +168,7 @@ function getSessionOutputDir(sessionId: string): string {
 /**
  * Get the output file path for a session.
  */
-function getSessionOutputPath(sessionId: string): string {
+export function getSessionOutputPath(sessionId: string): string {
   return join(getSessionOutputDir(sessionId), "output.log");
 }
 
@@ -669,6 +677,211 @@ function handleUnsubscribeCommand(
 }
 
 /**
+ * Load a persisted session from disk by session ID.
+ */
+function loadPersistedSession(
+  sessionId: string
+): Effect.Effect<Session, Error> {
+  return Effect.tryPromise({
+    try: () =>
+      readFile(
+        join(homedir(), ".ferix", "sessions", `${sessionId}.json`),
+        "utf-8"
+      ),
+    catch: (error) =>
+      new Error(
+        `Failed to read session file: ${error instanceof Error ? error.message : String(error)}`
+      ),
+  }).pipe(
+    Effect.flatMap((content) =>
+      Effect.try({
+        try: () => JSON.parse(content) as unknown,
+        catch: () => new Error("Invalid JSON in session file"),
+      })
+    ),
+    Effect.flatMap((parsed) =>
+      decodeSession(parsed).pipe(
+        Effect.mapError(
+          (error) => new Error(`Session validation failed: ${String(error)}`)
+        )
+      )
+    )
+  );
+}
+
+/**
+ * Save a persisted session to disk.
+ */
+function savePersistedSession(session: Session): Effect.Effect<void, Error> {
+  return Effect.tryPromise({
+    try: () =>
+      writeFile(
+        join(homedir(), ".ferix", "sessions", `${session.id}.json`),
+        JSON.stringify(session, null, 2),
+        "utf-8"
+      ),
+    catch: (error) =>
+      new Error(
+        `Failed to write session file: ${error instanceof Error ? error.message : String(error)}`
+      ),
+  });
+}
+
+/**
+ * Load all persisted sessions from disk.
+ * Reads all .json files from ~/.ferix/sessions/ and parses each.
+ * Skips files that fail to parse (graceful degradation).
+ */
+function loadAllPersistedSessions(): Effect.Effect<Session[], never, never> {
+  const sessionsDir = join(homedir(), ".ferix", "sessions");
+  return Effect.tryPromise({
+    try: async () => {
+      try {
+        const entries = await readdir(sessionsDir);
+        return entries.filter((e) => e.endsWith(".json"));
+      } catch {
+        return [];
+      }
+    },
+    catch: () => [] as string[],
+  }).pipe(
+    Effect.catchAll(() => Effect.succeed([] as string[])),
+    Effect.flatMap((files) =>
+      Effect.forEach(files, (file) =>
+        loadPersistedSession(file.replace(".json", "")).pipe(
+          Effect.map((session) => ({ _tag: "Some" as const, value: session })),
+          Effect.catchAll(() =>
+            Effect.succeed({ _tag: "None" as const } as const)
+          )
+        )
+      )
+    ),
+    Effect.map((results) =>
+      results
+        .filter((r): r is { _tag: "Some"; value: Session } => r._tag === "Some")
+        .map((r) => r.value)
+    )
+  );
+}
+
+/**
+ * Map persisted session status to daemon SessionInfo status.
+ * Persisted uses "active" | "completed" | "failed" | "paused".
+ * SessionInfo uses "starting" | "running" | "paused" | "completed" | "failed".
+ */
+function mapPersistedStatus(status: Session["status"]): SessionInfo["status"] {
+  switch (status) {
+    case "active":
+      return "running";
+    case "completed":
+      return "completed";
+    case "failed":
+      return "failed";
+    case "paused":
+      return "paused";
+    default:
+      return "completed";
+  }
+}
+
+/**
+ * Handle the "create_pr" command - create a PR for a completed session.
+ */
+function handleCreatePRCommand(
+  stateRef: Ref.Ref<DaemonState>,
+  socket: Socket,
+  sessionId: string
+): Effect.Effect<void, never, never> {
+  return Effect.gen(function* () {
+    // Load persisted session from disk
+    const session = yield* loadPersistedSession(sessionId).pipe(
+      Effect.catchAll((error) =>
+        Effect.gen(function* () {
+          sendToClient(socket, {
+            type: "error",
+            message: `Failed to load session: ${error.message}`,
+          });
+          return yield* Effect.fail("handled" as const);
+        })
+      )
+    );
+
+    // Check if PR already exists
+    if (session.prUrl) {
+      sendToClient(socket, {
+        type: "pr_created",
+        prUrl: session.prUrl,
+      });
+      return;
+    }
+
+    // Need a branch name to create PR
+    if (!session.branchName) {
+      sendToClient(socket, {
+        type: "error",
+        message: "Session has no branch name - cannot create PR",
+      });
+      return;
+    }
+
+    // Use git service to push and create PR
+    const prEffect = Effect.gen(function* () {
+      const git = yield* Git;
+
+      // Push the branch first
+      yield* git.pushBranchByName(session.branchName as string);
+
+      // Create the PR
+      const title = session.displayName
+        ? session.displayName.replace(/-/g, " ")
+        : session.originalTask.slice(0, 72);
+      const body = `## Task\n\n${session.originalTask}\n\n---\nCreated by Ferix`;
+
+      const prUrl = yield* git.createPRByBranchName(
+        session.branchName as string,
+        title,
+        body,
+        session.baseBranch
+      );
+
+      return prUrl;
+    }).pipe(Effect.provide(FileSystemGit.Live));
+
+    const prUrl = yield* prEffect.pipe(
+      Effect.catchAll((error) =>
+        Effect.gen(function* () {
+          sendToClient(socket, {
+            type: "error",
+            message: `Failed to create PR: ${error instanceof Error ? error.message : String(error)}`,
+          });
+          return yield* Effect.fail("handled" as const);
+        })
+      )
+    );
+
+    // Update persisted session with PR URL
+    yield* savePersistedSession({ ...session, prUrl }).pipe(
+      Effect.catchAll(() => Effect.void)
+    );
+
+    // Update in-memory session info if exists
+    yield* Ref.update(stateRef, (s) => {
+      const sessions = new Map(s.sessions);
+      const activeSession = sessions.get(sessionId);
+      if (activeSession) {
+        sessions.set(sessionId, {
+          ...activeSession,
+          info: { ...activeSession.info, prUrl },
+        });
+      }
+      return { ...s, sessions };
+    });
+
+    sendToClient(socket, { type: "pr_created", prUrl });
+  }).pipe(Effect.catchAll(() => Effect.void));
+}
+
+/**
  * Handle a command from a client.
  */
 function handleCommand(
@@ -713,7 +926,40 @@ function handleCommand(
     case "list":
       return Effect.gen(function* () {
         const state = yield* Ref.get(stateRef);
-        const sessions = Array.from(state.sessions.values()).map((s) => s.info);
+
+        // Load all persisted sessions from disk
+        const persistedSessions = yield* loadAllPersistedSessions();
+
+        // Build merged list: in-memory sessions override persisted ones
+        const sessionMap = new Map<string, SessionInfo>();
+
+        // First add persisted sessions (base layer)
+        for (const persisted of persistedSessions) {
+          sessionMap.set(persisted.id, {
+            sessionId: persisted.id,
+            task: persisted.originalTask,
+            status: mapPersistedStatus(persisted.status),
+            startedAt: new Date(persisted.createdAt).getTime(),
+            prUrl: persisted.prUrl,
+            branchName: persisted.branchName,
+          });
+        }
+
+        // Then overlay in-memory sessions (live status takes priority)
+        for (const [id, active] of state.sessions) {
+          const existing = sessionMap.get(id);
+          sessionMap.set(id, {
+            ...active.info,
+            prUrl: active.info.prUrl ?? existing?.prUrl,
+            branchName: active.info.branchName ?? existing?.branchName,
+          });
+        }
+
+        // Sort by startedAt descending (most recent first)
+        const sessions = Array.from(sessionMap.values()).sort(
+          (a, b) => b.startedAt - a.startedAt
+        );
+
         sendToClient(socket, { type: "sessions", sessions });
       });
 
@@ -748,6 +994,9 @@ function handleCommand(
       return Effect.sync(() => {
         sendToClient(socket, { type: "version", buildTime: daemonBuildTime });
       });
+
+    case "create_pr":
+      return handleCreatePRCommand(stateRef, socket, command.sessionId);
 
     default:
       return Effect.sync(() => {

@@ -10,6 +10,8 @@ const SessionInfoSchema = S.Struct({
   status: S.Literal("starting", "running", "paused", "completed", "failed"),
   startedAt: S.Number,
   completedAt: S.optional(S.Number),
+  prUrl: S.optional(S.String),
+  branchName: S.optional(S.String),
 });
 export type SessionInfo = typeof SessionInfoSchema.Type;
 
@@ -54,6 +56,10 @@ const DaemonCommandSchema = S.Union(
   }),
   S.Struct({
     type: S.Literal("version"),
+  }),
+  S.Struct({
+    type: S.Literal("create_pr"),
+    sessionId: S.String,
   })
 );
 export type DaemonCommand = typeof DaemonCommandSchema.Type;
@@ -81,6 +87,10 @@ const DaemonResponseSchema = S.Union(
   S.Struct({
     type: S.Literal("version"),
     buildTime: S.Number,
+  }),
+  S.Struct({
+    type: S.Literal("pr_created"),
+    prUrl: S.String,
   })
 );
 export type DaemonResponse = typeof DaemonResponseSchema.Type;

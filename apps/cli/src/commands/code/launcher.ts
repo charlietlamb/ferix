@@ -1,11 +1,8 @@
 import { Effect } from "effect";
 import { main } from "./action.js";
-import {
-  createLauncherConsumer,
-  createSessionViewConsumer,
-} from "./consumers/launcher/index.js";
-import { ensureDaemonRunning } from "./daemon/index.js";
-import type { LoopConfig, ProviderName } from "./domain/index.js";
+import { type Route, tui } from "./consumers/tui/index.js";
+import { createDaemonClient, ensureDaemonRunning } from "./daemon/index.js";
+import type { ProviderName } from "./domain/index.js";
 
 /**
  * Options passed from the CLI to the launcher.
@@ -22,11 +19,25 @@ export interface LauncherOptions {
 }
 
 /**
- * Build LoopConfig from options and task.
+ * Normalized options for the TUI.
+ * These are the values that the TUI will use.
  */
-function buildConfig(options: LauncherOptions, task: string): LoopConfig {
+interface NormalizedOptions {
+  readonly maxIterations: number;
+  readonly verifyCommands: string[];
+  readonly branch?: string;
+  readonly push?: boolean;
+  readonly pr?: boolean;
+  readonly provider: ProviderName;
+  readonly yolo: boolean;
+  readonly debug: boolean;
+}
+
+/**
+ * Normalize options from CLI format to TUI format.
+ */
+function normalizeOptions(options: LauncherOptions): NormalizedOptions {
   return {
-    task,
     maxIterations: Number.parseInt(options.iterations, 10),
     verifyCommands: options.verify ?? [],
     branch: options.branch,
@@ -34,109 +45,84 @@ function buildConfig(options: LauncherOptions, task: string): LoopConfig {
     pr: options.pr,
     provider: options.provider as ProviderName,
     yolo: options.yolo ?? true,
-    debug: options.debug,
+    debug: options.debug ?? false,
   };
 }
 
 /**
- * Run a session and return whether to continue to launcher.
- * Returns true if user pressed Escape (go to launcher), false to exit.
- */
-async function runSession(
-  options: LauncherOptions,
-  task: string
-): Promise<boolean> {
-  const config = buildConfig(options, task);
-  const result = await main(config);
-  return result === "back_to_launcher";
-}
-
-/**
- * Launch the session selector TUI.
+ * Launch the TUI.
  *
- * When called without an initialTask, this function displays an interactive
- * TUI that allows users to:
- * - Browse existing sessions
- * - Select a session to view its details (with Escape to return)
- * - Create a new session with inline task input
+ * This function:
+ * 1. Ensures the daemon is running
+ * 2. Connects to the daemon
+ * 3. Starts the TUI with the appropriate initial route
  *
- * When called with an initialTask, it runs that session first, then falls
- * through to the launcher if the user presses Escape.
+ * If an initialTask is provided, the TUI starts with a new session.
+ * Otherwise, it starts with the session launcher/selector.
  *
- * The launcher loops between the session list and session view until
- * the user either quits (Ctrl+C) or completes a session normally.
+ * The TUI handles all navigation internally (launcher <-> session views).
+ * The user exits via Ctrl+C.
+ *
+ * @param options - CLI options for the session
+ * @param initialTask - Optional task to start a new session with
  */
 export async function launchSelector(
   options: LauncherOptions,
   initialTask?: string
 ): Promise<void> {
-  // Require TTY for the launcher
+  // Non-TTY: run headless via action.ts
   if (!process.stdout.isTTY) {
-    console.error(
-      'Session selector requires a TTY. Provide a task: ferix "your task"'
-    );
-    process.exit(1);
+    if (!initialTask) {
+      console.error('Non-TTY mode requires a task. Usage: ferix "your task"');
+      process.exit(1);
+    }
+    const normalized = normalizeOptions(options);
+    await main({
+      task: initialTask,
+      maxIterations: normalized.maxIterations,
+      verifyCommands: normalized.verifyCommands,
+      branch: normalized.branch,
+      push: normalized.push,
+      pr: normalized.pr,
+      provider: normalized.provider,
+      yolo: normalized.yolo,
+      debug: normalized.debug,
+    });
+    return;
   }
 
   // Ensure daemon is running before entering the TUI
   await Effect.runPromise(ensureDaemonRunning());
 
-  // If initial task provided, run it first
+  // Create and connect daemon client
+  const client = createDaemonClient();
+  await Effect.runPromise(
+    client.connect().pipe(
+      Effect.catchAll((err) => {
+        console.error("Failed to connect to daemon:", err.message);
+        return Effect.sync(() => process.exit(1));
+      })
+    )
+  );
+
+  // Normalize options
+  const _normalized = normalizeOptions(options);
+
+  // Determine initial route
+  let initialRoute: Route | undefined;
   if (initialTask) {
-    const goToLauncher = await runSession(options, initialTask);
-    if (!goToLauncher) {
-      return;
-    }
-    // Fall through to launcher loop
+    // Start with a new session
+    initialRoute = { type: "new", task: initialTask };
   }
+  // Otherwise, default to launcher (undefined -> launcher route)
 
-  // Track selected index to preserve position when returning from session view
-  let selectedIndex = 0;
-
-  // Loop between launcher and session view
-  while (true) {
-    const launcher = createLauncherConsumer({
-      initialSelectedIndex: selectedIndex,
-    });
-    const result = await Effect.runPromise(launcher.run());
-
-    switch (result.type) {
-      case "quit":
-        process.exit(0);
-        break;
-
-      case "select": {
-        // Remember the selected index for when we return
-        selectedIndex = result.selectedIndex;
-
-        // Show session view, return to launcher on "back"
-        const viewConsumer = createSessionViewConsumer(result.sessionId);
-        const viewResult = await Effect.runPromise(viewConsumer.run());
-
-        if (viewResult === "quit") {
-          process.exit(0);
-        }
-        // viewResult === "back" -> continue loop to show launcher again
-        break;
-      }
-
-      case "new": {
-        // Start new session
-        const goToLauncher = await runSession(options, result.task);
-
-        // If user pressed Escape, go back to launcher
-        if (goToLauncher) {
-          // Reset to top of list since this was a new session
-          selectedIndex = 0;
-          break;
-        }
-
-        // Otherwise (completed or quit), exit
-        return;
-      }
-
-      default:
-        break;
-    }
-  }
+  // Start the TUI
+  await tui({
+    daemonClient: client,
+    initialRoute,
+    onExit: async () => {
+      // Disconnect from daemon on exit
+      await Effect.runPromise(client.disconnect().pipe(Effect.ignore));
+    },
+  });
 }

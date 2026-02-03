@@ -5,7 +5,9 @@
     "rootDir": "src",
     "noEmit": true,
     "types": ["node"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "jsx": "preserve",
+    "jsxImportSource": "@opentui/solid"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

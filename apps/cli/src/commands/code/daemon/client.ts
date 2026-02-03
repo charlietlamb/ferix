@@ -336,6 +336,29 @@ export class DaemonClient {
   }
 
   /**
+   * Create a PR for a session.
+   * Pushes the branch and creates a PR via the daemon.
+   */
+  createPR(
+    sessionId: string
+  ): Effect.Effect<string, DaemonCommandError, never> {
+    return Effect.gen(this, function* () {
+      const response = yield* this.sendCommand({
+        type: "create_pr",
+        sessionId,
+      });
+
+      if (response.type !== "pr_created") {
+        return yield* Effect.fail(
+          new DaemonCommandError(`Unexpected response: ${response.type}`)
+        );
+      }
+
+      return response.prUrl;
+    });
+  }
+
+  /**
    * Get the daemon's build time version.
    * Used to check if the daemon is running stale code.
    */

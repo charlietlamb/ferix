@@ -13,4 +13,6 @@ export default defineConfig({
   // Bundle workspace packages to avoid npm 404 errors when users install the CLI
   // These packages are not published to npm, so they must be inlined
   noExternal: ["@ferix/server"],
+  // Note: For OpenTUI JSX support, use the bun build.ts script instead of tsup
+  // tsup is kept for non-JSX builds or reference
 });

@@ -267,9 +267,10 @@ describe("TUI Reducers", () => {
     });
 
     describe("IterationCompleted", () => {
-      it("should flush partial line to output", () => {
+      it("should clear partial line (already displayed in outputLines)", () => {
+        // With live streaming, partial lines are already in outputLines for display
         const state = createTestState({
-          outputLines: ["Previous line"],
+          outputLines: ["Previous line", "Incomplete text"],
           partialLine: "Incomplete text",
         });
         const event = {
@@ -280,11 +281,12 @@ describe("TUI Reducers", () => {
 
         const result = stateReducerRegistry.reduce(state, event);
 
+        // Partial line was already in outputLines, just clear partialLine
         expect(result.outputLines).toContain("Incomplete text");
         expect(result.partialLine).toBe("");
       });
 
-      it("should not modify state if no partial line", () => {
+      it("should keep outputLines unchanged if no partial line", () => {
         const state = createTestState({
           outputLines: ["Line 1"],
           partialLine: "",
@@ -298,6 +300,7 @@ describe("TUI Reducers", () => {
         const result = stateReducerRegistry.reduce(state, event);
 
         expect(result.outputLines).toEqual(["Line 1"]);
+        expect(result.partialLine).toBe("");
       });
     });
   });
@@ -329,7 +332,7 @@ describe("TUI Reducers", () => {
         expect(result.partialLine).toBe("");
       });
 
-      it("should accumulate partial text without newline", () => {
+      it("should display partial text immediately for live streaming", () => {
         const state = createTestState({ partialLine: "" });
         const event = {
           _tag: "LLMText" as const,
@@ -338,8 +341,9 @@ describe("TUI Reducers", () => {
 
         const result = stateReducerRegistry.reduce(state, event);
 
+        // Partial text is now displayed immediately in outputLines for live streaming
         expect(result.partialLine).toBe("Partial");
-        expect(result.outputLines).toHaveLength(0);
+        expect(result.outputLines).toContain("Partial");
       });
 
       it("should handle multiple lines in single event", () => {

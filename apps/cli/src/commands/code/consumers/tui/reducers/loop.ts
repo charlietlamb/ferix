@@ -3,11 +3,21 @@ import type {
   LoopFailedEvent,
   LoopStartedEvent,
 } from "../../../domain/index.js";
-import { MAX_OUTPUT_LINES } from "../constants.js";
-import { completeBanner } from "../tags/primitives.js";
 import { appendError } from "./helpers.js";
 import type { StateReducer } from "./registry.js";
 import { stateReducerRegistry } from "./registry.js";
+
+/** Maximum number of output lines to keep in the buffer */
+const MAX_OUTPUT_LINES = 10_000;
+
+/**
+ * Generate a completion banner for display.
+ * Uses unicode box drawing characters for a clean appearance.
+ * @param _width - Terminal width (unused, kept for API compatibility)
+ */
+function completeBanner(_width: number): string {
+  return "───────────────────── ✓ ALL TASKS COMPLETE ─────────────────────";
+}
 
 const loopStartedReducer: StateReducer<"LoopStarted"> = {
   tag: "LoopStarted",

@@ -6,10 +6,7 @@
     },
     "apps/cli": {
       "entry": ["tests/**/*.test.ts"],
-      "project": ["src/**/*.ts", "tests/**/*.ts"],
-      "tsup": {
-        "config": ["tsup.config.ts"]
-      }
+      "project": ["src/**/*.{ts,tsx}", "tests/**/*.ts"]
     },
     "apps/web": {
       "entry": ["app/**/*.{ts,tsx}"],

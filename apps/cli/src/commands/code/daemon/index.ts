@@ -1,9 +1,4 @@
-export {
-  createDaemonClient,
-  DaemonClient,
-  DaemonCommandError,
-  DaemonConnectionError,
-} from "./client.js";
+export { createDaemonClient } from "./client.js";
 export {
   ensureDaemonRunning,
   getDaemonPid,
