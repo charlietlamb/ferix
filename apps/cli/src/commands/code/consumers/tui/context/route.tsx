@@ -6,6 +6,7 @@ import { createSimpleContext } from "./helper.js";
  */
 interface LauncherRoute {
   readonly type: "launcher";
+  readonly focusSessionId?: string;
 }
 
 interface SessionRoute {
@@ -53,8 +54,8 @@ export const { use: useRoute, provider: RouteProvider } = createSimpleContext({
       /**
        * Navigate to launcher view.
        */
-      toLauncher() {
-        setStore({ type: "launcher" });
+      toLauncher(focusSessionId?: string) {
+        setStore({ type: "launcher", focusSessionId });
       },
 
       /**

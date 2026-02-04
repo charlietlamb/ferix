@@ -1,7 +1,9 @@
 import { render } from "@opentui/solid";
+import type { FerixConfig } from "../../config/index.js";
 import type { DaemonClient } from "../../daemon/client.js";
 import { App } from "./app.js";
 import {
+  ConfigProvider,
   DaemonProvider,
   ExitProvider,
   type Route,
@@ -27,6 +29,11 @@ export interface TuiOptions {
   readonly initialRoute?: Route;
 
   /**
+   * Loaded ferix.json config for pre-filling session defaults.
+   */
+  readonly config?: FerixConfig;
+
+  /**
    * Callback when the TUI exits.
    */
   readonly onExit?: () => Promise<void>;
@@ -50,7 +57,7 @@ export interface TuiOptions {
  * @returns Promise that resolves when TUI exits
  */
 export function tui(options: TuiOptions): Promise<void> {
-  const { daemonClient, initialRoute, onExit } = options;
+  const { daemonClient, initialRoute, config = {}, onExit } = options;
 
   // Promise to keep process alive until exit
   return new Promise<void>((resolve) => {
@@ -70,13 +77,15 @@ export function tui(options: TuiOptions): Promise<void> {
         () => (
           <ExitProvider onExit={handleExit}>
             <ToastProvider>
-              <RouteProvider initial={initialRoute}>
-                <ThemeProvider mode={mode}>
-                  <DaemonProvider client={daemonClient}>
-                    <App />
-                  </DaemonProvider>
-                </ThemeProvider>
-              </RouteProvider>
+              <ConfigProvider config={config}>
+                <RouteProvider initial={initialRoute}>
+                  <ThemeProvider mode={mode}>
+                    <DaemonProvider client={daemonClient}>
+                      <App />
+                    </DaemonProvider>
+                  </ThemeProvider>
+                </RouteProvider>
+              </ConfigProvider>
             </ToastProvider>
           </ExitProvider>
         ),

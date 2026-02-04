@@ -11,15 +11,14 @@ export const registerCodeCommand = (program: Command): void => {
       "[task]",
       "Task description or path to PRD file (omit to see sessions)"
     )
-    .option("-i, --iterations <n>", "Maximum iterations", "1")
+    .option("-i, --iterations <n>", "Maximum iterations")
     .option("-c, --verify <commands...>", "Verification commands to run")
     .option("--branch <name>", "Git branch to create")
     .option("--push", "Push branch after completion")
     .option("--pr", "Create PR after pushing")
     .option(
       "--provider <name>",
-      "LLM provider to use (claude, cursor, opencode)",
-      "claude"
+      "LLM provider to use (claude, cursor, opencode)"
     )
     .option(
       "--no-yolo",

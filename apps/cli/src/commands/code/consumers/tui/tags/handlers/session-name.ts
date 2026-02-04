@@ -7,5 +7,5 @@ import { tagRendererRegistry } from "../registry.js";
  */
 tagRendererRegistry.register({
   pattern: /<ferix:session-name>([^<]+)<\/ferix:session-name>/g,
-  render: (m) => sessionName(m[1] ?? ""),
+  render: (m, w) => sessionName(m[1] ?? "", w),
 });

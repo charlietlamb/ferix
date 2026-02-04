@@ -12,85 +12,117 @@ const SessionInfoSchema = S.Struct({
   completedAt: S.optional(S.Number),
   prUrl: S.optional(S.String),
   branchName: S.optional(S.String),
+  displayName: S.optional(S.String),
+  provider: S.optional(S.Literal("claude", "cursor", "opencode")),
+  completedTaskCount: S.optional(S.Number),
+  taskTotal: S.optional(S.Number),
+  taskDone: S.optional(S.Number),
+  iteration: S.optional(S.Number),
+  maxIterations: S.optional(S.Number),
+  lastActivity: S.optional(S.String),
 });
 export type SessionInfo = typeof SessionInfoSchema.Type;
 
 /**
  * Commands from TUI → Daemon
+ *
+ * Each command carries an optional `commandId` for request/response correlation.
+ * The daemon echoes the `commandId` back in the response so the client can match
+ * responses to the commands that triggered them.
  */
 const DaemonCommandSchema = S.Union(
   S.Struct({
     type: S.Literal("start"),
     sessionId: S.String,
     config: S.Unknown, // LoopConfig - validated separately
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("pause"),
     sessionId: S.String,
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("resume"),
     sessionId: S.String,
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("cancel"),
     sessionId: S.String,
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("list"),
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("status"),
     sessionId: S.String,
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("subscribe"),
     sessionId: S.String,
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("unsubscribe"),
     sessionId: S.String,
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("shutdown"),
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("version"),
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("create_pr"),
     sessionId: S.String,
+    commandId: S.optional(S.String),
   })
 );
 export type DaemonCommand = typeof DaemonCommandSchema.Type;
 
 /**
  * Responses from Daemon → TUI (one-shot replies)
+ *
+ * Each response carries an optional `commandId` echoed from the command
+ * that triggered it, enabling request/response correlation.
  */
 const DaemonResponseSchema = S.Union(
   S.Struct({
     type: S.Literal("ok"),
     sessionId: S.optional(S.String),
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("error"),
     message: S.String,
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("sessions"),
     sessions: S.Array(SessionInfoSchema),
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("session_status"),
     session: SessionInfoSchema,
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("version"),
     buildTime: S.Number,
+    commandId: S.optional(S.String),
   }),
   S.Struct({
     type: S.Literal("pr_created"),
     prUrl: S.String,
+    commandId: S.optional(S.String),
   })
 );
 export type DaemonResponse = typeof DaemonResponseSchema.Type;

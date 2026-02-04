@@ -1,8 +1,10 @@
-import { TextAttributes } from "@opentui/core";
+import { type ScrollBoxRenderable, TextAttributes } from "@opentui/core";
 import { useKeyboard, useTerminalDimensions } from "@opentui/solid";
+import { Result } from "better-result";
 import { Effect } from "effect";
-import { createSignal, For, Show } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import type { SessionInfo } from "../../../daemon/protocol.js";
+import { Logo, SplitBorder } from "../components/index.js";
 import {
   useDaemon,
   useExit,
@@ -14,9 +16,216 @@ import { openUrl } from "../util/open-url.js";
 import { formatRelativeTime, truncate } from "../util/text.js";
 
 /**
+ * Provider config for display badges.
+ */
+interface ProviderDisplay {
+  readonly label: string;
+  readonly color: string;
+}
+
+/**
+ * Get provider display config for a session.
+ */
+function getProviderDisplay(
+  provider: string | undefined,
+  themeColors: { warning: string; info: string; success: string }
+): ProviderDisplay | undefined {
+  if (!provider) {
+    return undefined;
+  }
+  const configs: Record<string, ProviderDisplay> = {
+    claude: { label: "CLAUDE", color: themeColors.warning },
+    cursor: { label: "CURSOR", color: themeColors.info },
+    opencode: { label: "OPENCODE", color: themeColors.success },
+  };
+  return configs[provider];
+}
+
+/**
+ * Get the color for task progress text.
+ */
+function getTaskProgressColor(
+  done: number,
+  total: number,
+  selected: boolean,
+  themeColors: { success: string; textDim: string; textMuted: string }
+): string {
+  if (done === total && total > 0) {
+    return themeColors.success;
+  }
+  return selected ? themeColors.textDim : themeColors.textMuted;
+}
+
+/**
  * View mode for the launcher.
  */
 type ViewMode = "sessions" | "new_task_input";
+
+/**
+ * Hint definition for footer.
+ */
+interface HintDef {
+  readonly key: string;
+  readonly description: string;
+}
+
+/**
+ * Hint component for keyboard shortcuts.
+ */
+function Hint(props: HintDef) {
+  const { theme } = useTheme();
+
+  return (
+    <box flexDirection="row">
+      <text attributes={TextAttributes.BOLD} fg={theme.accent}>
+        {props.key}
+      </text>
+      <text fg={theme.textMuted}>{` ${props.description}`}</text>
+    </box>
+  );
+}
+
+/**
+ * Dot separator between hints.
+ */
+function HintSep() {
+  const { theme } = useTheme();
+  return <text fg={theme.textGhost}>{" · "}</text>;
+}
+
+/**
+ * Session row component for the launcher list.
+ */
+function SessionRow(props: {
+  session: SessionInfo;
+  isSelected: boolean;
+  dimensions: { width: number; height: number };
+}) {
+  const { theme, symbols } = useTheme();
+  const session = props.session;
+  const status = (() => {
+    switch (session.status) {
+      case "running":
+        return { icon: symbols.bulletFilled, color: theme.brand };
+      case "completed":
+        return { icon: symbols.checkmark, color: theme.success };
+      case "failed":
+        return { icon: symbols.cross, color: theme.error };
+      case "paused":
+        return { icon: symbols.bulletEmpty, color: theme.warning };
+      default:
+        return { icon: symbols.bulletEmpty, color: theme.textDim };
+    }
+  })();
+  const provider = getProviderDisplay(session.provider, theme);
+  const hasIteration =
+    session.iteration !== undefined && session.maxIterations !== undefined;
+  const hasTasks =
+    session.taskDone !== undefined && session.taskTotal !== undefined;
+  const sepColor = props.isSelected ? theme.textMuted : theme.textGhost;
+
+  return (
+    <box
+      backgroundColor={props.isSelected ? theme.backgroundElement : undefined}
+      border={props.isSelected ? ["left"] : undefined}
+      borderColor={props.isSelected ? theme.borderActive : undefined}
+      flexDirection="column"
+      paddingBottom={1}
+      paddingLeft={2}
+    >
+      {/* Line 1: status icon + task name + relative time */}
+      <box flexDirection="row" height={1}>
+        <text fg={status.color}>{`${status.icon} `}</text>
+        <text fg={props.isSelected ? theme.text : theme.textDim}>
+          {truncate(
+            session.displayName ?? session.task ?? session.sessionId,
+            props.dimensions.width - 30
+          )}
+        </text>
+        <box flexGrow={1} />
+        <Show when={session.startedAt}>
+          <text fg={theme.textMuted}>
+            {" "}
+            {formatRelativeTime(new Date(session.startedAt).toISOString())}
+          </text>
+        </Show>
+        <text> </text>
+      </box>
+
+      {/* Line 2: provider + iteration + task progress */}
+      <box flexDirection="row" height={1} paddingLeft={2}>
+        <Show when={provider}>
+          <text attributes={TextAttributes.BOLD} fg={provider?.color}>
+            {provider?.label}
+          </text>
+          <text fg={sepColor}> </text>
+        </Show>
+        <Show when={hasIteration}>
+          <Show when={provider}>
+            <text fg={sepColor}>{`${symbols.dot} `}</text>
+          </Show>
+          <text
+            fg={props.isSelected ? theme.textDim : theme.textMuted}
+          >{`iter ${session.iteration}/${session.maxIterations}`}</text>
+        </Show>
+        <Show when={hasTasks}>
+          <Show when={provider || hasIteration}>
+            <text fg={sepColor}>{` ${symbols.dot} `}</text>
+          </Show>
+          <text
+            fg={getTaskProgressColor(
+              session.taskDone as number,
+              session.taskTotal as number,
+              props.isSelected,
+              theme
+            )}
+          >{`${session.taskDone}/${session.taskTotal} tasks`}</text>
+        </Show>
+      </box>
+
+      {/* Line 3: last activity */}
+      <Show when={session.lastActivity}>
+        <box flexDirection="row" height={1} paddingLeft={2}>
+          <text fg={props.isSelected ? theme.textMuted : theme.textGhost}>
+            {truncate(
+              session.lastActivity as string,
+              props.dimensions.width - 8
+            )}
+          </text>
+        </box>
+      </Show>
+
+      {/* Line 4: branch name + PR indicator + status */}
+      <Show when={session.branchName || session.prUrl}>
+        <box flexDirection="row" height={1} paddingLeft={2}>
+          <Show when={session.branchName}>
+            <text fg={theme.textGhost}>{session.branchName}</text>
+          </Show>
+          <Show when={session.prUrl}>
+            <text fg={theme.textGhost}> </text>
+            <text fg={theme.info}>PR</text>
+          </Show>
+          <text fg={theme.textGhost}>{` ${symbols.dot} `}</text>
+          <text fg={theme.textGhost}>{session.status}</text>
+        </box>
+      </Show>
+    </box>
+  );
+}
+
+/**
+ * Height of the header chrome (logo + paddingTop).
+ */
+const LOGO_HEIGHT = 6;
+const HEADER_PADDING_TOP = 1;
+const SPLIT_BORDER_HEIGHT = 1;
+const CREATE_NEW_HEIGHT = 2;
+const CHROME_HEIGHT =
+  LOGO_HEIGHT +
+  HEADER_PADDING_TOP +
+  SPLIT_BORDER_HEIGHT +
+  CREATE_NEW_HEIGHT +
+  SPLIT_BORDER_HEIGHT;
 
 /**
  * Launcher view component.
@@ -43,23 +252,57 @@ export function LauncherView() {
   const [taskInput, setTaskInput] = createSignal("");
   const [loading, setLoading] = createSignal(true);
   const [prCreating, setPrCreating] = createSignal(false);
+  const [scrollboxRef, setScrollboxRef] = createSignal<
+    ScrollBoxRenderable | undefined
+  >(undefined);
+
+  // Auto-scroll to keep the selected session visible
+  const SESSION_ROW_HEIGHT = 4;
+  createEffect(() => {
+    const ref = scrollboxRef();
+    const idx = selectedIndex();
+    if (ref && idx > 0) {
+      const sessionIdx = idx - 1;
+      const scrollHeight = dimensions().height - CHROME_HEIGHT;
+      const targetTop = sessionIdx * SESSION_ROW_HEIGHT;
+      const targetBottom = targetTop + SESSION_ROW_HEIGHT;
+      if (targetBottom > ref.scrollTop + scrollHeight) {
+        ref.scrollTop = targetBottom - scrollHeight;
+      } else if (targetTop < ref.scrollTop) {
+        ref.scrollTop = targetTop;
+      }
+    } else if (ref && idx === 0) {
+      ref.scrollTop = 0;
+    }
+  });
 
   // Load sessions on mount
-  const loadSessions = () => {
+  const loadSessions = async () => {
     setLoading(true);
-    Effect.runPromise(daemon.listSessions())
-      .then((result) => {
-        // Map sessions to enriched format
-        const enriched: SessionInfo[] = result.map((session) => ({
+    const result = await Result.tryPromise(() =>
+      Effect.runPromise(daemon.listSessions())
+    );
+    result.match({
+      ok: (data) => {
+        const enriched: SessionInfo[] = data.map((session) => ({
           ...session,
         }));
         setSessions(enriched);
-        setLoading(false);
-      })
-      .catch((err) => {
-        toast.error(err);
-        setLoading(false);
-      });
+
+        // Focus the session we navigated back from
+        const routeData = route.data;
+        if (routeData.type === "launcher" && routeData.focusSessionId) {
+          const focusIdx = enriched.findIndex(
+            (s) => s.sessionId === routeData.focusSessionId
+          );
+          if (focusIdx >= 0) {
+            setSelectedIndex(focusIdx + 1); // +1 for "Create new session" row
+          }
+        }
+      },
+      err: (e) => toast.error(e),
+    });
+    setLoading(false);
   };
 
   // Initial load
@@ -69,7 +312,7 @@ export function LauncherView() {
   const getSelectedSession = (): SessionInfo | undefined => {
     const idx = selectedIndex();
     if (idx === 0) {
-      return undefined; // "Create new" is at index 0
+      return undefined;
     }
     return sessions()[idx - 1];
   };
@@ -90,7 +333,7 @@ export function LauncherView() {
     ctrl?: boolean;
     key?: string;
   }) => {
-    const maxIndex = sessions().length; // +1 for "Create new"
+    const maxIndex = sessions().length;
 
     switch (evt.name) {
       case "j":
@@ -113,10 +356,8 @@ export function LauncherView() {
 
       case "return":
         if (selectedIndex() === 0) {
-          // "Create new" selected
           setViewMode("new_task_input");
         } else {
-          // Session selected
           const session = getSelectedSession();
           if (session) {
             route.toSession(session.sessionId);
@@ -152,7 +393,6 @@ export function LauncherView() {
       return;
     }
 
-    // If PR already exists, open it
     if (session.prUrl) {
       openUrl(session.prUrl);
       toast.show({
@@ -162,7 +402,6 @@ export function LauncherView() {
       return;
     }
 
-    // If session is completed with a branch, create PR
     if (
       (session.status === "completed" || session.status === "failed") &&
       session.branchName
@@ -198,21 +437,18 @@ export function LauncherView() {
     ctrl?: boolean;
     key?: string;
   }) => {
-    // Ctrl+C - cancel
     if (evt.ctrl && evt.name === "c") {
       setViewMode("sessions");
       setTaskInput("");
       return;
     }
 
-    // Escape - cancel
     if (evt.name === "escape") {
       setViewMode("sessions");
       setTaskInput("");
       return;
     }
 
-    // Enter without shift - submit if there's content
     if (evt.name === "return" && !evt.shift) {
       const task = taskInput().trim();
       if (task) {
@@ -221,42 +457,78 @@ export function LauncherView() {
     }
   };
 
-  // Format session status
-  const getStatusIcon = (status: SessionInfo["status"]) => {
-    switch (status) {
-      case "running":
-        return { icon: symbols.bulletFilled, color: theme.brand };
-      case "completed":
-        return { icon: symbols.checkmark, color: theme.success };
-      case "failed":
-        return { icon: symbols.cross, color: theme.error };
-      case "paused":
-        return { icon: symbols.bulletEmpty, color: theme.warning };
-      default:
-        return { icon: symbols.bulletEmpty, color: theme.textDim };
+  // Footer hints
+  const getFooterHints = (): HintDef[] => {
+    const base: HintDef[] = [
+      { key: "j/k", description: "navigate" },
+      { key: "Enter", description: "select" },
+      { key: "n", description: "new" },
+      { key: "r", description: "refresh" },
+    ];
+
+    const session = getSelectedSession();
+    if (prCreating()) {
+      return [...base, { key: "...", description: "creating PR" }];
     }
+    if (session?.prUrl) {
+      return [
+        ...base,
+        { key: "o", description: "open PR" },
+        { key: "Esc", description: "quit" },
+      ];
+    }
+    if (
+      session &&
+      (session.status === "completed" || session.status === "failed") &&
+      session.branchName
+    ) {
+      return [
+        ...base,
+        { key: "o", description: "create PR" },
+        { key: "Esc", description: "quit" },
+      ];
+    }
+    return [...base, { key: "Esc", description: "quit" }];
   };
+
+  const scrollHeight = () => Math.max(0, dimensions().height - CHROME_HEIGHT);
 
   return (
     <box flexDirection="column" height="100%" width="100%">
-      {/* Header */}
+      {/* Header area with logo */}
       <box
-        alignItems="center"
-        backgroundColor={theme.backgroundDim}
-        height={2}
+        backgroundColor={theme.backgroundPanel}
+        flexDirection="column"
         paddingLeft={2}
+        paddingTop={1}
         width="100%"
       >
-        <text attributes={TextAttributes.BOLD} fg={theme.brand}>
-          {viewMode() === "sessions" ? "FERIX" : "NEW SESSION"}
-        </text>
-        <Show when={viewMode() === "sessions"}>
-          <text fg={theme.textDim}>{" • "}</text>
-          <text fg={theme.textDim}>
-            {`${sessions().length} session${sessions().length !== 1 ? "s" : ""}`}
-          </text>
+        <Show
+          fallback={
+            <box height={1}>
+              <text attributes={TextAttributes.BOLD} fg={theme.brand}>
+                NEW SESSION
+              </text>
+            </box>
+          }
+          when={viewMode() === "sessions"}
+        >
+          <Logo />
         </Show>
       </box>
+
+      {/* Separator with session count + cwd */}
+      <SplitBorder width={dimensions().width}>
+        <box flexDirection="row" paddingLeft={1}>
+          <Show when={viewMode() === "sessions"}>
+            <text fg={theme.accent}>{`${symbols.dot} `}</text>
+            <text fg={theme.textDim}>
+              {`${sessions().length} session${sessions().length !== 1 ? "s" : ""}`}
+            </text>
+          </Show>
+        </box>
+        <box flexGrow={1} />
+      </SplitBorder>
 
       {/* Content */}
       <box flexDirection="column" flexGrow={1} width="100%">
@@ -270,61 +542,44 @@ export function LauncherView() {
           {/* Create new option */}
           <box
             backgroundColor={
-              selectedIndex() === 0 ? theme.backgroundHighlight : undefined
+              selectedIndex() === 0 ? theme.backgroundElement : undefined
             }
+            border={selectedIndex() === 0 ? ["left"] : undefined}
+            borderColor={selectedIndex() === 0 ? theme.borderActive : undefined}
             flexDirection="column"
             paddingLeft={2}
             paddingTop={1}
           >
-            <text fg={selectedIndex() === 0 ? theme.brand : theme.text}>
-              {`${symbols.arrow} Create new session`}
+            <text fg={selectedIndex() === 0 ? theme.accent : theme.text}>
+              {`${symbols.diamond} Create new session`}
             </text>
           </box>
 
-          {/* Sessions list */}
-          <For each={sessions()}>
-            {(session, index) => {
-              const isSelected = () => selectedIndex() === index() + 1;
-              const status = getStatusIcon(session.status);
-              return (
-                <box
-                  backgroundColor={
-                    isSelected() ? theme.backgroundHighlight : undefined
-                  }
-                  flexDirection="column"
-                  paddingLeft={2}
-                >
-                  {/* Main session row */}
-                  <box flexDirection="row" height={1}>
-                    <text fg={status.color}>{`${status.icon} `}</text>
-                    <text fg={isSelected() ? theme.text : theme.textDim}>
-                      {truncate(
-                        session.task ?? session.sessionId,
-                        dimensions().width - 30
-                      )}
-                    </text>
-                    <box flexGrow={1} />
-                    {/* Relative time from startedAt */}
-                    <Show when={session.startedAt}>
-                      <text fg={theme.textMuted}>
-                        {" "}
-                        {formatRelativeTime(
-                          new Date(session.startedAt).toISOString()
-                        )}
-                      </text>
-                    </Show>
-                    <text> </text>
-                  </box>
-                </box>
-              );
-            }}
-          </For>
+          {/* Sessions list in scrollbox */}
+          <scrollbox
+            height={scrollHeight()}
+            ref={setScrollboxRef}
+            scrollY={true}
+            width={dimensions().width}
+          >
+            <box flexDirection="column" width={dimensions().width - 2}>
+              <For each={sessions()}>
+                {(session, index) => (
+                  <SessionRow
+                    dimensions={dimensions()}
+                    isSelected={selectedIndex() === index() + 1}
+                    session={session}
+                  />
+                )}
+              </For>
 
-          <Show when={sessions().length === 0}>
-            <box paddingLeft={2} paddingTop={1}>
-              <text fg={theme.textMuted}>No sessions yet</text>
+              <Show when={sessions().length === 0}>
+                <box paddingLeft={2} paddingTop={1}>
+                  <text fg={theme.textMuted}>No sessions yet</text>
+                </box>
+              </Show>
             </box>
-          </Show>
+          </scrollbox>
         </Show>
 
         <Show when={viewMode() === "new_task_input"}>
@@ -334,16 +589,16 @@ export function LauncherView() {
               Esc to cancel):
             </text>
             <box
-              borderColor={theme.border}
+              borderColor={theme.borderActive}
               borderStyle="single"
-              height={dimensions().height - 8}
+              height={dimensions().height - 12}
               marginTop={1}
               width={dimensions().width - 6}
             >
               <textarea
-                backgroundColor={theme.backgroundDim}
+                backgroundColor={theme.backgroundElement}
                 focused={true}
-                height={dimensions().height - 10}
+                height={dimensions().height - 14}
                 onContentChange={(event) => {
                   const text =
                     typeof event === "string" ? event : String(event);
@@ -359,44 +614,34 @@ export function LauncherView() {
       </box>
 
       {/* Footer */}
-      <box
-        backgroundColor={theme.backgroundDim}
-        height={1}
-        paddingLeft={2}
-        width="100%"
-      >
+      <SplitBorder width={dimensions().width}>
         <Show
           fallback={
-            <text fg={theme.textDim}>
-              Enter: Submit | Shift+Enter: Newline | Esc: Cancel
-            </text>
+            <box flexDirection="row" paddingLeft={1}>
+              <Hint description="submit" key="Enter" />
+              <HintSep />
+              <Hint description="newline" key="Shift+Enter" />
+              <HintSep />
+              <Hint description="cancel" key="Esc" />
+            </box>
           }
           when={viewMode() === "sessions"}
         >
-          <text fg={theme.textDim}>
-            {(() => {
-              const base =
-                "j/k: Navigate | Enter: Select | n: New | r: Refresh";
-              const session = getSelectedSession();
-              if (prCreating()) {
-                return `${base} | Creating PR...`;
-              }
-              if (session?.prUrl) {
-                return `${base} | o: Open PR | Esc: Quit`;
-              }
-              if (
-                session &&
-                (session.status === "completed" ||
-                  session.status === "failed") &&
-                session.branchName
-              ) {
-                return `${base} | o: Create PR | Esc: Quit`;
-              }
-              return `${base} | Esc: Quit`;
-            })()}
-          </text>
+          <box flexGrow={1} />
+          <box flexDirection="row" paddingRight={1}>
+            <For each={getFooterHints()}>
+              {(hint, index) => (
+                <>
+                  <Show when={index() > 0}>
+                    <HintSep />
+                  </Show>
+                  <Hint description={hint.description} key={hint.key} />
+                </>
+              )}
+            </For>
+          </box>
         </Show>
-      </box>
+      </SplitBorder>
     </box>
   );
 }

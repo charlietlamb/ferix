@@ -47,7 +47,7 @@ export function Toast() {
       {(current) => (
         <box
           alignItems="flex-start"
-          backgroundColor={theme.backgroundDim}
+          backgroundColor={theme.backgroundElement}
           border={["left", "right"]}
           borderColor={getVariantColor(current().variant)}
           justifyContent="center"

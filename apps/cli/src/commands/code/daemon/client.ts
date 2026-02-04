@@ -41,7 +41,11 @@ export class DaemonCommandError extends Error {
 export class DaemonClient {
   private socket: Socket | null = null;
   private buffer = "";
-  private responseQueue: Queue.Queue<DaemonResponse> | null = null;
+  private readonly pendingCommands = new Map<
+    string,
+    Deferred.Deferred<DaemonResponse>
+  >();
+  private commandIdCounter = 0;
   private domainEventQueue: Queue.Queue<DaemonDomainEvent> | null = null;
   private statusEventQueue: Queue.Queue<DaemonSessionStatusEvent> | null = null;
   private connected = false;
@@ -53,14 +57,12 @@ export class DaemonClient {
     return Effect.gen(this, function* () {
       const socketPath = getSocketPath();
 
-      // Create bounded queues for responses and events
+      // Create bounded queues for events
       // Using reasonable limits to prevent unbounded memory growth
-      this.responseQueue = yield* Queue.bounded<DaemonResponse>(100);
       this.domainEventQueue = yield* Queue.bounded<DaemonDomainEvent>(10_000);
       this.statusEventQueue =
         yield* Queue.bounded<DaemonSessionStatusEvent>(1000);
 
-      const responseQueue = this.responseQueue;
       const domainEventQueue = this.domainEventQueue;
       const statusEventQueue = this.statusEventQueue;
 
@@ -94,7 +96,7 @@ export class DaemonClient {
 
       socket.on("data", (data) => {
         this.buffer += data.toString();
-        this.processBuffer(responseQueue, domainEventQueue, statusEventQueue);
+        this.processBuffer(domainEventQueue, statusEventQueue);
       });
 
       socket.on("close", () => {
@@ -127,10 +129,51 @@ export class DaemonClient {
   }
 
   /**
+   * Resolve a pending command's deferred with the given response.
+   */
+  private resolveResponse(response: DaemonResponse): void {
+    const commandId = response.commandId;
+    if (commandId) {
+      const deferred = this.pendingCommands.get(commandId);
+      if (deferred) {
+        this.pendingCommands.delete(commandId);
+        Effect.runPromise(Deferred.succeed(deferred, response));
+        return;
+      }
+    }
+    // Fallback: resolve the oldest pending command (FIFO order).
+    // This handles responses from daemons that don't echo commandId.
+    const firstKey = this.pendingCommands.keys().next().value;
+    if (firstKey !== undefined) {
+      const deferred = this.pendingCommands.get(firstKey);
+      if (deferred) {
+        this.pendingCommands.delete(firstKey);
+        Effect.runPromise(Deferred.succeed(deferred, response));
+      }
+    }
+  }
+
+  /**
+   * Route a parsed message to the appropriate handler.
+   */
+  private routeMessage(
+    message: DaemonResponse | DaemonDomainEvent | DaemonSessionStatusEvent,
+    domainEventQueue: Queue.Queue<DaemonDomainEvent>,
+    statusEventQueue: Queue.Queue<DaemonSessionStatusEvent>
+  ): void {
+    if (isDaemonDomainEvent(message)) {
+      Effect.runPromise(Queue.offer(domainEventQueue, message));
+    } else if (isDaemonSessionStatusEvent(message)) {
+      Effect.runPromise(Queue.offer(statusEventQueue, message));
+    } else if (isDaemonResponse(message)) {
+      this.resolveResponse(message);
+    }
+  }
+
+  /**
    * Process buffered data, extracting complete lines and routing messages.
    */
   private processBuffer(
-    responseQueue: Queue.Queue<DaemonResponse>,
     domainEventQueue: Queue.Queue<DaemonDomainEvent>,
     statusEventQueue: Queue.Queue<DaemonSessionStatusEvent>
   ): void {
@@ -141,13 +184,7 @@ export class DaemonClient {
 
       const message = parseMessage(line);
       if (message) {
-        if (isDaemonDomainEvent(message)) {
-          Effect.runPromise(Queue.offer(domainEventQueue, message));
-        } else if (isDaemonSessionStatusEvent(message)) {
-          Effect.runPromise(Queue.offer(statusEventQueue, message));
-        } else if (isDaemonResponse(message)) {
-          Effect.runPromise(Queue.offer(responseQueue, message));
-        }
+        this.routeMessage(message, domainEventQueue, statusEventQueue);
       }
 
       newlineIndex = this.buffer.indexOf("\n");
@@ -155,23 +192,39 @@ export class DaemonClient {
   }
 
   /**
-   * Send a command and wait for response.
+   * Generate a unique command ID for request/response correlation.
+   */
+  private nextCommandId(): string {
+    this.commandIdCounter += 1;
+    return `cmd-${this.commandIdCounter}`;
+  }
+
+  /**
+   * Send a command and wait for the correlated response.
    */
   private sendCommand(
     command: DaemonCommand
   ): Effect.Effect<DaemonResponse, DaemonCommandError, never> {
     return Effect.gen(this, function* () {
-      if (!(this.socket && this.responseQueue)) {
+      if (!this.socket) {
         return yield* Effect.fail(
           new DaemonCommandError("Not connected to daemon")
         );
       }
 
-      // Send command
-      this.socket.write(serializeCommand(command));
+      // Assign a unique commandId for correlation
+      const commandId = this.nextCommandId();
+      const taggedCommand = { ...command, commandId };
 
-      // Wait for response
-      const response = yield* Queue.take(this.responseQueue);
+      // Create a deferred to wait for the correlated response
+      const deferred = yield* Deferred.make<DaemonResponse>();
+      this.pendingCommands.set(commandId, deferred);
+
+      // Send command
+      this.socket.write(serializeCommand(taggedCommand));
+
+      // Wait for the response matching this commandId
+      const response = yield* Deferred.await(deferred);
 
       if (response.type === "error") {
         return yield* Effect.fail(new DaemonCommandError(response.message));

@@ -1,11 +1,19 @@
 import { type ScrollBoxRenderable, TextAttributes } from "@opentui/core";
 import { createEffect, createSignal, For, Show } from "solid-js";
-import type {
-  TUIState,
-  TUITask,
-  TUITaskStatus,
-} from "../../../../../domain/schemas/tui.js";
+import type { TUIState, TUITask } from "../../../../../domain/schemas/tui.js";
+import { GitInfo, ProgressBar, Spinner } from "../../../components/index.js";
 import { useTheme } from "../../../context/index.js";
+import { formatDuration } from "../../../util/format.js";
+import {
+  getStatusColor,
+  getTaskStatusIcon,
+  STATUS_LABELS,
+} from "../../../util/status.js";
+
+/**
+ * Height of each task row in the scrollbox (2 content lines + 1 padding).
+ */
+export const TASK_ROW_HEIGHT = 3;
 
 interface TasksViewProps {
   readonly state: TUIState;
@@ -14,53 +22,30 @@ interface TasksViewProps {
 }
 
 /**
- * Format duration between two timestamps.
+ * Individual task row component — multi-line layout.
+ *
+ * Line 1: selection indicator + status icon + title + spacer + duration
+ * Line 2: phase progress bar + criteria icons + status label
  */
-function formatDuration(startedAt?: number, completedAt?: number): string {
-  if (!startedAt) {
-    return "--:--";
-  }
-  const endTime = completedAt ?? Date.now();
-  const diffMs = endTime - startedAt;
-  const minutes = Math.floor(diffMs / 60_000);
-  const seconds = Math.floor((diffMs % 60_000) / 1000);
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-}
-
-/**
- * Individual task row component.
- */
-function TaskRow(props: { task: TUITask; isSelected: boolean; width: number }) {
+function TaskRow(props: {
+  task: TUITask;
+  isSelected: boolean;
+  isActive: boolean;
+  width: number;
+}) {
   const { theme } = useTheme();
 
-  const STATUS_SYMBOLS: Record<
-    TUITaskStatus,
-    { icon: string; color: typeof theme.success }
-  > = {
-    pending: { icon: "○", color: theme.textDim },
-    in_progress: { icon: "◐", color: theme.warning },
-    done: { icon: "●", color: theme.success },
-    failed: { icon: "✗", color: theme.error },
-  };
+  const status = () => getTaskStatusIcon(props.task.status, theme);
+  const statusClr = () => getStatusColor(props.task.status, theme);
 
-  const status = () =>
-    STATUS_SYMBOLS[props.task.status] ?? STATUS_SYMBOLS.pending;
+  const phasesDone = () =>
+    props.task.phases.filter((p) => p.status === "done").length;
 
-  // Calculate phase progress
-  const phaseProgress = () => {
-    if (props.task.phases.length === 0) {
-      return null;
-    }
-    const done = props.task.phases.filter((p) => p.status === "done").length;
-    return `${done}/${props.task.phases.length}`;
-  };
+  const criteriaPassed = () =>
+    props.task.criteria.filter((c) => c.status === "passed").length;
 
-  // Calculate criteria progress
-  const criteriaIcons = () => {
-    if (props.task.criteria.length === 0) {
-      return null;
-    }
-    return props.task.criteria.map((c) => {
+  const criteriaIcons = () =>
+    props.task.criteria.map((c) => {
       if (c.status === "passed") {
         return { icon: "●", color: theme.success };
       }
@@ -69,99 +54,89 @@ function TaskRow(props: { task: TUITask; isSelected: boolean; width: number }) {
       }
       return { icon: "○", color: theme.textDim };
     });
-  };
+
+  const hasMetadata = () =>
+    props.task.phases.length > 0 || props.task.criteria.length > 0;
 
   return (
     <box
-      backgroundColor={props.isSelected ? theme.backgroundHighlight : undefined}
-      flexDirection="row"
-      height={1}
+      backgroundColor={props.isSelected ? theme.backgroundElement : undefined}
+      border={props.isSelected ? ["left"] : undefined}
+      borderColor={props.isSelected ? theme.brandGlow : undefined}
+      flexDirection="column"
+      paddingBottom={1}
       paddingLeft={1}
       width={props.width}
     >
-      {/* Selection indicator */}
-      <text fg={props.isSelected ? theme.brand : theme.background}>
-        {props.isSelected ? "▸ " : "  "}
-      </text>
+      {/* Line 1: status + title + duration */}
+      <box flexDirection="row" height={1}>
+        {/* Selection indicator */}
+        <text fg={props.isSelected ? theme.brand : theme.background}>
+          {props.isSelected ? "▸ " : "  "}
+        </text>
 
-      {/* Task ID */}
-      <text fg={theme.text}>{`[${props.task.id}] `}</text>
+        {/* Status icon */}
+        <text fg={status().color}>{`${status().icon} `}</text>
 
-      {/* Status icon */}
-      <text fg={status().color}>{`${status().icon} `}</text>
+        {/* Title */}
+        <text
+          attributes={
+            props.isSelected ? TextAttributes.BOLD : TextAttributes.NONE
+          }
+          fg={theme.text}
+        >
+          {props.task.title}
+        </text>
 
-      {/* Title - flexible width */}
-      <text
-        attributes={
-          props.isSelected ? TextAttributes.BOLD : TextAttributes.NONE
-        }
-        fg={theme.text}
-      >
-        {props.task.title}
-      </text>
+        {/* Spacer */}
+        <box flexGrow={1} />
 
-      {/* Spacer */}
-      <box flexGrow={1} />
+        {/* Duration */}
+        <text fg={theme.info}>
+          {formatDuration(props.task.startedAt, props.task.completedAt)}
+        </text>
 
-      {/* Duration */}
-      <text fg={theme.info}>
-        {formatDuration(props.task.startedAt, props.task.completedAt)}
-      </text>
-
-      {/* Phase progress */}
-      <Show when={phaseProgress()}>
-        <text fg={theme.textDim}>{` ${phaseProgress()}`}</text>
-      </Show>
-
-      {/* Criteria icons */}
-      <Show when={criteriaIcons()}>
         <text> </text>
-        <For each={criteriaIcons()}>
-          {(c) => <text fg={c.color}>{c.icon}</text>}
-        </For>
-      </Show>
+      </box>
 
-      <text> </text>
-    </box>
-  );
-}
-
-/**
- * Git info section.
- */
-function GitInfo(props: { state: TUIState; width: number }) {
-  const { theme } = useTheme();
-
-  return (
-    <box flexDirection="column" width={props.width}>
-      <Show when={props.state.gitBranch}>
-        <box flexDirection="row" height={1} paddingLeft={1}>
-          <text fg={theme.brand}>{"▸ "}</text>
-          <text attributes={TextAttributes.BOLD} fg={theme.text}>
-            GIT
+      {/* Line 2: progress metadata */}
+      <box flexDirection="row" height={1} paddingLeft={4}>
+        <Show when={props.task.phases.length > 0}>
+          <text fg={theme.textMuted}>{"Phases "}</text>
+          <ProgressBar
+            done={phasesDone()}
+            total={props.task.phases.length}
+            width={6}
+          />
+          <text fg={theme.textMuted}>
+            {` ${phasesDone()}/${props.task.phases.length}`}
           </text>
-          <text fg={theme.textDim}>{" • "}</text>
-          <text fg={theme.text}>{props.state.gitBranch}</text>
-          <text> </text>
-          <Show
-            fallback={<text fg={theme.textDim}>Not pushed</text>}
-            when={props.state.gitPushed}
-          >
-            <text fg={theme.success}>{"●"}</text>
+        </Show>
+
+        <Show when={hasMetadata() && props.task.criteria.length > 0}>
+          <Show when={props.task.phases.length > 0}>
+            <text fg={theme.textGhost}>{" · "}</text>
           </Show>
-        </box>
-      </Show>
-
-      <Show when={props.state.prUrl}>
-        <box flexDirection="row" height={1} paddingLeft={1}>
-          <text fg={theme.brand}>{"▸ "}</text>
-          <text attributes={TextAttributes.BOLD} fg={theme.text}>
-            PR
+          <text fg={theme.textMuted}>{"Criteria "}</text>
+          <For each={criteriaIcons()}>
+            {(c) => <text fg={c.color}>{c.icon}</text>}
+          </For>
+          <text fg={theme.textMuted}>
+            {` ${criteriaPassed()}/${props.task.criteria.length}`}
           </text>
-          <text fg={theme.textDim}>{" • "}</text>
-          <text fg={theme.info}>{props.state.prUrl}</text>
-        </box>
-      </Show>
+        </Show>
+
+        <Show when={hasMetadata()}>
+          <text fg={theme.textGhost}>{" · "}</text>
+        </Show>
+
+        <Show when={props.isActive}>
+          <Spinner active={true} />
+          <text> </text>
+        </Show>
+
+        <text fg={statusClr()}>{STATUS_LABELS[props.task.status]}</text>
+      </box>
     </box>
   );
 }
@@ -177,11 +152,10 @@ export function TasksView(props: TasksViewProps) {
     ScrollBoxRenderable | undefined
   >(undefined);
 
-  // Auto-scroll to keep selected task visible
   createEffect(() => {
     const ref = scrollboxRef();
     if (ref) {
-      const selectedPos = props.state.selectedTaskIndex;
+      const selectedPos = props.state.selectedTaskIndex * TASK_ROW_HEIGHT;
       ref.scrollTop = Math.max(0, selectedPos - Math.floor(props.height / 2));
     }
   });
@@ -198,29 +172,31 @@ export function TasksView(props: TasksViewProps) {
     return h;
   };
 
-  // Header height (title + separator)
-  const headerHeight = 3;
-  // Available height for tasks
+  const headerHeight = 2;
   const tasksHeight = () =>
     props.height - headerHeight - (hasGitInfo() ? gitInfoHeight() + 1 : 0);
 
   return (
     <box flexDirection="column" height={props.height} width={props.width}>
       {/* Header */}
-      <box height={1} paddingLeft={1}>
-        <text fg={theme.brand}>{"▸ "}</text>
-        <text attributes={TextAttributes.BOLD} fg={theme.text}>
-          TASKS
+      <box
+        backgroundColor={theme.backgroundPanel}
+        height={1}
+        paddingLeft={1}
+        width={props.width}
+      >
+        <text attributes={TextAttributes.BOLD} fg={theme.accent}>
+          {"▸ TASKS"}
         </text>
+        <text fg={theme.textGhost}>{` ${props.state.tasks.length}`}</text>
       </box>
 
-      {/* Separator */}
-      <box
-        borderColor={theme.border}
-        borderStyle="single"
-        height={1}
-        width={props.width}
-      />
+      {/* Subtle separator */}
+      <box height={1} paddingLeft={1} width={props.width}>
+        <text fg={theme.borderSubtle}>
+          {"─".repeat(Math.max(0, props.width - 2))}
+        </text>
+      </box>
 
       {/* Tasks list */}
       <Show
@@ -241,6 +217,7 @@ export function TasksView(props: TasksViewProps) {
             <For each={props.state.tasks}>
               {(task, index) => (
                 <TaskRow
+                  isActive={task.id === props.state.currentTaskId}
                   isSelected={index() === props.state.selectedTaskIndex}
                   task={task}
                   width={props.width - 2}
@@ -253,12 +230,11 @@ export function TasksView(props: TasksViewProps) {
 
       {/* Separator before git info */}
       <Show when={hasGitInfo()}>
-        <box
-          borderColor={theme.border}
-          borderStyle="single"
-          height={1}
-          width={props.width}
-        />
+        <box height={1} paddingLeft={1} width={props.width}>
+          <text fg={theme.borderSubtle}>
+            {"─".repeat(Math.max(0, props.width - 2))}
+          </text>
+        </box>
         <GitInfo state={props.state} width={props.width} />
       </Show>
     </box>

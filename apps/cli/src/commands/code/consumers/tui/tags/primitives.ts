@@ -20,18 +20,40 @@ function chunk(
 }
 
 /**
- * Renders a tool use line (e.g., ">> Read file.ts").
+ * Truncates text to fit within a maximum length, adding ellipsis if truncated.
+ */
+function truncate(text: string, maxLen: number): string {
+  if (maxLen <= 0) {
+    return "";
+  }
+  if (text.length <= maxLen) {
+    return text;
+  }
+  return `${text.slice(0, Math.max(0, maxLen - 1))}…`;
+}
+
+/**
+ * Renders a tool use line (e.g., "▸ Read file.ts").
  * @param tool - The tool name
  * @param detail - Optional detail text
  * @returns Array of styled chunks
  */
-export function toolUseLine(tool: string, detail: string): StyledChunk[] {
+export function toolUseLine(
+  tool: string,
+  detail: string,
+  width: number
+): StyledChunk[] {
+  // prefix: "▸ " (2) + tool + " " (1)
+  const prefixLen = 2 + tool.length + 1;
   const chunks: StyledChunk[] = [
-    chunk(`${symbols.prompt} `, { fg: theme.textMuted }),
-    chunk(tool, { fg: getToolColor(tool) }),
+    chunk(`${symbols.arrowFilled} `, { fg: theme.accent }),
+    chunk(tool, { fg: getToolColor(tool), bold: true }),
   ];
   if (detail) {
-    chunks.push(chunk(` ${detail}`, { fg: theme.textMuted }));
+    const maxDetail = width - prefixLen;
+    chunks.push(
+      chunk(` ${truncate(detail, maxDetail)}`, { fg: theme.textDim })
+    );
   }
   return chunks;
 }
@@ -44,15 +66,14 @@ export function toolUseLine(tool: string, detail: string): StyledChunk[] {
 export function taskListHeader(width: number): StyledChunk[] {
   const innerWidth = width - 6;
   if (innerWidth < 10) {
-    return [chunk("TASKS", { fg: theme.brand, bold: true })];
+    return [chunk("TASKS", { fg: theme.accent, bold: true })];
   }
-  const label = " TASKS ";
+  const label = ` ${symbols.arrowFilled} TASKS `;
   const sideLen = Math.max(1, Math.floor((innerWidth - label.length) / 2));
   return [
-    chunk(box.singleTopLeft, { fg: theme.border }),
-    chunk(box.singleHorizontal.repeat(sideLen), { fg: theme.border }),
-    chunk(label, { fg: theme.brand, bold: true }),
-    chunk(box.singleHorizontal.repeat(sideLen), { fg: theme.border }),
+    chunk(box.singleHorizontal.repeat(sideLen), { fg: theme.borderSubtle }),
+    chunk(label, { fg: theme.accent, bold: true }),
+    chunk(box.singleHorizontal.repeat(sideLen), { fg: theme.borderSubtle }),
   ];
 }
 
@@ -60,14 +81,12 @@ export function taskListHeader(width: number): StyledChunk[] {
  * Renders a task list footer.
  * @returns Array of styled chunks
  */
-export function taskListFooter(): StyledChunk[] {
+export function taskListFooter(width: number): StyledChunk[] {
+  const lineLen = Math.max(1, Math.min(width - 6, 32));
   return [
-    chunk(
-      `${box.singleBottomLeft}${box.singleHorizontal.repeat(32)}${box.singleBottomRight}`,
-      {
-        fg: theme.border,
-      }
-    ),
+    chunk(box.singleHorizontal.repeat(lineLen), {
+      fg: theme.borderSubtle,
+    }),
   ];
 }
 
@@ -77,11 +96,18 @@ export function taskListFooter(): StyledChunk[] {
  * @param description - Task description
  * @returns Array of styled chunks
  */
-export function taskLine(id: string, description: string): StyledChunk[] {
+export function taskLine(
+  id: string,
+  description: string,
+  width: number
+): StyledChunk[] {
+  // prefix: "◆ " (2) + "[id]" (id.length + 2) + " " (1)
+  const prefixLen = 2 + id.length + 2 + 1;
+  const maxDesc = width - prefixLen;
   return [
-    chunk(`${symbols.separator} `, { fg: theme.border }),
-    chunk(`[${id}]`, { fg: theme.text, bold: true }),
-    chunk(` ${description}`, { fg: theme.text }),
+    chunk(`${symbols.diamond} `, { fg: theme.accent }),
+    chunk(`[${id}]`, { fg: theme.textMuted }),
+    chunk(` ${truncate(description, maxDesc)}`, { fg: theme.text }),
   ];
 }
 
@@ -92,20 +118,21 @@ export function taskLine(id: string, description: string): StyledChunk[] {
  */
 export function taskDone(id: string): StyledChunk[] {
   return [
+    chunk(`${symbols.diamond} `, { fg: theme.brandGlow }),
     chunk(symbols.checkmark, { fg: theme.success }),
-    chunk(` Task ${id} complete`, { fg: theme.textMuted }),
+    chunk(` Task ${id} complete`, { fg: theme.textDim }),
   ];
 }
 
 /**
  * Renders phases section header.
- * @param taskId - Task ID
+ * @param _taskId - Task ID
  * @returns Array of styled chunks
  */
-export function phasesHeader(taskId: string): StyledChunk[] {
+export function phasesHeader(_taskId: string): StyledChunk[] {
   return [
-    chunk(`${symbols.separator}   `, { fg: theme.border }),
-    chunk(`Phases for task ${taskId}:`, { fg: theme.textMuted }),
+    chunk(`${symbols.arrowFilled} `, { fg: theme.accent }),
+    chunk("Phases", { fg: theme.accent, bold: true }),
   ];
 }
 
@@ -115,13 +142,20 @@ export function phasesHeader(taskId: string): StyledChunk[] {
  * @param description - Phase description
  * @returns Array of styled chunks
  */
-export function phaseLine(id: string, description: string): StyledChunk[] {
+export function phaseLine(
+  id: string,
+  description: string,
+  width: number
+): StyledChunk[] {
+  // prefix: "  " (2) + "├ " (2) + "○" (1) + " [id]" (id.length + 3) + " " (1)
+  const prefixLen = 2 + 2 + 1 + id.length + 3 + 1;
+  const maxDesc = width - prefixLen;
   return [
-    chunk(`${symbols.separator}   `, { fg: theme.border }),
-    chunk(`${symbols.treeMiddle} `, { fg: theme.textMuted }),
+    chunk("  ", {}),
+    chunk(`${symbols.treeMiddle} `, { fg: theme.textGhost }),
     chunk(symbols.bulletEmpty, { fg: theme.textMuted }),
-    chunk(` [${id}]`, { fg: theme.textMuted }),
-    chunk(` ${description}`, { fg: theme.text }),
+    chunk(` [${id}]`, { fg: theme.textGhost }),
+    chunk(` ${truncate(description, maxDesc)}`, { fg: theme.textDim }),
   ];
 }
 
@@ -132,9 +166,9 @@ export function phaseLine(id: string, description: string): StyledChunk[] {
  */
 export function phaseStart(id: string): StyledChunk[] {
   return [
-    chunk(`${symbols.separator}   `, { fg: theme.border }),
+    chunk("  ", {}),
     chunk(symbols.bulletFilled, { fg: theme.warning }),
-    chunk(` Phase ${id} started`, { fg: theme.textMuted }),
+    chunk(` Phase ${id} started`, { fg: theme.textDim }),
   ];
 }
 
@@ -145,9 +179,9 @@ export function phaseStart(id: string): StyledChunk[] {
  */
 export function phaseDone(id: string): StyledChunk[] {
   return [
-    chunk(`${symbols.separator}   `, { fg: theme.border }),
+    chunk("  ", {}),
     chunk(symbols.checkmark, { fg: theme.success }),
-    chunk(` Phase ${id} complete`, { fg: theme.textMuted }),
+    chunk(` Phase ${id} complete`, { fg: theme.textDim }),
   ];
 }
 
@@ -157,24 +191,31 @@ export function phaseDone(id: string): StyledChunk[] {
  * @param reason - Failure reason
  * @returns Array of styled chunks
  */
-export function phaseFailed(id: string, reason: string): StyledChunk[] {
+export function phaseFailed(
+  id: string,
+  reason: string,
+  width: number
+): StyledChunk[] {
+  // prefix: "  " (2) + "✕" (1) + " Phase id failed: " (9 + id.length + 9)
+  const prefixLen = 2 + 1 + 9 + id.length + 9;
+  const maxReason = width - prefixLen;
   return [
-    chunk(`${symbols.separator}   `, { fg: theme.border }),
+    chunk("  ", {}),
     chunk(symbols.cross, { fg: theme.error }),
-    chunk(` Phase ${id} failed: `, { fg: theme.textMuted }),
-    chunk(reason, { fg: theme.error }),
+    chunk(` Phase ${id} failed: `, { fg: theme.textDim }),
+    chunk(truncate(reason, maxReason), { fg: theme.error }),
   ];
 }
 
 /**
  * Renders criteria section header.
- * @param taskId - Task ID
+ * @param _taskId - Task ID
  * @returns Array of styled chunks
  */
-export function criteriaHeader(taskId: string): StyledChunk[] {
+export function criteriaHeader(_taskId: string): StyledChunk[] {
   return [
-    chunk(`${symbols.separator}   `, { fg: theme.border }),
-    chunk(`Success criteria for task ${taskId}:`, { fg: theme.textMuted }),
+    chunk(`${symbols.arrowFilled} `, { fg: theme.accent }),
+    chunk("Criteria", { fg: theme.accent, bold: true }),
   ];
 }
 
@@ -184,13 +225,20 @@ export function criteriaHeader(taskId: string): StyledChunk[] {
  * @param description - Criterion description
  * @returns Array of styled chunks
  */
-export function criterionLine(id: string, description: string): StyledChunk[] {
+export function criterionLine(
+  id: string,
+  description: string,
+  width: number
+): StyledChunk[] {
+  // prefix: "  " (2) + "├ " (2) + "○" (1) + " [id]" (id.length + 3) + " " (1)
+  const prefixLen = 2 + 2 + 1 + id.length + 3 + 1;
+  const maxDesc = width - prefixLen;
   return [
-    chunk(`${symbols.separator}   `, { fg: theme.border }),
-    chunk(`${symbols.treeMiddle} `, { fg: theme.textMuted }),
+    chunk("  ", {}),
+    chunk(`${symbols.treeMiddle} `, { fg: theme.textGhost }),
     chunk(symbols.bulletEmpty, { fg: theme.textMuted }),
-    chunk(` [${id}]`, { fg: theme.textMuted }),
-    chunk(` ${description}`, { fg: theme.text }),
+    chunk(` [${id}]`, { fg: theme.textGhost }),
+    chunk(` ${truncate(description, maxDesc)}`, { fg: theme.textDim }),
   ];
 }
 
@@ -202,7 +250,7 @@ export function criterionLine(id: string, description: string): StyledChunk[] {
 export function criterionPassed(id: string): StyledChunk[] {
   return [
     chunk(symbols.checkmark, { fg: theme.success }),
-    chunk(` Criterion ${id} passed`, { fg: theme.textMuted }),
+    chunk(` Criterion ${id} passed`, { fg: theme.textDim }),
   ];
 }
 
@@ -212,11 +260,18 @@ export function criterionPassed(id: string): StyledChunk[] {
  * @param reason - Failure reason
  * @returns Array of styled chunks
  */
-export function criterionFailed(id: string, reason: string): StyledChunk[] {
+export function criterionFailed(
+  id: string,
+  reason: string,
+  width: number
+): StyledChunk[] {
+  // prefix: "✕" (1) + " Criterion id failed: " (12 + id.length + 9)
+  const prefixLen = 1 + 12 + id.length + 9;
+  const maxReason = width - prefixLen;
   return [
     chunk(symbols.cross, { fg: theme.error }),
-    chunk(` Criterion ${id} failed: `, { fg: theme.textMuted }),
-    chunk(reason, { fg: theme.error }),
+    chunk(` Criterion ${id} failed: `, { fg: theme.textDim }),
+    chunk(truncate(reason, maxReason), { fg: theme.error }),
   ];
 }
 
@@ -255,12 +310,15 @@ function headerBanner(
  * @param message - Error message
  * @returns Array of styled chunks
  */
-export function errorLine(message: string): StyledChunk[] {
+export function errorLine(message: string, width: number): StyledChunk[] {
+  // prefix: "▸ " (2) + "ERROR" (5) + " │ " (3)
+  const prefixLen = 10;
+  const maxMsg = width - prefixLen;
   return [
-    chunk(`${symbols.arrow} `, { fg: theme.brand }),
-    chunk("ERROR", { fg: theme.error }),
+    chunk(`${symbols.arrowFilled} `, { fg: theme.error }),
+    chunk("ERROR", { fg: theme.error, bold: true }),
     chunk(` ${symbols.separator} `, { fg: theme.textMuted }),
-    chunk(message, { fg: theme.error }),
+    chunk(truncate(message, maxMsg), { fg: theme.error }),
   ];
 }
 
@@ -273,8 +331,8 @@ export function reviewPassedBanner(width: number): StyledChunk[] {
   return headerBanner(
     `${symbols.checkmark} REVIEW PASSED`,
     width,
-    theme.brightCyan,
-    theme.brightGreen,
+    theme.borderSubtle,
+    theme.brandGlow,
     true
   );
 }
@@ -288,7 +346,7 @@ export function reviewFailedBanner(width: number): StyledChunk[] {
   return headerBanner(
     `${symbols.cross} REVIEW FAILED`,
     width,
-    theme.brightCyan,
+    theme.borderSubtle,
     theme.brightRed,
     true
   );
@@ -301,7 +359,7 @@ export function reviewFailedBanner(width: number): StyledChunk[] {
 export function checkPassed(): StyledChunk[] {
   return [
     chunk(symbols.checkmark, { fg: theme.success }),
-    chunk(" Check passed", { fg: theme.textMuted }),
+    chunk(" Check passed", { fg: theme.textDim }),
   ];
 }
 
@@ -312,7 +370,7 @@ export function checkPassed(): StyledChunk[] {
 export function checkFailed(): StyledChunk[] {
   return [
     chunk(symbols.cross, { fg: theme.error }),
-    chunk(" Check failed", { fg: theme.textMuted }),
+    chunk(" Check failed", { fg: theme.textDim }),
   ];
 }
 
@@ -323,7 +381,7 @@ export function checkFailed(): StyledChunk[] {
 export function reviewComplete(): StyledChunk[] {
   return [
     chunk(symbols.checkmark, { fg: theme.success }),
-    chunk(" Review complete", { fg: theme.textMuted }),
+    chunk(" Review complete", { fg: theme.textDim }),
   ];
 }
 
@@ -334,7 +392,7 @@ export function reviewComplete(): StyledChunk[] {
 export function reviewChangesMade(): StyledChunk[] {
   return [
     chunk(symbols.bulletFilled, { fg: theme.info }),
-    chunk(" Review made changes", { fg: theme.textMuted }),
+    chunk(" Review made changes", { fg: theme.textDim }),
   ];
 }
 
@@ -343,10 +401,13 @@ export function reviewChangesMade(): StyledChunk[] {
  * @param name - Session name
  * @returns Array of styled chunks
  */
-export function sessionName(name: string): StyledChunk[] {
+export function sessionName(name: string, width: number): StyledChunk[] {
+  // prefix: "◇" (1) + " " (1)
+  const prefixLen = 2;
+  const maxName = width - prefixLen;
   return [
-    chunk(symbols.arrow, { fg: theme.brand }),
-    chunk(` ${name}`, { fg: theme.textMuted }),
+    chunk(symbols.diamondEmpty, { fg: theme.accent }),
+    chunk(` ${truncate(name, maxName)}`, { fg: theme.textDim }),
   ];
 }
 

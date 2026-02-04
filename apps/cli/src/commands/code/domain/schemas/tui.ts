@@ -122,5 +122,9 @@ const TUIStateSchema = S.Struct({
 
   // Current provider/agent (claude, cursor, opencode)
   provider: TUIProviderSchema,
+
+  // Verify state
+  verifyAttempt: S.optional(S.Number),
+  verifyCommand: S.optional(S.String),
 });
 export type TUIState = typeof TUIStateSchema.Type;

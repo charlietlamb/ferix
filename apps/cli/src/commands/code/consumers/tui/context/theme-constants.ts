@@ -12,11 +12,20 @@ export const darkTheme = {
   // Brand colors
   brand: RGBA.fromHex("#7C3AED"),
   brandDim: RGBA.fromHex("#5B21B6"),
+  brandGlow: RGBA.fromHex("#A78BFA"),
 
-  // Text colors
-  text: RGBA.fromHex("#E5E5E5"),
+  // Primary color (matches web dark mode --primary)
+  primary: RGBA.fromHex("#FFE244"),
+
+  // Accent colors (retro amber)
+  accent: RGBA.fromHex("#F59E0B"),
+  accentDim: RGBA.fromHex("#D97706"),
+
+  // Text colors (wider contrast range)
+  text: RGBA.fromHex("#EEEEEE"),
   textDim: RGBA.fromHex("#A3A3A3"),
-  textMuted: RGBA.fromHex("#737373"),
+  textMuted: RGBA.fromHex("#606060"),
+  textGhost: RGBA.fromHex("#404040"),
 
   // Status colors
   success: RGBA.fromHex("#22C55E"),
@@ -24,13 +33,19 @@ export const darkTheme = {
   error: RGBA.fromHex("#EF4444"),
   info: RGBA.fromHex("#3B82F6"),
 
-  // Background colors
-  background: RGBA.fromHex("#171717"),
-  backgroundDim: RGBA.fromHex("#262626"),
-  backgroundHighlight: RGBA.fromHex("#404040"),
+  // Background layers (depth)
+  background: RGBA.fromHex("#0D0D0D"),
+  backgroundPanel: RGBA.fromHex("#171717"),
+  backgroundElement: RGBA.fromHex("#1E1E1E"),
+  backgroundHighlight: RGBA.fromHex("#2A2A2A"),
 
-  // Border colors
+  // Legacy aliases
+  backgroundDim: RGBA.fromHex("#171717"),
+
+  // Border tiers
   border: RGBA.fromHex("#404040"),
+  borderActive: RGBA.fromHex("#7C3AED"),
+  borderSubtle: RGBA.fromHex("#262626"),
   borderDim: RGBA.fromHex("#303030"),
 
   // Special colors
@@ -57,13 +72,21 @@ export const darkTheme = {
  */
 export const lightTheme = {
   ...darkTheme,
+  brandGlow: RGBA.fromHex("#7C3AED"),
+  accent: RGBA.fromHex("#D97706"),
+  accentDim: RGBA.fromHex("#B45309"),
   text: RGBA.fromHex("#1A1A1A"),
   textDim: RGBA.fromHex("#525252"),
   textMuted: RGBA.fromHex("#737373"),
+  textGhost: RGBA.fromHex("#A3A3A3"),
   background: RGBA.fromHex("#FAFAFA"),
-  backgroundDim: RGBA.fromHex("#F5F5F5"),
+  backgroundPanel: RGBA.fromHex("#F5F5F5"),
+  backgroundElement: RGBA.fromHex("#EEEEEE"),
   backgroundHighlight: RGBA.fromHex("#E5E5E5"),
+  backgroundDim: RGBA.fromHex("#F5F5F5"),
   border: RGBA.fromHex("#D4D4D4"),
+  borderActive: RGBA.fromHex("#7C3AED"),
+  borderSubtle: RGBA.fromHex("#E5E5E5"),
   borderDim: RGBA.fromHex("#E5E5E5"),
 } as const;
 
@@ -94,6 +117,7 @@ export function getToolColor(tool: string): RGBA {
  */
 export const symbols = {
   arrow: ">",
+  arrowFilled: "▸",
   prompt: ">>",
   bulletEmpty: "○",
   bulletFilled: "●",
@@ -103,6 +127,14 @@ export const symbols = {
   treeMiddle: "├─",
   treeLast: "└─",
   treeVertical: "│  ",
+  dot: "·",
+  diamond: "◆",
+  diamondEmpty: "◇",
+  triangle: "△",
+  splitVertical: "┃",
+  blockFull: "█",
+  blockUpper: "▀",
+  blockLower: "▄",
 } as const;
 
 /**
@@ -122,3 +154,21 @@ export const box = {
   singleBottomLeft: "└",
   singleBottomRight: "┘",
 } as const;
+
+/**
+ * Spinner configuration for animated braille spinner.
+ */
+export const spinnerFrames = [
+  "⠋",
+  "⠙",
+  "⠹",
+  "⠸",
+  "⠼",
+  "⠴",
+  "⠦",
+  "⠧",
+  "⠇",
+  "⠏",
+] as const;
+
+export const SPINNER_INTERVAL_MS = 80;

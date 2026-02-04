@@ -31,7 +31,7 @@ tagRendererRegistry.register({
  */
 tagRendererRegistry.register({
   pattern: /<criterion id="([^"]+)">([^<]+)<\/criterion>/g,
-  render: (m) => criterionLine(m[1] ?? "", m[2] ?? ""),
+  render: (m, w) => criterionLine(m[1] ?? "", m[2] ?? "", w),
 });
 
 /**
@@ -49,5 +49,5 @@ tagRendererRegistry.register({
  */
 tagRendererRegistry.register({
   pattern: /<ferix:criterion-failed id="([^"]+)" reason="([^"]+)"\/>/g,
-  render: (m) => criterionFailed(m[1] ?? "", m[2] ?? ""),
+  render: (m, w) => criterionFailed(m[1] ?? "", m[2] ?? "", w),
 });

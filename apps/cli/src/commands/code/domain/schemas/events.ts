@@ -335,6 +335,51 @@ const TaskCommittedEventSchema = taggedEvent("TaskCommitted", {
 export type TaskCommittedEvent = typeof TaskCommittedEventSchema.Type;
 
 /**
+ * Verify events - signals from the verify command execution runner.
+ */
+const VerifyStartedEventSchema = taggedEvent("VerifyStarted", {
+  sessionId: S.String,
+  commands: S.Array(S.String),
+  attempt: S.Number,
+  timestamp: S.Number,
+});
+export type VerifyStartedEvent = typeof VerifyStartedEventSchema.Type;
+
+const VerifyCommandPassedEventSchema = taggedEvent("VerifyCommandPassed", {
+  sessionId: S.String,
+  command: S.String,
+  output: S.String,
+  timestamp: S.Number,
+});
+export type VerifyCommandPassedEvent =
+  typeof VerifyCommandPassedEventSchema.Type;
+
+const VerifyCommandFailedEventSchema = taggedEvent("VerifyCommandFailed", {
+  sessionId: S.String,
+  command: S.String,
+  output: S.String,
+  exitCode: S.Number,
+  timestamp: S.Number,
+});
+export type VerifyCommandFailedEvent =
+  typeof VerifyCommandFailedEventSchema.Type;
+
+const VerifyPassedEventSchema = taggedEvent("VerifyPassed", {
+  sessionId: S.String,
+  attempt: S.Number,
+  timestamp: S.Number,
+});
+export type VerifyPassedEvent = typeof VerifyPassedEventSchema.Type;
+
+const VerifyFailedEventSchema = taggedEvent("VerifyFailed", {
+  sessionId: S.String,
+  failedCommands: S.Array(S.String),
+  attempt: S.Number,
+  timestamp: S.Number,
+});
+export type VerifyFailedEvent = typeof VerifyFailedEventSchema.Type;
+
+/**
  * Explicit discriminated union type for proper TypeScript narrowing.
  */
 export type DomainEvent =
@@ -374,4 +419,9 @@ export type DomainEvent =
   | PRCreatedEvent
   | PushFailedEvent
   | PRCreationFailedEvent
-  | SessionNameGeneratedEvent;
+  | SessionNameGeneratedEvent
+  | VerifyStartedEvent
+  | VerifyCommandPassedEvent
+  | VerifyCommandFailedEvent
+  | VerifyPassedEvent
+  | VerifyFailedEvent;

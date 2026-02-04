@@ -32,7 +32,7 @@ tagRendererRegistry.register({
  */
 tagRendererRegistry.register({
   pattern: /<phase id="([^"]+)">([^<]+)<\/phase>/g,
-  render: (m) => phaseLine(m[1] ?? "", m[2] ?? ""),
+  render: (m, w) => phaseLine(m[1] ?? "", m[2] ?? "", w),
 });
 
 /**
@@ -59,5 +59,5 @@ tagRendererRegistry.register({
  */
 tagRendererRegistry.register({
   pattern: /<ferix:phase-failed id="([^"]+)">([^<]+)<\/ferix:phase-failed>/g,
-  render: (m) => phaseFailed(m[1] ?? "", m[2] ?? ""),
+  render: (m, w) => phaseFailed(m[1] ?? "", m[2] ?? "", w),
 });

@@ -106,7 +106,7 @@ export function appendToolUse(
   input: unknown
 ): TUIState {
   const detail = formatToolInput(tool, input);
-  const toolLine = detail ? `>> ${tool} ${detail}` : `>> ${tool}`;
+  const toolLine = detail ? `▸ ${tool} ${detail}` : `▸ ${tool}`;
   const combined = [...state.outputLines, toolLine, ""];
   const outputLines =
     combined.length > MAX_OUTPUT_LINES
@@ -121,13 +121,13 @@ export function appendToolUse(
 export function appendError(state: TUIState, error: string): TUIState {
   const errorLines = [
     "",
-    "═══════════════════════════════════════════════════════════════",
-    "                           ERROR",
-    "═══════════════════════════════════════════════════════════════",
+    "───────────────────────────────────────────────────────────────",
+    "▸ ERROR",
+    "───────────────────────────────────────────────────────────────",
     "",
     ...error.split("\n"),
     "",
-    "═══════════════════════════════════════════════════════════════",
+    "───────────────────────────────────────────────────────────────",
     "",
   ];
   const combined = [...state.outputLines, ...errorLines];

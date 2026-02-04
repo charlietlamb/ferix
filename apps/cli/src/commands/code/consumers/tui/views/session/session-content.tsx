@@ -3,12 +3,14 @@ import { createMemo, createSignal, Match, Switch } from "solid-js";
 import type { SetStoreFunction } from "solid-js/store";
 import type { ViewMode } from "../../../../domain/schemas/tui.js";
 import { useTheme } from "../../context/index.js";
+import { computeDetailLineCount } from "../../util/detail-line-count.js";
 import type { MutableTUIState } from "../../util/stream-to-store.js";
 import { clamp } from "../../util/text.js";
 import { Footer } from "./footer.js";
 import { StatusBar } from "./status-bar.js";
 import { TaskBar } from "./task-bar.js";
 import { DetailView, LogsView, TasksView } from "./views/index.js";
+import { TASK_ROW_HEIGHT } from "./views/tasks.js";
 
 /**
  * Fixed rows: status bar (1) + task bar (1) + footer (1) + borders (2)
@@ -48,15 +50,21 @@ export function SessionContent(props: SessionContentProps) {
       case "logs":
         return Math.max(0, props.store.outputLines.length - contentHeight());
       case "tasks":
-        return Math.max(0, props.store.tasks.length - contentHeight());
+        return Math.max(
+          0,
+          props.store.tasks.length * TASK_ROW_HEIGHT - contentHeight()
+        );
       case "detail": {
         const task = props.store.tasks[selectedTaskIndex()];
         if (!task) {
           return 0;
         }
-        const estimatedLines =
-          10 + task.phases.length * 2 + task.criteria.length * 2;
-        return Math.max(0, estimatedLines - contentHeight());
+        const totalLines = computeDetailLineCount(
+          task,
+          props.store.gitBranch,
+          props.store.prUrl
+        );
+        return Math.max(0, totalLines - contentHeight());
       }
       default:
         return 0;

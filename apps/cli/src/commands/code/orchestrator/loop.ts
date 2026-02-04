@@ -18,6 +18,7 @@ import { SignalParser } from "../services/signal-parser.js";
 import { StateStore } from "../services/state-store.js";
 import { createDiscoveryStream } from "./discovery.js";
 import { createIterationStream } from "./iteration.js";
+import { runVerifyCommands } from "./verify.js";
 
 /**
  * Required services for the orchestrator.
@@ -241,6 +242,25 @@ export function runLoop(
           )
         );
 
+      // Verify retry stream - runs verify commands after iterations,
+      // re-invokes LLM on failure, up to MAX_VERIFY_ATTEMPTS
+      const verifyStream: Stream.Stream<DomainEvent, never, never> =
+        config.verifyCommands.length > 0 && worktreePath
+          ? createVerifyRetryStream(
+              config,
+              session.id,
+              worktreePath,
+              loopCompletedRef,
+              llm,
+              signalParser,
+              planStore,
+              stateStore,
+              progressStore,
+              { commitChanges: git.commitChanges },
+              currentPlanRef
+            )
+          : Stream.empty;
+
       const completionStream = createCompletionStream(
         sessionStore,
         {
@@ -262,6 +282,7 @@ export function runLoop(
         Stream.concat(Stream.succeed(worktreeCreated)),
         Stream.concat(discoveryStream),
         Stream.concat(iterationsStream),
+        Stream.concat(verifyStream),
         Stream.concat(completionStream)
       );
     }).pipe(
@@ -278,6 +299,154 @@ export function runLoop(
         )
       )
     )
+  );
+}
+
+const MAX_VERIFY_ATTEMPTS = 3;
+
+/**
+ * Build error context string from a failed verify event.
+ */
+function buildVerifyErrorContext(events: DomainEvent[]): string {
+  const failedEvent = events.find((e) => e._tag === "VerifyCommandFailed");
+  if (failedEvent?._tag === "VerifyCommandFailed") {
+    return `Verify command failed: \`${failedEvent.command}\`\nExit code: ${failedEvent.exitCode}\nOutput:\n${failedEvent.output}`;
+  }
+  return "Verification failed";
+}
+
+/**
+ * Iteration service dependencies, derived from createIterationStream parameters.
+ */
+type IterationLLM = Parameters<typeof createIterationStream>[0];
+type IterationSignalParser = Parameters<typeof createIterationStream>[1];
+type IterationPlanStore = Parameters<typeof createIterationStream>[2];
+type IterationStateStore = Parameters<typeof createIterationStream>[3];
+type IterationProgressStore = Parameters<typeof createIterationStream>[4];
+type IterationGit = Parameters<typeof createIterationStream>[5];
+
+/**
+ * Execute a single verify attempt: run commands, and if failed, invoke LLM to fix.
+ */
+function executeVerifyAttempt(
+  config: LoopConfig,
+  sessionId: string,
+  worktreePath: string,
+  attempt: number,
+  loopCompletedRef: Ref.Ref<boolean>,
+  llm: IterationLLM,
+  signalParser: IterationSignalParser,
+  planStore: IterationPlanStore,
+  stateStore: IterationStateStore,
+  progressStore: IterationProgressStore,
+  git: IterationGit,
+  currentPlanRef: Ref.Ref<Plan | undefined>
+): Effect.Effect<{ events: DomainEvent[]; passed: boolean }, never, never> {
+  return Effect.gen(function* () {
+    const verifyResult = yield* runVerifyCommands(
+      config.verifyCommands,
+      sessionId,
+      worktreePath,
+      attempt
+    ).pipe(Stream.runCollect);
+
+    const verifyEvents = [...verifyResult];
+    const verifyPassed = verifyEvents.some((e) => e._tag === "VerifyPassed");
+
+    if (verifyPassed || attempt >= MAX_VERIFY_ATTEMPTS) {
+      return { events: verifyEvents, passed: verifyPassed };
+    }
+
+    // Re-invoke LLM to fix the issue
+    const errorContext = buildVerifyErrorContext(verifyEvents);
+    const fixPrompt = `The following verification command failed after completing the task. Please fix the issues and ensure the command passes.\n\n${errorContext}\n\nFix the issues so the verification commands pass. Do not emit any ferix signals.`;
+
+    yield* Ref.set(loopCompletedRef, false);
+
+    const fixEvents = yield* createIterationStream(
+      llm,
+      signalParser,
+      planStore,
+      stateStore,
+      progressStore,
+      git,
+      currentPlanRef,
+      loopCompletedRef,
+      { ...config, task: fixPrompt },
+      attempt * 100,
+      sessionId,
+      worktreePath
+    ).pipe(Stream.runCollect);
+
+    yield* Ref.set(loopCompletedRef, true);
+
+    return {
+      events: [...verifyEvents, ...[...fixEvents]],
+      passed: false,
+    };
+  });
+}
+
+/**
+ * Creates a verify retry stream that runs verify commands after iterations complete.
+ * Retries up to MAX_VERIFY_ATTEMPTS times, re-invoking the LLM on each failure.
+ */
+function createVerifyRetryStream(
+  config: LoopConfig,
+  sessionId: string,
+  worktreePath: string,
+  loopCompletedRef: Ref.Ref<boolean>,
+  llm: IterationLLM,
+  signalParser: IterationSignalParser,
+  planStore: IterationPlanStore,
+  stateStore: IterationStateStore,
+  progressStore: IterationProgressStore,
+  git: IterationGit,
+  currentPlanRef: Ref.Ref<Plan | undefined>
+): Stream.Stream<DomainEvent, never, never> {
+  return Stream.unwrap(
+    Effect.gen(function* () {
+      const completed = yield* Ref.get(loopCompletedRef);
+      if (!completed) {
+        return Stream.empty;
+      }
+
+      return Stream.unfoldEffect(1, (attempt: number) =>
+        Effect.gen(function* () {
+          if (attempt > MAX_VERIFY_ATTEMPTS) {
+            return Option.none<
+              readonly [Stream.Stream<DomainEvent, never, never>, number]
+            >();
+          }
+
+          const result = yield* executeVerifyAttempt(
+            config,
+            sessionId,
+            worktreePath,
+            attempt,
+            loopCompletedRef,
+            llm,
+            signalParser,
+            planStore,
+            stateStore,
+            progressStore,
+            git,
+            currentPlanRef
+          );
+
+          const nextAttempt = result.passed
+            ? MAX_VERIFY_ATTEMPTS + 1
+            : attempt + 1;
+
+          return Option.some([
+            Stream.fromIterable(result.events),
+            nextAttempt,
+          ] as const);
+        })
+      ).pipe(
+        Stream.flatMap((s: Stream.Stream<DomainEvent, never, never>) => s)
+      );
+    })
   );
 }
 

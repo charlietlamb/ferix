@@ -6,7 +6,14 @@ import type {
   TUIState,
   TUITask,
 } from "../../../../../domain/schemas/tui.js";
+import { GitInfo, ProgressBar, Spinner } from "../../../components/index.js";
 import { useTheme } from "../../../context/index.js";
+import { formatDuration, formatTime } from "../../../util/format.js";
+import {
+  getCriterionStatusIcon,
+  getStatusInfo,
+  getTaskStatusIcon,
+} from "../../../util/status.js";
 
 interface DetailViewProps {
   readonly state: TUIState;
@@ -25,94 +32,58 @@ const TREE = {
 } as const;
 
 /**
- * Format duration between two timestamps.
- */
-function formatDuration(startedAt?: number, completedAt?: number): string {
-  if (!startedAt) {
-    return "--:--";
-  }
-  const endTime = completedAt ?? Date.now();
-  const diffMs = endTime - startedAt;
-  const minutes = Math.floor(diffMs / 60_000);
-  const seconds = Math.floor((diffMs % 60_000) / 1000);
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-}
-
-/**
- * Format a timestamp as HH:MM:SS.
- */
-function formatTime(timestamp: number): string {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
-}
-
-/**
- * Get status display info.
- */
-function getStatusInfo(
-  status: string,
-  themeColors: ReturnType<typeof useTheme>["theme"]
-): {
-  text: string;
-  color: typeof themeColors.success;
-} {
-  switch (status) {
-    case "done":
-    case "passed":
-      return { text: "Done", color: themeColors.success };
-    case "in_progress":
-      return { text: "In Progress", color: themeColors.warning };
-    case "failed":
-      return { text: "Failed", color: themeColors.error };
-    default:
-      return { text: "Pending", color: themeColors.textDim };
-  }
-}
-
-/**
  * Phase row component.
  */
-function PhaseRow(props: { phase: TUIPhase; isLast: boolean }) {
+function PhaseRow(props: {
+  phase: TUIPhase;
+  isLast: boolean;
+  isActive: boolean;
+}) {
   const { theme } = useTheme();
 
-  const STATUS_ICONS = {
-    pending: { icon: "○", color: theme.textDim },
-    in_progress: { icon: "◐", color: theme.warning },
-    done: { icon: "●", color: theme.success },
-    failed: { icon: "✗", color: theme.error },
-  } as const;
-
-  const status = () =>
-    STATUS_ICONS[props.phase.status as keyof typeof STATUS_ICONS] ??
-    STATUS_ICONS.pending;
+  const status = () => getTaskStatusIcon(props.phase.status, theme);
   const prefix = () => (props.isLast ? TREE.last : TREE.middle);
+
+  const durationClr = () => {
+    switch (props.phase.status) {
+      case "done":
+        return theme.success;
+      case "in_progress":
+        return theme.warning;
+      default:
+        return theme.textGhost;
+    }
+  };
 
   return (
     <box flexDirection="column">
-      <box flexDirection="row" height={1} paddingLeft={3}>
-        <text fg={theme.textDim}>{`${prefix()} `}</text>
+      <box
+        backgroundColor={props.isActive ? theme.backgroundElement : undefined}
+        flexDirection="row"
+        height={1}
+        paddingLeft={3}
+      >
+        <text fg={theme.textMuted}>{`${prefix()} `}</text>
         <text fg={status().color}>{`${status().icon} `}</text>
-        <text fg={theme.textDim}>{`[${props.phase.id}] `}</text>
+        <text fg={theme.textMuted}>{`[${props.phase.id}] `}</text>
         <text fg={theme.text}>{props.phase.description}</text>
-        <Show when={props.phase.startedAt}>
-          <text fg={theme.info}>
-            {`  ${formatDuration(props.phase.startedAt, props.phase.completedAt)}`}
-          </text>
+        <box flexGrow={1} />
+        <Show when={props.phase.status === "in_progress"}>
+          <text> </text>
+          <Spinner active={true} />
         </Show>
+        <text fg={durationClr()}>
+          {`  ${formatDuration(props.phase.startedAt, props.phase.completedAt)}`}
+        </text>
       </box>
 
       <Show when={props.phase.startedAt}>
         {(startedAt) => (
           <box flexDirection="row" height={1} paddingLeft={3}>
-            <text fg={theme.textDim}>
+            <text fg={theme.textMuted}>
               {`${props.isLast ? TREE.space : TREE.vertical}     `}
             </text>
-            <text fg={theme.textDim}>
+            <text fg={theme.textMuted}>
               {`${formatTime(startedAt())} → ${props.phase.completedAt ? formatTime(props.phase.completedAt) : "..."}`}
             </text>
           </box>
@@ -128,24 +99,22 @@ function PhaseRow(props: { phase: TUIPhase; isLast: boolean }) {
 function CriterionRow(props: { criterion: TUICriterion; isLast: boolean }) {
   const { theme } = useTheme();
 
-  const STATUS_ICONS = {
-    pending: { icon: "○", color: theme.textDim },
-    passed: { icon: "●", color: theme.success },
-    failed: { icon: "✗", color: theme.error },
-  } as const;
-
-  const status = () =>
-    STATUS_ICONS[props.criterion.status as keyof typeof STATUS_ICONS] ??
-    STATUS_ICONS.pending;
+  const status = () => getCriterionStatusIcon(props.criterion.status, theme);
   const prefix = () => (props.isLast ? TREE.last : TREE.middle);
 
   return (
     <box flexDirection="column">
       <box flexDirection="row" height={1} paddingLeft={3}>
-        <text fg={theme.textDim}>{`${prefix()} `}</text>
+        <text fg={theme.textMuted}>{`${prefix()} `}</text>
         <text fg={status().color}>{`${status().icon} `}</text>
-        <text fg={theme.textDim}>{`[${props.criterion.id}] `}</text>
+        <text fg={theme.textMuted}>{`[${props.criterion.id}] `}</text>
         <text fg={theme.text}>{props.criterion.description}</text>
+        <Show when={props.criterion.status === "passed"}>
+          <text fg={theme.success}>{" ✓ PASSED"}</text>
+        </Show>
+        <Show when={props.criterion.status === "failed"}>
+          <text fg={theme.error}>{" ✗ FAILED"}</text>
+        </Show>
       </box>
 
       <Show
@@ -154,7 +123,7 @@ function CriterionRow(props: { criterion: TUICriterion; isLast: boolean }) {
         }
       >
         <box flexDirection="row" height={1} paddingLeft={3}>
-          <text fg={theme.textDim}>
+          <text fg={theme.textMuted}>
             {`${props.isLast ? TREE.space : TREE.vertical}     `}
           </text>
           <text fg={theme.error}>{`↳ ${props.criterion.failureReason}`}</text>
@@ -165,27 +134,32 @@ function CriterionRow(props: { criterion: TUICriterion; isLast: boolean }) {
 }
 
 /**
- * Task header section.
+ * Task header section with backgroundPanel.
  */
 function TaskHeader(props: { task: TUITask; width: number }) {
   const { theme } = useTheme();
 
-  const STATUS_ICONS = {
-    pending: { icon: "○", color: theme.textDim },
-    in_progress: { icon: "◐", color: theme.warning },
-    done: { icon: "●", color: theme.success },
-    failed: { icon: "✗", color: theme.error },
-  } as const;
-
   const statusInfo = () => getStatusInfo(props.task.status, theme);
-  const statusIcon = () =>
-    STATUS_ICONS[props.task.status as keyof typeof STATUS_ICONS] ??
-    STATUS_ICONS.pending;
+  const statusIcon = () => getTaskStatusIcon(props.task.status, theme);
+
+  const phasesDone = () =>
+    props.task.phases.filter((p) => p.status === "done").length;
+  const criteriaPassed = () =>
+    props.task.criteria.filter((c) => c.status === "passed").length;
+  const hasProgress = () =>
+    props.task.phases.length > 0 || props.task.criteria.length > 0;
 
   return (
     <box flexDirection="column" width={props.width}>
-      <box height={1} paddingLeft={1}>
-        <text fg={theme.brand}>{"▸ "}</text>
+      <box
+        backgroundColor={theme.backgroundPanel}
+        height={1}
+        paddingLeft={1}
+        width={props.width}
+      >
+        <text attributes={TextAttributes.BOLD} fg={theme.accent}>
+          {"▸ "}
+        </text>
         <text attributes={TextAttributes.BOLD} fg={theme.text}>
           {`TASK #${props.task.id}`}
         </text>
@@ -197,12 +171,12 @@ function TaskHeader(props: { task: TUITask; width: number }) {
 
       <box height={1} />
 
-      <box
-        borderColor={theme.border}
-        borderStyle="single"
-        height={1}
-        width={props.width}
-      />
+      {/* Subtle divider */}
+      <box height={1} paddingLeft={1} width={props.width}>
+        <text fg={theme.borderSubtle}>
+          {"─".repeat(Math.max(0, props.width - 2))}
+        </text>
+      </box>
 
       <box height={1} />
 
@@ -223,11 +197,53 @@ function TaskHeader(props: { task: TUITask; width: number }) {
             <text fg={theme.info}>
               {formatDuration(startedAt(), props.task.completedAt)}
             </text>
-            <text fg={theme.textDim}>
+            <text fg={theme.textMuted}>
               {` (${formatTime(startedAt())} → ${props.task.completedAt ? formatTime(props.task.completedAt) : "..."})`}
             </text>
           </box>
         )}
+      </Show>
+
+      {/* Progress summary */}
+      <Show when={hasProgress()}>
+        <box flexDirection="row" height={1} paddingLeft={1}>
+          <text attributes={TextAttributes.BOLD} fg={theme.text}>
+            {"Progress: "}
+          </text>
+          <Show when={props.task.phases.length > 0}>
+            <ProgressBar
+              done={phasesDone()}
+              total={props.task.phases.length}
+              width={10}
+            />
+            <text fg={theme.textMuted}>
+              {` ${phasesDone()}/${props.task.phases.length} phases`}
+            </text>
+          </Show>
+          <Show
+            when={
+              props.task.phases.length > 0 && props.task.criteria.length > 0
+            }
+          >
+            <text fg={theme.textGhost}>{" · "}</text>
+          </Show>
+          <Show when={props.task.criteria.length > 0}>
+            <For each={props.task.criteria}>
+              {(c) => {
+                if (c.status === "passed") {
+                  return <text fg={theme.success}>{"●"}</text>;
+                }
+                if (c.status === "failed") {
+                  return <text fg={theme.error}>{"✗"}</text>;
+                }
+                return <text fg={theme.textDim}>{"○"}</text>;
+              }}
+            </For>
+            <text fg={theme.textMuted}>
+              {` ${criteriaPassed()}/${props.task.criteria.length} criteria`}
+            </text>
+          </Show>
+        </box>
       </Show>
 
       <box height={1} />
@@ -236,22 +252,36 @@ function TaskHeader(props: { task: TUITask; width: number }) {
 }
 
 /**
- * Phases section.
+ * Phases section with accent header.
  */
-function PhasesSection(props: { phases: readonly TUIPhase[] }) {
+function PhasesSection(props: {
+  phases: readonly TUIPhase[];
+  currentTaskId?: string;
+  taskId: string;
+}) {
   const { theme } = useTheme();
+
+  const doneCount = () =>
+    props.phases.filter((p) => p.status === "done").length;
 
   return (
     <Show when={props.phases.length > 0}>
       <box flexDirection="column">
-        <box height={1} paddingLeft={1}>
-          <text attributes={TextAttributes.BOLD} fg={theme.text}>
-            Phases:
+        <box flexDirection="row" height={1} paddingLeft={1}>
+          <text attributes={TextAttributes.BOLD} fg={theme.accent}>
+            {"▸ Phases:"}
+          </text>
+          <text fg={theme.textDim}>
+            {` ${doneCount()}/${props.phases.length} complete`}
           </text>
         </box>
         <For each={props.phases}>
           {(phase, index) => (
             <PhaseRow
+              isActive={
+                props.currentTaskId === props.taskId &&
+                phase.status === "in_progress"
+              }
               isLast={index() === props.phases.length - 1}
               phase={phase}
             />
@@ -264,17 +294,23 @@ function PhasesSection(props: { phases: readonly TUIPhase[] }) {
 }
 
 /**
- * Criteria section.
+ * Criteria section with accent header.
  */
 function CriteriaSection(props: { criteria: readonly TUICriterion[] }) {
   const { theme } = useTheme();
 
+  const passedCount = () =>
+    props.criteria.filter((c) => c.status === "passed").length;
+
   return (
     <Show when={props.criteria.length > 0}>
       <box flexDirection="column">
-        <box height={1} paddingLeft={1}>
-          <text attributes={TextAttributes.BOLD} fg={theme.text}>
-            Criteria:
+        <box flexDirection="row" height={1} paddingLeft={1}>
+          <text attributes={TextAttributes.BOLD} fg={theme.accent}>
+            {"▸ Criteria:"}
+          </text>
+          <text fg={theme.textDim}>
+            {` ${passedCount()}/${props.criteria.length} passed`}
           </text>
         </box>
         <For each={props.criteria}>
@@ -286,53 +322,6 @@ function CriteriaSection(props: { criteria: readonly TUICriterion[] }) {
           )}
         </For>
         <box height={1} />
-      </box>
-    </Show>
-  );
-}
-
-/**
- * Git info section.
- */
-function GitSection(props: { state: TUIState; width: number }) {
-  const { theme } = useTheme();
-
-  return (
-    <Show when={props.state.gitBranch}>
-      <box flexDirection="column" width={props.width}>
-        <box
-          borderColor={theme.border}
-          borderStyle="single"
-          height={1}
-          width={props.width}
-        />
-
-        <box flexDirection="row" height={1} paddingLeft={1}>
-          <text fg={theme.brand}>{"▸ "}</text>
-          <text attributes={TextAttributes.BOLD} fg={theme.text}>
-            GIT
-          </text>
-          <text fg={theme.textDim}>{" • "}</text>
-          <text fg={theme.text}>{props.state.gitBranch}</text>
-          <text> </text>
-          <Show
-            fallback={<text fg={theme.textDim}>Not pushed</text>}
-            when={props.state.gitPushed}
-          >
-            <text fg={theme.success}>{"●"}</text>
-          </Show>
-        </box>
-
-        <Show when={props.state.prUrl}>
-          <box flexDirection="row" height={1} paddingLeft={1}>
-            <text fg={theme.brand}>{"▸ "}</text>
-            <text attributes={TextAttributes.BOLD} fg={theme.text}>
-              PR
-            </text>
-            <text fg={theme.textDim}>{" • "}</text>
-            <text fg={theme.info}>{props.state.prUrl}</text>
-          </box>
-        </Show>
       </box>
     </Show>
   );
@@ -376,9 +365,17 @@ export function DetailView(props: DetailViewProps) {
         >
           <box flexDirection="column" width={props.width - 2}>
             <TaskHeader task={currentTask()} width={props.width - 2} />
-            <PhasesSection phases={currentTask().phases} />
+            <PhasesSection
+              currentTaskId={props.state.currentTaskId}
+              phases={currentTask().phases}
+              taskId={currentTask().id}
+            />
             <CriteriaSection criteria={currentTask().criteria} />
-            <GitSection state={props.state} width={props.width - 2} />
+            <GitInfo
+              showDivider={true}
+              state={props.state}
+              width={props.width - 2}
+            />
           </box>
         </scrollbox>
       )}

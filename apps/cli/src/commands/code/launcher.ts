@@ -1,19 +1,22 @@
 import { Effect } from "effect";
 import { main } from "./action.js";
+import { type FerixConfig, loadConfig } from "./config/index.js";
 import { type Route, tui } from "./consumers/tui/index.js";
 import { createDaemonClient, ensureDaemonRunning } from "./daemon/index.js";
 import type { ProviderName } from "./domain/index.js";
 
 /**
  * Options passed from the CLI to the launcher.
+ * Fields are optional when they have no CLI default, allowing
+ * ferix.json values to fill in.
  */
 export interface LauncherOptions {
-  readonly iterations: string;
+  readonly iterations?: string;
   readonly verify?: string[];
   readonly branch?: string;
   readonly push?: boolean;
   readonly pr?: boolean;
-  readonly provider: string;
+  readonly provider?: string;
   readonly yolo: boolean;
   readonly debug?: boolean;
 }
@@ -35,17 +38,23 @@ interface NormalizedOptions {
 
 /**
  * Normalize options from CLI format to TUI format.
+ * CLI flags take precedence over ferix.json config values.
  */
-function normalizeOptions(options: LauncherOptions): NormalizedOptions {
+function normalizeOptions(
+  options: LauncherOptions,
+  config: FerixConfig
+): NormalizedOptions {
   return {
-    maxIterations: Number.parseInt(options.iterations, 10),
-    verifyCommands: options.verify ?? [],
-    branch: options.branch,
-    push: options.push,
-    pr: options.pr,
-    provider: options.provider as ProviderName,
-    yolo: options.yolo ?? true,
-    debug: options.debug ?? false,
+    maxIterations: options.iterations
+      ? Number.parseInt(options.iterations, 10)
+      : (config.iterations ?? 1),
+    verifyCommands: options.verify ?? config.verify ?? [],
+    branch: options.branch ?? config.branch,
+    push: options.push ?? config.push,
+    pr: options.pr ?? config.pr,
+    provider: (options.provider ?? config.provider ?? "claude") as ProviderName,
+    yolo: options.yolo ?? config.yolo ?? true,
+    debug: options.debug ?? config.debug ?? false,
   };
 }
 
@@ -70,13 +79,22 @@ export async function launchSelector(
   options: LauncherOptions,
   initialTask?: string
 ): Promise<void> {
+  // Load ferix.json config (empty config if file doesn't exist)
+  const config = await loadConfig().pipe(
+    Effect.catchTag("ConfigError", (err) => {
+      console.warn(`Warning: ${err.message}`);
+      return Effect.succeed({} as FerixConfig);
+    }),
+    Effect.runPromise
+  );
+
   // Non-TTY: run headless via action.ts
   if (!process.stdout.isTTY) {
     if (!initialTask) {
       console.error('Non-TTY mode requires a task. Usage: ferix "your task"');
       process.exit(1);
     }
-    const normalized = normalizeOptions(options);
+    const normalized = normalizeOptions(options, config);
     await main({
       task: initialTask,
       maxIterations: normalized.maxIterations,
@@ -106,7 +124,7 @@ export async function launchSelector(
   );
 
   // Normalize options
-  const _normalized = normalizeOptions(options);
+  const _normalized = normalizeOptions(options, config);
 
   // Determine initial route
   let initialRoute: Route | undefined;
@@ -120,6 +138,7 @@ export async function launchSelector(
   await tui({
     daemonClient: client,
     initialRoute,
+    config,
     onExit: async () => {
       // Disconnect from daemon on exit
       await Effect.runPromise(client.disconnect().pipe(Effect.ignore));

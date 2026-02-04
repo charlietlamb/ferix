@@ -28,6 +28,7 @@ import {
   type DaemonCommand,
   type DaemonDomainEvent,
   type DaemonMessage,
+  type DaemonResponse,
   type DaemonSessionStatusEvent,
   parseCommand,
   parseLoopConfig,
@@ -132,6 +133,33 @@ function sendToClient(socket: Socket, message: DaemonMessage): void {
   if (!socket.destroyed) {
     socket.write(serializeMessage(message));
   }
+}
+
+/**
+ * Distributive Omit preserves union discriminants.
+ * Standard Omit<Union, K> collapses the union; this version maps over each variant.
+ */
+type DistributiveOmit<T, K extends keyof T> = T extends unknown
+  ? Omit<T, K>
+  : never;
+
+/**
+ * A DaemonResponse without `commandId` — the reply helper adds it automatically.
+ */
+type ReplyPayload = DistributiveOmit<DaemonResponse, "commandId">;
+
+/**
+ * A function that sends a DaemonResponse with a pre-bound `commandId`.
+ */
+type Reply = (response: ReplyPayload) => void;
+
+/**
+ * Create a reply function that closes over `commandId`, removing the need
+ * to pass it through every handler and include it in every response object.
+ */
+function createReply(socket: Socket, commandId?: string): Reply {
+  return (response) =>
+    sendToClient(socket, { ...response, commandId } as DaemonResponse);
 }
 
 /**
@@ -452,6 +480,7 @@ function broadcastStatusChange(
 function handleStartCommand(
   stateRef: Ref.Ref<DaemonState>,
   socket: Socket,
+  reply: Reply,
   sessionId: string,
   rawConfig: unknown
 ): Effect.Effect<void, never, never> {
@@ -461,16 +490,13 @@ function handleStartCommand(
 
     // Validate config
     if (!config) {
-      sendToClient(socket, {
-        type: "error",
-        message: "Invalid config format",
-      });
+      reply({ type: "error", message: "Invalid config format" });
       return;
     }
 
     // Check if session already exists
     if (state.sessions.has(sessionId)) {
-      sendToClient(socket, {
+      reply({
         type: "error",
         message: `Session ${sessionId} already exists`,
       });
@@ -512,7 +538,7 @@ function handleStartCommand(
       return { ...s, clients };
     });
 
-    sendToClient(socket, { type: "ok", sessionId });
+    reply({ type: "ok", sessionId });
   });
 }
 
@@ -521,7 +547,7 @@ function handleStartCommand(
  */
 function handlePauseCommand(
   stateRef: Ref.Ref<DaemonState>,
-  socket: Socket,
+  reply: Reply,
   sessionId: string
 ): Effect.Effect<void, never, never> {
   return Effect.gen(function* () {
@@ -529,7 +555,7 @@ function handlePauseCommand(
     const session = state.sessions.get(sessionId);
 
     if (!session) {
-      sendToClient(socket, {
+      reply({
         type: "error",
         message: `Session ${sessionId} not found`,
       });
@@ -556,7 +582,7 @@ function handlePauseCommand(
     const updatedState = yield* Ref.get(stateRef);
     broadcastStatusChange(updatedState, sessionId, "paused");
 
-    sendToClient(socket, { type: "ok", sessionId });
+    reply({ type: "ok", sessionId });
   });
 }
 
@@ -565,7 +591,7 @@ function handlePauseCommand(
  */
 function handleCancelCommand(
   stateRef: Ref.Ref<DaemonState>,
-  socket: Socket,
+  reply: Reply,
   sessionId: string
 ): Effect.Effect<void, never, never> {
   return Effect.gen(function* () {
@@ -573,7 +599,7 @@ function handleCancelCommand(
     const session = state.sessions.get(sessionId);
 
     if (!session) {
-      sendToClient(socket, {
+      reply({
         type: "error",
         message: `Session ${sessionId} not found`,
       });
@@ -602,7 +628,7 @@ function handleCancelCommand(
     const updatedState = yield* Ref.get(stateRef);
     broadcastStatusChange(updatedState, sessionId, "failed", completedAt);
 
-    sendToClient(socket, { type: "ok", sessionId });
+    reply({ type: "ok", sessionId });
   });
 }
 
@@ -612,6 +638,7 @@ function handleCancelCommand(
 function handleSubscribeCommand(
   stateRef: Ref.Ref<DaemonState>,
   socket: Socket,
+  reply: Reply,
   sessionId: string
 ): Effect.Effect<void, never, never> {
   return Effect.gen(function* () {
@@ -619,7 +646,7 @@ function handleSubscribeCommand(
     const session = state.sessions.get(sessionId);
 
     if (!session) {
-      sendToClient(socket, {
+      reply({
         type: "error",
         message: `Session ${sessionId} not found`,
       });
@@ -643,7 +670,7 @@ function handleSubscribeCommand(
       return { ...s, sessions, clients };
     });
 
-    sendToClient(socket, { type: "ok", sessionId });
+    reply({ type: "ok", sessionId });
   });
 }
 
@@ -653,6 +680,7 @@ function handleSubscribeCommand(
 function handleUnsubscribeCommand(
   stateRef: Ref.Ref<DaemonState>,
   socket: Socket,
+  reply: Reply,
   sessionId: string
 ): Effect.Effect<void, never, never> {
   return Effect.gen(function* () {
@@ -672,7 +700,7 @@ function handleUnsubscribeCommand(
       return { ...s, sessions, clients };
     });
 
-    sendToClient(socket, { type: "ok", sessionId });
+    reply({ type: "ok", sessionId });
   });
 }
 
@@ -765,6 +793,58 @@ function loadAllPersistedSessions(): Effect.Effect<Session[], never, never> {
 }
 
 /**
+ * Enrich a SessionInfo with data from STATE.json.
+ * Reads ~/.ferix/plans/{sessionId}/STATE.json for task progress and iteration info.
+ */
+function enrichWithState(
+  sessionId: string,
+  base: SessionInfo
+): Effect.Effect<SessionInfo, never, never> {
+  const statePath = join(homedir(), ".ferix", "plans", sessionId, "STATE.json");
+  return Effect.tryPromise({
+    try: () => readFile(statePath, "utf-8"),
+    catch: () => null,
+  }).pipe(
+    Effect.map((content) => {
+      if (!content) {
+        return base;
+      }
+      try {
+        const state = JSON.parse(content) as Record<string, unknown>;
+        const taskSummary = state.taskSummary as
+          | Record<string, unknown>
+          | undefined;
+        const recentProgress = state.recentProgress as string[] | undefined;
+        return {
+          ...base,
+          taskTotal:
+            typeof taskSummary?.total === "number"
+              ? taskSummary.total
+              : undefined,
+          taskDone:
+            typeof taskSummary?.done === "number"
+              ? taskSummary.done
+              : undefined,
+          iteration:
+            typeof state.iteration === "number" ? state.iteration : undefined,
+          maxIterations:
+            typeof state.maxIterations === "number"
+              ? state.maxIterations
+              : undefined,
+          lastActivity:
+            Array.isArray(recentProgress) && recentProgress.length > 0
+              ? recentProgress.at(-1)
+              : undefined,
+        };
+      } catch {
+        return base;
+      }
+    }),
+    Effect.catchAll(() => Effect.succeed(base))
+  );
+}
+
+/**
  * Map persisted session status to daemon SessionInfo status.
  * Persisted uses "active" | "completed" | "failed" | "paused".
  * SessionInfo uses "starting" | "running" | "paused" | "completed" | "failed".
@@ -789,7 +869,7 @@ function mapPersistedStatus(status: Session["status"]): SessionInfo["status"] {
  */
 function handleCreatePRCommand(
   stateRef: Ref.Ref<DaemonState>,
-  socket: Socket,
+  reply: Reply,
   sessionId: string
 ): Effect.Effect<void, never, never> {
   return Effect.gen(function* () {
@@ -797,7 +877,7 @@ function handleCreatePRCommand(
     const session = yield* loadPersistedSession(sessionId).pipe(
       Effect.catchAll((error) =>
         Effect.gen(function* () {
-          sendToClient(socket, {
+          reply({
             type: "error",
             message: `Failed to load session: ${error.message}`,
           });
@@ -808,16 +888,13 @@ function handleCreatePRCommand(
 
     // Check if PR already exists
     if (session.prUrl) {
-      sendToClient(socket, {
-        type: "pr_created",
-        prUrl: session.prUrl,
-      });
+      reply({ type: "pr_created", prUrl: session.prUrl });
       return;
     }
 
     // Need a branch name to create PR
     if (!session.branchName) {
-      sendToClient(socket, {
+      reply({
         type: "error",
         message: "Session has no branch name - cannot create PR",
       });
@@ -850,7 +927,7 @@ function handleCreatePRCommand(
     const prUrl = yield* prEffect.pipe(
       Effect.catchAll((error) =>
         Effect.gen(function* () {
-          sendToClient(socket, {
+          reply({
             type: "error",
             message: `Failed to create PR: ${error instanceof Error ? error.message : String(error)}`,
           });
@@ -877,43 +954,48 @@ function handleCreatePRCommand(
       return { ...s, sessions };
     });
 
-    sendToClient(socket, { type: "pr_created", prUrl });
+    reply({ type: "pr_created", prUrl });
   }).pipe(Effect.catchAll(() => Effect.void));
 }
 
 /**
  * Handle a command from a client.
+ * Creates a `reply` helper that closes over the `commandId` so that
+ * every response is tagged for request/response correlation on the client.
  */
 function handleCommand(
   stateRef: Ref.Ref<DaemonState>,
   socket: Socket,
   command: DaemonCommand
 ): Effect.Effect<void, never, never> {
+  const reply = createReply(socket, command.commandId);
+
   switch (command.type) {
     case "start":
       return handleStartCommand(
         stateRef,
         socket,
+        reply,
         command.sessionId,
         command.config
       );
 
     case "pause":
-      return handlePauseCommand(stateRef, socket, command.sessionId);
+      return handlePauseCommand(stateRef, reply, command.sessionId);
 
     case "resume":
       return Effect.gen(function* () {
         const state = yield* Ref.get(stateRef);
         const session = state.sessions.get(command.sessionId);
         if (!session) {
-          sendToClient(socket, {
+          reply({
             type: "error",
             message: `Session ${command.sessionId} not found`,
           });
           return;
         }
         // Resume is complex - would need to reload state and restart
-        sendToClient(socket, {
+        reply({
           type: "error",
           message:
             "Resume not yet implemented - use start with same session ID",
@@ -921,7 +1003,7 @@ function handleCommand(
       });
 
     case "cancel":
-      return handleCancelCommand(stateRef, socket, command.sessionId);
+      return handleCancelCommand(stateRef, reply, command.sessionId);
 
     case "list":
       return Effect.gen(function* () {
@@ -942,6 +1024,9 @@ function handleCommand(
             startedAt: new Date(persisted.createdAt).getTime(),
             prUrl: persisted.prUrl,
             branchName: persisted.branchName,
+            displayName: persisted.displayName,
+            provider: persisted.provider,
+            completedTaskCount: persisted.completedTasks.length,
           });
         }
 
@@ -960,7 +1045,14 @@ function handleCommand(
           (a, b) => b.startedAt - a.startedAt
         );
 
-        sendToClient(socket, { type: "sessions", sessions });
+        // Enrich all sessions with STATE.json data in parallel
+        const enriched = yield* Effect.forEach(
+          sessions,
+          (session) => enrichWithState(session.sessionId, session),
+          { concurrency: "unbounded" }
+        );
+
+        reply({ type: "sessions", sessions: enriched });
       });
 
     case "status":
@@ -968,42 +1060,44 @@ function handleCommand(
         const state = yield* Ref.get(stateRef);
         const session = state.sessions.get(command.sessionId);
         if (!session) {
-          sendToClient(socket, {
+          reply({
             type: "error",
             message: `Session ${command.sessionId} not found`,
           });
           return;
         }
-        sendToClient(socket, { type: "session_status", session: session.info });
+        reply({ type: "session_status", session: session.info });
       });
 
     case "subscribe":
-      return handleSubscribeCommand(stateRef, socket, command.sessionId);
+      return handleSubscribeCommand(stateRef, socket, reply, command.sessionId);
 
     case "unsubscribe":
-      return handleUnsubscribeCommand(stateRef, socket, command.sessionId);
+      return handleUnsubscribeCommand(
+        stateRef,
+        socket,
+        reply,
+        command.sessionId
+      );
 
     case "shutdown":
       return Effect.sync(() => {
-        sendToClient(socket, { type: "ok" });
+        reply({ type: "ok" });
         // Give client time to receive response, then exit
         setTimeout(() => process.exit(0), 100);
       });
 
     case "version":
       return Effect.sync(() => {
-        sendToClient(socket, { type: "version", buildTime: daemonBuildTime });
+        reply({ type: "version", buildTime: daemonBuildTime });
       });
 
     case "create_pr":
-      return handleCreatePRCommand(stateRef, socket, command.sessionId);
+      return handleCreatePRCommand(stateRef, reply, command.sessionId);
 
     default:
       return Effect.sync(() => {
-        sendToClient(socket, {
-          type: "error",
-          message: "Unknown command type",
-        });
+        reply({ type: "error", message: "Unknown command type" });
       });
   }
 }

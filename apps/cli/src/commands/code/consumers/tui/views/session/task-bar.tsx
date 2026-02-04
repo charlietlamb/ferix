@@ -8,27 +8,26 @@ interface TaskBarProps {
 
 /**
  * Task bar component.
- * Shows the current task description.
+ * Shows the current task description with accent left border and diamond icon.
+ * Uses backgroundElement for visual distinction from status bar.
  */
 export function TaskBar(props: TaskBarProps) {
-  const { theme } = useTheme();
+  const { theme, symbols } = useTheme();
 
-  // Clean up task text (remove newlines, extra spaces)
   const cleanTask = () => props.task.replace(/\s+/g, " ").trim();
-
-  // Calculate max width for task text
-  const maxWidth = () => props.width - 8; // Account for borders and padding
+  const maxWidth = () => props.width - 6;
 
   return (
     <box
-      borderColor={theme.border}
-      borderStyle="single"
+      backgroundColor={theme.backgroundElement}
+      border={["left"]}
+      borderColor={theme.borderActive}
       flexDirection="row"
       height={1}
       paddingLeft={1}
       width={props.width}
     >
-      <text fg={theme.textDim}>{"Task: "}</text>
+      <text fg={theme.accent}>{`${symbols.diamond} `}</text>
       <text fg={theme.text}>{truncate(cleanTask(), maxWidth())}</text>
     </box>
   );

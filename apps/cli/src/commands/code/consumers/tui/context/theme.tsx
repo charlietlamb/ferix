@@ -5,6 +5,8 @@ import {
   darkTheme,
   getToolColor,
   lightTheme,
+  SPINNER_INTERVAL_MS,
+  spinnerFrames,
   symbols,
 } from "./theme-constants.js";
 
@@ -23,6 +25,8 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
       getToolColor,
       symbols,
       box,
+      spinnerFrames,
+      SPINNER_INTERVAL_MS,
       styles: {
         container: {
           borderColor: theme.border,
@@ -36,6 +40,16 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
         },
         muted: {
           fg: theme.textMuted,
+        },
+        panel: {
+          backgroundColor: theme.backgroundPanel,
+        },
+        element: {
+          backgroundColor: theme.backgroundElement,
+        },
+        sectionHeader: {
+          fg: theme.accent,
+          bold: true,
         },
         statusRunning: {
           fg: theme.brand,

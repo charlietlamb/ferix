@@ -6,6 +6,7 @@ import "./llm.js";
 import "./loop.js";
 import "./progress.js";
 import "./tasks.js";
+import "./verify.js";
 import "./worktree.js";
 
 // Re-export reduce function

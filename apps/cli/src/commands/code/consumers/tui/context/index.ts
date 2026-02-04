@@ -5,6 +5,7 @@
  * following patterns from OpenCode's @opentui/solid implementation.
  */
 
+export { ConfigProvider, useConfig } from "./config.js";
 export { DaemonProvider, useDaemon } from "./daemon.js";
 export { ExitProvider, useExit } from "./exit.js";
 export {

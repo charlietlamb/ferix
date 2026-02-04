@@ -21,7 +21,7 @@ tagRendererRegistry.register({
  */
 tagRendererRegistry.register({
   pattern: /<\/ferix:tasks>/g,
-  render: () => taskListFooter(),
+  render: (_, w) => taskListFooter(w),
 });
 
 /**
@@ -30,7 +30,7 @@ tagRendererRegistry.register({
  */
 tagRendererRegistry.register({
   pattern: /<task id="(\d+)">([^<]+)<\/task>/g,
-  render: (m) => taskLine(m[1] ?? "", m[2] ?? ""),
+  render: (m, w) => taskLine(m[1] ?? "", m[2] ?? "", w),
 });
 
 /**

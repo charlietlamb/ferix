@@ -5,34 +5,34 @@ import { styleFerixTags } from "../../src/commands/code/consumers/tui/tags/index
 describe("OpenTUI Tag Parser", () => {
   describe("tool use lines", () => {
     it("parses tool use line with detail", () => {
-      const chunks = styleFerixTags(">> Read file.ts", 80);
+      const chunks = styleFerixTags("▸ Read file.ts", 80);
       expect(chunks.length).toBeGreaterThan(1);
       expect(chunks.some((c) => c.text.includes("Read"))).toBe(true);
       expect(chunks.some((c) => c.text.includes("file.ts"))).toBe(true);
     });
 
     it("parses tool use line without detail", () => {
-      const chunks = styleFerixTags(">> Bash", 80);
+      const chunks = styleFerixTags("▸ Bash", 80);
       expect(chunks.length).toBeGreaterThan(1);
       expect(chunks.some((c) => c.text.includes("Bash"))).toBe(true);
     });
 
     it("applies correct color for Read tool", () => {
-      const chunks = styleFerixTags(">> Read file.ts", 80);
+      const chunks = styleFerixTags("▸ Read file.ts", 80);
       const readChunk = chunks.find((c) => c.text === "Read");
       expect(readChunk).toBeDefined();
       expect(readChunk?.fg).toEqual(theme.cyan);
     });
 
     it("applies correct color for Edit tool", () => {
-      const chunks = styleFerixTags(">> Edit file.ts", 80);
+      const chunks = styleFerixTags("▸ Edit file.ts", 80);
       const editChunk = chunks.find((c) => c.text === "Edit");
       expect(editChunk).toBeDefined();
       expect(editChunk?.fg).toEqual(theme.warning);
     });
 
     it("applies correct color for Write tool", () => {
-      const chunks = styleFerixTags(">> Write file.ts", 80);
+      const chunks = styleFerixTags("▸ Write file.ts", 80);
       const writeChunk = chunks.find((c) => c.text === "Write");
       expect(writeChunk).toBeDefined();
       expect(writeChunk?.fg).toEqual(theme.success);
@@ -71,9 +71,7 @@ describe("OpenTUI Tag Parser", () => {
   describe("phase tags", () => {
     it("parses phases header", () => {
       const chunks = styleFerixTags('<ferix:phases task="1">', 80);
-      expect(chunks.some((c) => c.text.includes("Phases for task 1"))).toBe(
-        true
-      );
+      expect(chunks.some((c) => c.text.includes("Phases"))).toBe(true);
     });
 
     it("parses individual phase", () => {
@@ -112,9 +110,7 @@ describe("OpenTUI Tag Parser", () => {
   describe("criteria tags", () => {
     it("parses criteria header", () => {
       const chunks = styleFerixTags('<ferix:criteria task="1">', 80);
-      expect(
-        chunks.some((c) => c.text.includes("Success criteria for task 1"))
-      ).toBe(true);
+      expect(chunks.some((c) => c.text.includes("Criteria"))).toBe(true);
     });
 
     it("parses individual criterion", () => {
@@ -243,7 +239,7 @@ describe("OpenTUI Tag Parser", () => {
         "<ferix:session-name>My Session</ferix:session-name>",
         80
       );
-      expect(chunks.some((c) => c.text.includes(">"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("◇"))).toBe(true);
       expect(chunks.some((c) => c.text.includes("My Session"))).toBe(true);
     });
   });
@@ -279,7 +275,7 @@ describe("OpenTUI Tag Parser", () => {
     });
 
     it("handles partial tag matches", () => {
-      const chunks = styleFerixTags(">> Read", 80);
+      const chunks = styleFerixTags("▸ Read", 80);
       // Should match the tool use pattern
       expect(chunks.some((c) => c.text === "Read")).toBe(true);
     });

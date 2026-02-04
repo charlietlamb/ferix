@@ -4,6 +4,7 @@ import type {
   ExecutionMode,
   TUIState,
 } from "../../../../domain/schemas/tui.js";
+import { Spinner, SplitBorder } from "../../components/index.js";
 import { useTheme } from "../../context/index.js";
 import { formatElapsedTime } from "../../util/text.js";
 
@@ -64,8 +65,17 @@ function getProviderConfig(
 }
 
 /**
+ * Separator between status bar sections.
+ */
+function Sep() {
+  const { theme } = useTheme();
+  return <text fg={theme.borderSubtle}>{" │ "}</text>;
+}
+
+/**
  * Status bar component.
  * Shows brand, mode, provider, iteration, elapsed time, and current tool.
+ * Uses SplitBorder pattern with backgroundPanel.
  */
 export function StatusBar(props: StatusBarProps) {
   const { theme } = useTheme();
@@ -75,7 +85,6 @@ export function StatusBar(props: StatusBarProps) {
   const providerConfig = () =>
     getProviderConfig(props.state.provider ?? "claude", theme);
 
-  // Task progress
   const taskProgress = () => {
     if (props.state.tasks.length === 0) {
       return null;
@@ -88,101 +97,115 @@ export function StatusBar(props: StatusBarProps) {
   };
 
   return (
-    <box
-      borderColor={theme.border}
-      borderStyle="single"
-      flexDirection="row"
-      height={1}
-      paddingLeft={1}
-      width={props.width}
-    >
-      {/* Brand */}
-      <text attributes={TextAttributes.BOLD} fg={theme.brand}>
-        {"▸ "}
-      </text>
-      <text attributes={TextAttributes.BOLD} fg={theme.text}>
-        FERIX
-      </text>
+    <SplitBorder width={props.width}>
+      {/* Left group */}
+      <box flexDirection="row" paddingLeft={1}>
+        {/* Brand in accent amber */}
+        <text attributes={TextAttributes.BOLD} fg={theme.accent}>
+          FERIX
+        </text>
 
-      <text fg={theme.textDim}>{" • "}</text>
+        <Sep />
 
-      {/* YOLO mode */}
-      <Show when={props.state.yolo}>
-        <text fg={theme.warning}>{"⚠ YOLO"}</text>
-        <text fg={theme.textDim}>{" • "}</text>
-      </Show>
+        {/* YOLO mode */}
+        <Show when={props.state.yolo}>
+          <text fg={theme.warning}>{"⚠ YOLO"}</text>
+          <Sep />
+        </Show>
 
-      {/* Debug mode */}
-      <Show when={props.state.debug}>
-        <text fg={theme.warning}>DEBUG</text>
-        <text fg={theme.textDim}>{" • "}</text>
-      </Show>
+        {/* Debug mode */}
+        <Show when={props.state.debug}>
+          <text fg={theme.warning}>DEBUG</text>
+          <Sep />
+        </Show>
 
-      {/* PR mode */}
-      <Show when={props.state.pr}>
-        <text fg={theme.info}>PR</text>
-        <text fg={theme.textDim}>{" • "}</text>
-      </Show>
+        {/* PR mode */}
+        <Show when={props.state.pr}>
+          <text fg={theme.info}>PR</text>
+          <Sep />
+        </Show>
 
-      {/* Provider */}
-      <text fg={providerConfig().color}>{providerConfig().label}</text>
+        {/* Provider */}
+        <text fg={providerConfig().color}>{providerConfig().label}</text>
 
-      <text fg={theme.textDim}>{" • "}</text>
+        <Sep />
 
-      {/* Status/Mode */}
-      <Show when={props.state.status === "running"}>
-        <text fg={theme.brand}>{"⠋ "}</text>
-        <text fg={modeDisplay().color}>{modeDisplay().text}</text>
-      </Show>
-      <Show when={props.state.status === "complete"}>
-        <text fg={theme.info}>COMPLETE</text>
-      </Show>
-      <Show when={props.state.status === "paused"}>
-        <text fg={theme.warning}>PAUSED</text>
-      </Show>
-      <Show when={props.state.status === "error"}>
-        <text fg={theme.error}>ERROR</text>
-      </Show>
-      <Show when={props.state.status === "idle"}>
-        <text fg={theme.textDim}>IDLE</text>
-      </Show>
+        {/* Status/Mode with animated spinner */}
+        <Show when={props.state.status === "running"}>
+          <Spinner active={true} />
+          <text> </text>
+          <text fg={modeDisplay().color}>{modeDisplay().text}</text>
+        </Show>
+        <Show when={props.state.status === "complete"}>
+          <text fg={theme.info}>COMPLETE</text>
+        </Show>
+        <Show when={props.state.status === "paused"}>
+          <text fg={theme.warning}>PAUSED</text>
+        </Show>
+        <Show when={props.state.status === "error"}>
+          <text fg={theme.error}>ERROR</text>
+        </Show>
+        <Show when={props.state.status === "idle"}>
+          <text fg={theme.textDim}>IDLE</text>
+        </Show>
+      </box>
 
-      <text fg={theme.textDim}>{" • "}</text>
+      {/* Spacer */}
+      <box flexGrow={1} />
 
-      {/* Iteration */}
-      <text fg={theme.textDim}>
-        {props.state.maxIterations > 0
-          ? `${props.state.iteration}/${props.state.maxIterations}`
-          : `${props.state.iteration}`}
-      </text>
+      {/* Right group */}
+      <box flexDirection="row" paddingRight={1}>
+        {/* Iteration */}
+        <text fg={theme.textDim}>
+          {props.state.maxIterations > 0
+            ? `${props.state.iteration}/${props.state.maxIterations}`
+            : `${props.state.iteration}`}
+        </text>
 
-      {/* Elapsed time */}
-      <Show when={props.state.startTime > 0}>
-        <text fg={theme.textDim}>{" • "}</text>
-        <text fg={theme.info}>{formatElapsedTime(props.state.startTime)}</text>
-      </Show>
+        {/* Elapsed time */}
+        <Show when={props.state.startTime > 0}>
+          <Sep />
+          <text fg={theme.info}>
+            {formatElapsedTime(props.state.startTime)}
+          </text>
+        </Show>
 
-      {/* Task progress */}
-      {(() => {
-        const progress = taskProgress();
-        if (!progress) {
-          return null;
-        }
-        return (
-          <>
-            <text fg={theme.textDim}>{" • "}</text>
-            <text fg={progress.allDone ? theme.success : theme.textDim}>
-              {`TASK ${progress.completed}/${progress.total}`}
-            </text>
-          </>
-        );
-      })()}
+        {/* Current tool (accent color, no brackets) */}
+        <Show when={props.state.currentTool}>
+          <Sep />
+          <text fg={theme.accent}>{props.state.currentTool}</text>
+        </Show>
 
-      {/* Current tool */}
-      <Show when={props.state.currentTool}>
-        <text fg={theme.textDim}>{" • "}</text>
-        <text fg={theme.brand}>{`[${props.state.currentTool}]`}</text>
-      </Show>
-    </box>
+        {/* Verify attempt counter */}
+        <Show when={props.state.verifyAttempt !== undefined}>
+          <Sep />
+          <text fg={theme.warning}>
+            {`VERIFY ${props.state.verifyAttempt}/3`}
+          </text>
+        </Show>
+
+        {/* Verify current command */}
+        <Show when={props.state.verifyCommand}>
+          <Sep />
+          <text fg={theme.accent}>{props.state.verifyCommand}</text>
+        </Show>
+
+        {/* Task progress */}
+        {(() => {
+          const progress = taskProgress();
+          if (!progress) {
+            return null;
+          }
+          return (
+            <>
+              <Sep />
+              <text fg={progress.allDone ? theme.success : theme.textDim}>
+                {`${progress.completed}/${progress.total}`}
+              </text>
+            </>
+          );
+        })()}
+      </box>
+    </SplitBorder>
   );
 }

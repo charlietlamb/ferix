@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@clack/prompts": "catalog:",
+    "better-result": "catalog:",
     "@opentui/core": "^0.1.75",
     "@opentui/solid": "^0.1.75",
     "commander": "^14.0.0",

@@ -1,6 +1,8 @@
 import { api } from "@ferix/server/_generated/api";
 import { ConvexHttpClient } from "convex/browser";
 import { Effect, Schema as S } from "effect";
+import pc from "picocolors";
+import { printHint } from "../../shared/ui.js";
 import { ConvexError, SchemaValidationError } from "./errors.js";
 import {
   getConvexUrl,
@@ -19,14 +21,13 @@ import {
 export const resolvePackageOrgs = (
   packageNames: readonly string[],
   dev?: boolean
-): Effect.Effect<readonly PackageOrg[], ConvexError | SchemaValidationError> =>
+): Effect.Effect<readonly PackageOrg[]> =>
   Effect.gen(function* () {
-    // Step 1: Call Convex action
     const response = yield* Effect.tryPromise({
       try: async () => {
         const client = new ConvexHttpClient(getConvexUrl(dev));
         return await client.action(api.packageOrg.resolve, {
-          packageNames: [...packageNames],
+          packageNames,
         });
       },
       catch: (error) =>
@@ -37,7 +38,6 @@ export const resolvePackageOrgs = (
         }),
     });
 
-    // Step 2: Validate response with Effect Schema
     const validated = yield* S.decodeUnknown(PackageOrgsResponseSchema)(
       response
     ).pipe(
@@ -51,5 +51,16 @@ export const resolvePackageOrgs = (
       )
     );
 
+    for (const entry of validated) {
+      if (entry.githubOrg === null) {
+        printHint(`Skill could not be found: ${pc.cyan(entry.packageName)}`);
+      }
+    }
+
     return validated;
-  });
+  }).pipe(
+    Effect.catchAll((error) => {
+      printHint(`Failed to resolve some packages: ${error.message}`);
+      return Effect.succeed([] as readonly PackageOrg[]);
+    })
+  );

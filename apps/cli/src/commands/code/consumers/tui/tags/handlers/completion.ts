@@ -7,7 +7,7 @@ import { tagRendererRegistry } from "../registry.js";
  */
 tagRendererRegistry.register({
   pattern: /<ferix:error>([^<]+)<\/ferix:error>/g,
-  render: (m) => errorLine(m[1] ?? ""),
+  render: (m, w) => errorLine(m[1] ?? "", w),
 });
 
 /**
