@@ -4,7 +4,7 @@ import {
   useTerminalDimensions,
 } from "@opentui/solid";
 import { ErrorBoundary, Match, Switch } from "solid-js";
-import { Toast, useExit, useRoute, useTheme } from "./context/index.js";
+import { Toast, useExit, useRoute } from "./context/index.js";
 import { LauncherView } from "./views/launcher.js";
 import { SessionView } from "./views/session/index.js";
 
@@ -22,7 +22,6 @@ export function App() {
   const renderer = useRenderer();
   const route = useRoute();
   const exit = useExit();
-  const { theme } = useTheme();
 
   // Disable stdout interception - critical for proper terminal rendering
   // This restores the original stdout.write after OpenTUI has set up its interceptor
@@ -42,7 +41,7 @@ export function App() {
       fallback={(err) => {
         return (
           <box
-            backgroundColor={theme.background}
+            backgroundColor="transparent"
             flexDirection="column"
             height={dimensions().height}
             width={dimensions().width}
@@ -53,7 +52,7 @@ export function App() {
       }}
     >
       <box
-        backgroundColor={theme.background}
+        backgroundColor="transparent"
         flexDirection="column"
         height={dimensions().height}
         width={dimensions().width}

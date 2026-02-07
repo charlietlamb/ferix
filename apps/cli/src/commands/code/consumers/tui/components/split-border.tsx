@@ -15,7 +15,7 @@ interface SplitBorderProps extends ParentProps {
 export function SplitBorder(props: SplitBorderProps) {
   const { theme, symbols } = useTheme();
 
-  const bg = () => props.backgroundColor ?? theme.backgroundPanel;
+  const bg = () => props.backgroundColor ?? "transparent";
   const borderClr = () => props.borderColor ?? theme.borderSubtle;
   const innerWidth = () => Math.max(0, props.width - 2);
 

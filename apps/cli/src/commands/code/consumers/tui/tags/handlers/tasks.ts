@@ -1,36 +1,42 @@
-import {
-  taskDone,
-  taskLine,
-  taskListFooter,
-  taskListHeader,
-} from "../primitives.js";
+import { hidden, taskDone } from "../primitives.js";
 import { tagRendererRegistry } from "../registry.js";
 
 /**
  * Task list header handler.
- * Renders the opening of a task list section.
+ * Hidden - tasks are rendered from state via task-block marker.
  */
 tagRendererRegistry.register({
   pattern: /<ferix:tasks>/g,
-  render: (_, w) => taskListHeader(w),
+  render: () => hidden(),
 });
 
 /**
  * Task list footer handler.
- * Renders the closing of a task list section.
+ * Hidden - tasks are rendered from state via task-block marker.
  */
 tagRendererRegistry.register({
   pattern: /<\/ferix:tasks>/g,
-  render: (_, w) => taskListFooter(w),
+  render: () => hidden(),
 });
 
 /**
  * Individual task handler.
- * Renders a task with its ID and description.
+ * Hidden - tasks are rendered from state via task-block marker.
+ * Uses [\s\S]*? to match multiline content.
  */
 tagRendererRegistry.register({
-  pattern: /<task id="(\d+)">([^<]+)<\/task>/g,
-  render: (m, w) => taskLine(m[1] ?? "", m[2] ?? "", w),
+  pattern: /<task id="(\d+)">[\s\S]*?<\/task>/g,
+  render: () => hidden(),
+});
+
+/**
+ * Task-block marker handler.
+ * Returns a special marker that LogsView detects to render tasks from state.
+ * The marker text "__TASK_BLOCK__" is detected by LogsView.
+ */
+tagRendererRegistry.register({
+  pattern: /<ferix:task-block\/>/g,
+  render: () => [{ text: "__TASK_BLOCK__" }],
 });
 
 /**

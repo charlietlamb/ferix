@@ -117,20 +117,14 @@ export function appendToolUse(
 
 /**
  * Append error lines to output.
+ * Uses ferix:error tags so errors render through the tag styling system.
  */
 export function appendError(state: TUIState, error: string): TUIState {
-  const errorLines = [
-    "",
-    "───────────────────────────────────────────────────────────────",
-    "▸ ERROR",
-    "───────────────────────────────────────────────────────────────",
-    "",
-    ...error.split("\n"),
-    "",
-    "───────────────────────────────────────────────────────────────",
-    "",
-  ];
-  const combined = [...state.outputLines, ...errorLines];
+  const errorLines = error
+    .split("\n")
+    .filter((line) => line.length > 0)
+    .map((line) => `<ferix:error>${line}</ferix:error>`);
+  const combined = [...state.outputLines, "", ...errorLines, ""];
   const outputLines =
     combined.length > MAX_OUTPUT_LINES
       ? combined.slice(-MAX_OUTPUT_LINES)

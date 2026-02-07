@@ -32,6 +32,43 @@ interface UseGithubRepoValidationResult {
 
 const trailingSlashRegex = /\/$/;
 
+interface ParsedError {
+  status: GithubRepoStatus;
+  message: string;
+}
+
+function parseGithubError(err: unknown): ParsedError {
+  const message =
+    err instanceof Error ? err.message : "Failed to fetch repository";
+
+  if (message.includes("not found") || message.includes("private")) {
+    return { status: "invalid", message: "Repository not found or is private" };
+  }
+
+  if (message.includes("403") || message.includes("rate limit")) {
+    return {
+      status: "error",
+      message: "GitHub rate limit exceeded. Please try again later.",
+    };
+  }
+
+  if (
+    message.includes("500") ||
+    message.includes("502") ||
+    message.includes("503")
+  ) {
+    return {
+      status: "error",
+      message: "GitHub is temporarily unavailable. Please try again later.",
+    };
+  }
+
+  return {
+    status: "error",
+    message: "Unable to verify repository. Please check the URL and try again.",
+  };
+}
+
 export function useGithubRepoValidation(): UseGithubRepoValidationResult {
   const [url, setUrl] = useState<string>("");
   const [debouncedUrl] = useDebounce(url, 500);
@@ -102,16 +139,9 @@ export function useGithubRepoValidation(): UseGithubRepoValidationResult {
           return;
         }
 
-        const message =
-          err instanceof Error ? err.message : "Failed to fetch repository";
-
-        if (message.includes("not found") || message.includes("private")) {
-          setStatus("invalid");
-          setError("Repository not found or is private");
-        } else {
-          setStatus("error");
-          setError(message);
-        }
+        const parsed = parseGithubError(err);
+        setStatus(parsed.status);
+        setError(parsed.message);
         setRepoData(null);
       }
     }

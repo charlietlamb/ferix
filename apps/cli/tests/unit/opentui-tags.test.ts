@@ -40,25 +40,36 @@ describe("OpenTUI Tag Parser", () => {
   });
 
   describe("task tags", () => {
-    it("parses task list header", () => {
+    it("hides task list header (tasks render from state via task-block)", () => {
       const chunks = styleFerixTags("<ferix:tasks>", 80);
-      expect(chunks.some((c) => c.text.includes("TASKS"))).toBe(true);
+      expect(chunks.length).toBe(0);
     });
 
-    it("parses task list footer", () => {
+    it("hides task list footer (tasks render from state via task-block)", () => {
       const chunks = styleFerixTags("</ferix:tasks>", 80);
-      expect(chunks.length).toBeGreaterThan(0);
+      expect(chunks.length).toBe(0);
     });
 
-    it("parses individual task", () => {
+    it("hides individual task (tasks render from state via task-block)", () => {
       const chunks = styleFerixTags(
         '<task id="1">Implement feature</task>',
         80
       );
-      expect(chunks.some((c) => c.text.includes("[1]"))).toBe(true);
-      expect(chunks.some((c) => c.text.includes("Implement feature"))).toBe(
-        true
+      expect(chunks.length).toBe(0);
+    });
+
+    it("hides multiline task content", () => {
+      const chunks = styleFerixTags(
+        '<task id="1">Implement feature\nwith multiple lines</task>',
+        80
       );
+      expect(chunks.length).toBe(0);
+    });
+
+    it("parses task-block marker", () => {
+      const chunks = styleFerixTags("<ferix:task-block/>", 80);
+      expect(chunks.length).toBe(1);
+      expect(chunks[0]?.text).toBe("__TASK_BLOCK__");
     });
 
     it("parses task done signal", () => {
@@ -264,6 +275,139 @@ describe("OpenTUI Tag Parser", () => {
     });
   });
 
+  describe("learning tags", () => {
+    it("parses learning with category", () => {
+      const chunks = styleFerixTags(
+        '<ferix:learning category="architecture">Use dependency injection</ferix:learning>',
+        80
+      );
+      expect(chunks.some((c) => c.text.includes("●"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("[architecture]"))).toBe(true);
+      expect(
+        chunks.some((c) => c.text.includes("Use dependency injection"))
+      ).toBe(true);
+    });
+
+    it("parses learning without category", () => {
+      const chunks = styleFerixTags(
+        '<ferix:learning category="">Some insight</ferix:learning>',
+        80
+      );
+      expect(chunks.some((c) => c.text.includes("●"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("Some insight"))).toBe(true);
+    });
+  });
+
+  describe("guardrail tags", () => {
+    it("parses critical guardrail", () => {
+      const chunks = styleFerixTags(
+        '<ferix:guardrail severity="critical">no eval()</ferix:guardrail>',
+        80
+      );
+      expect(chunks.some((c) => c.text.includes("✗"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("Guardrail:"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("no eval()"))).toBe(true);
+    });
+
+    it("parses warn guardrail", () => {
+      const chunks = styleFerixTags(
+        '<ferix:guardrail severity="warn">avoid console.log</ferix:guardrail>',
+        80
+      );
+      expect(chunks.some((c) => c.text.includes("△"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("Guardrail:"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("avoid console.log"))).toBe(
+        true
+      );
+    });
+  });
+
+  describe("verify tags", () => {
+    it("parses verify started", () => {
+      const chunks = styleFerixTags('<ferix:verify-started attempt="1"/>', 80);
+      expect(chunks.some((c) => c.text.includes("▸"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("Verify"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("attempt 1"))).toBe(true);
+    });
+
+    it("parses verify passed", () => {
+      const chunks = styleFerixTags("<ferix:verify-passed/>", 80);
+      expect(chunks.some((c) => c.text.includes("VERIFY PASSED"))).toBe(true);
+    });
+
+    it("parses verify failed", () => {
+      const chunks = styleFerixTags('<ferix:verify-failed attempt="2"/>', 80);
+      expect(chunks.some((c) => c.text.includes("✗"))).toBe(true);
+      expect(
+        chunks.some((c) => c.text.includes("Verify failed (attempt 2)"))
+      ).toBe(true);
+    });
+  });
+
+  describe("worktree tags", () => {
+    it("parses branch pushed", () => {
+      const chunks = styleFerixTags(
+        "<ferix:branch-pushed>feature/my-branch</ferix:branch-pushed>",
+        80
+      );
+      expect(chunks.some((c) => c.text.includes("▸"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("feature/my-branch"))).toBe(
+        true
+      );
+    });
+
+    it("parses PR created", () => {
+      const chunks = styleFerixTags(
+        "<ferix:pr-created>https://github.com/org/repo/pull/42</ferix:pr-created>",
+        80
+      );
+      expect(chunks.some((c) => c.text.includes("◆"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("PR:"))).toBe(true);
+      expect(
+        chunks.some((c) =>
+          c.text.includes("https://github.com/org/repo/pull/42")
+        )
+      ).toBe(true);
+    });
+  });
+
+  describe("iteration tags", () => {
+    it("parses iteration separator", () => {
+      const chunks = styleFerixTags('<ferix:iteration n="3" max="10"/>', 80);
+      expect(chunks.some((c) => c.text.includes("Iteration 3/10"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("─"))).toBe(true);
+    });
+
+    it("respects width for iteration separator", () => {
+      const narrowChunks = styleFerixTags(
+        '<ferix:iteration n="1" max="5"/>',
+        30
+      );
+      const wideChunks = styleFerixTags('<ferix:iteration n="1" max="5"/>', 80);
+      expect(narrowChunks.some((c) => c.text.includes("Iteration 1/5"))).toBe(
+        true
+      );
+      expect(wideChunks.some((c) => c.text.includes("Iteration 1/5"))).toBe(
+        true
+      );
+    });
+  });
+
+  describe("hidden tags produce empty chunks", () => {
+    it("hidden tags return zero-length array", () => {
+      const chunks = styleFerixTags('<ferix:task-complete id="1">', 80);
+      expect(chunks.length).toBe(0);
+    });
+
+    it("summary hidden tag returns zero-length array", () => {
+      const chunks = styleFerixTags(
+        "<summary>Task completed successfully</summary>",
+        80
+      );
+      expect(chunks.length).toBe(0);
+    });
+  });
+
   describe("edge cases", () => {
     it("handles malformed tags as plain text", () => {
       const chunks = styleFerixTags(
@@ -281,11 +425,15 @@ describe("OpenTUI Tag Parser", () => {
     });
 
     it("respects width parameter for banners", () => {
-      const narrowChunks = styleFerixTags("<ferix:tasks>", 20);
-      const wideChunks = styleFerixTags("<ferix:tasks>", 80);
-      // Both should contain TASKS
-      expect(narrowChunks.some((c) => c.text.includes("TASKS"))).toBe(true);
-      expect(wideChunks.some((c) => c.text.includes("TASKS"))).toBe(true);
+      const narrowChunks = styleFerixTags("<ferix:review-passed/>", 20);
+      const wideChunks = styleFerixTags("<ferix:review-passed/>", 80);
+      // Both should contain REVIEW PASSED
+      expect(narrowChunks.some((c) => c.text.includes("REVIEW PASSED"))).toBe(
+        true
+      );
+      expect(wideChunks.some((c) => c.text.includes("REVIEW PASSED"))).toBe(
+        true
+      );
     });
   });
 });

@@ -59,38 +59,6 @@ export function toolUseLine(
 }
 
 /**
- * Renders a task list header banner.
- * @param width - Terminal width for centering
- * @returns Array of styled chunks
- */
-export function taskListHeader(width: number): StyledChunk[] {
-  const innerWidth = width - 6;
-  if (innerWidth < 10) {
-    return [chunk("TASKS", { fg: theme.accent, bold: true })];
-  }
-  const label = ` ${symbols.arrowFilled} TASKS `;
-  const sideLen = Math.max(1, Math.floor((innerWidth - label.length) / 2));
-  return [
-    chunk(box.singleHorizontal.repeat(sideLen), { fg: theme.borderSubtle }),
-    chunk(label, { fg: theme.accent, bold: true }),
-    chunk(box.singleHorizontal.repeat(sideLen), { fg: theme.borderSubtle }),
-  ];
-}
-
-/**
- * Renders a task list footer.
- * @returns Array of styled chunks
- */
-export function taskListFooter(width: number): StyledChunk[] {
-  const lineLen = Math.max(1, Math.min(width - 6, 32));
-  return [
-    chunk(box.singleHorizontal.repeat(lineLen), {
-      fg: theme.borderSubtle,
-    }),
-  ];
-}
-
-/**
  * Renders a task line with ID and description.
  * @param id - Task ID
  * @param description - Task description
@@ -408,6 +376,146 @@ export function sessionName(name: string, width: number): StyledChunk[] {
   return [
     chunk(symbols.diamondEmpty, { fg: theme.accent }),
     chunk(` ${truncate(name, maxName)}`, { fg: theme.textDim }),
+  ];
+}
+
+/**
+ * Renders a learning line with category and content.
+ * @param category - Learning category
+ * @param content - Learning content
+ * @param width - Terminal width
+ * @returns Array of styled chunks
+ */
+export function learningLine(
+  category: string,
+  content: string,
+  width: number
+): StyledChunk[] {
+  const prefix = category ? `[${category}] ` : "";
+  const prefixLen = 2 + prefix.length;
+  const maxContent = width - prefixLen;
+  return [
+    chunk(`${symbols.bulletFilled} `, { fg: theme.info }),
+    ...(category ? [chunk(prefix, { fg: theme.textMuted })] : []),
+    chunk(truncate(content, maxContent), { fg: theme.textDim }),
+  ];
+}
+
+/**
+ * Renders a guardrail line with severity and pattern.
+ * @param severity - Guardrail severity (critical or warn)
+ * @param pattern - Guardrail pattern
+ * @param width - Terminal width
+ * @returns Array of styled chunks
+ */
+export function guardrailLine(
+  severity: string,
+  pattern: string,
+  width: number
+): StyledChunk[] {
+  const isCritical = severity === "critical";
+  const icon = isCritical ? symbols.cross : symbols.triangle;
+  const color = isCritical ? theme.error : theme.warning;
+  const prefixLen = 14;
+  const maxPattern = width - prefixLen;
+  return [
+    chunk(`${icon} `, { fg: color }),
+    chunk("Guardrail: ", { fg: theme.textDim }),
+    chunk(truncate(pattern, maxPattern), { fg: color }),
+  ];
+}
+
+/**
+ * Renders a verify started marker.
+ * @param attempt - Verify attempt number
+ * @returns Array of styled chunks
+ */
+export function verifyStartedLine(attempt: string): StyledChunk[] {
+  return [
+    chunk(`${symbols.arrowFilled} `, { fg: theme.accent }),
+    chunk("Verify", { fg: theme.accent, bold: true }),
+    chunk(` attempt ${attempt}`, { fg: theme.textDim }),
+  ];
+}
+
+/**
+ * Renders a verify passed banner.
+ * @param width - Terminal width
+ * @returns Array of styled chunks
+ */
+export function verifyPassedLine(width: number): StyledChunk[] {
+  return headerBanner(
+    `${symbols.checkmark} VERIFY PASSED`,
+    width,
+    theme.borderSubtle,
+    theme.success,
+    true
+  );
+}
+
+/**
+ * Renders a verify failed marker.
+ * @param attempt - Verify attempt number
+ * @returns Array of styled chunks
+ */
+export function verifyFailedLine(attempt: string): StyledChunk[] {
+  return [
+    chunk(symbols.cross, { fg: theme.error }),
+    chunk(` Verify failed (attempt ${attempt})`, { fg: theme.textDim }),
+  ];
+}
+
+/**
+ * Renders a branch pushed line.
+ * @param branch - Branch name
+ * @param width - Terminal width
+ * @returns Array of styled chunks
+ */
+export function branchPushedLine(branch: string, width: number): StyledChunk[] {
+  const prefixLen = 4;
+  const maxBranch = width - prefixLen;
+  return [
+    chunk(`${symbols.arrowFilled} `, { fg: theme.success }),
+    chunk(truncate(branch, maxBranch), { fg: theme.success }),
+  ];
+}
+
+/**
+ * Renders a PR created line.
+ * @param url - PR URL
+ * @param width - Terminal width
+ * @returns Array of styled chunks
+ */
+export function prCreatedLine(url: string, width: number): StyledChunk[] {
+  const prefixLen = 7;
+  const maxUrl = width - prefixLen;
+  return [
+    chunk(`${symbols.diamond} `, { fg: theme.brandGlow }),
+    chunk("PR: ", { fg: theme.textDim }),
+    chunk(truncate(url, maxUrl), { fg: theme.brandGlow, underline: true }),
+  ];
+}
+
+/**
+ * Renders an iteration separator line.
+ * @param iteration - Current iteration number
+ * @param maxIterations - Maximum iterations
+ * @param width - Terminal width
+ * @returns Array of styled chunks
+ */
+export function iterationSeparator(
+  iteration: string,
+  maxIterations: string,
+  width: number
+): StyledChunk[] {
+  const label = ` Iteration ${iteration}/${maxIterations} `;
+  const innerWidth = width - 4;
+  const sideLen = Math.max(1, Math.floor((innerWidth - label.length) / 2));
+  const line = box.singleHorizontal.repeat(sideLen);
+  return [
+    chunk(line, { fg: theme.borderSubtle }),
+    chunk(label, { fg: theme.textMuted }),
+    chunk(line, { fg: theme.borderSubtle }),
   ];
 }
 

@@ -483,7 +483,10 @@
     "success": "Repository added successfully",
     "error": "Failed to add repository",
     "alreadyExists": "This repository has already been added",
-    "unauthorized": "You must be signed in to add a repository"
+    "unauthorized": "You must be signed in to add a repository",
+    "rateLimitError": "GitHub rate limit exceeded. Please try again later.",
+    "githubUnavailable": "GitHub is temporarily unavailable. Please try again later.",
+    "validationError": "Unable to verify repository. Please check the URL and try again."
   },
   "components": {
     "repositoryFileTree": {

@@ -7,26 +7,25 @@ import type { StateReducer } from "./registry.js";
 import { stateReducerRegistry } from "./registry.js";
 
 /**
- * LearningRecorded reducer - displays learning in output.
+ * LearningRecorded reducer - displays learning in output using ferix tags.
  */
 const learningRecordedReducer: StateReducer<"LearningRecorded"> = {
   tag: "LearningRecorded",
   reduce: (state, event: LearningRecordedEvent) => {
-    const category = event.category ? `[${event.category}] ` : "";
-    const line = `Learning: ${category}${event.content}`;
+    const category = event.category ?? "";
+    const line = `<ferix:learning category="${category}">${event.content}</ferix:learning>`;
     return appendOutput(state, `${line}\n`);
   },
 };
 
 /**
- * GuardrailAdded reducer - displays guardrail in output.
+ * GuardrailAdded reducer - displays guardrail in output using ferix tags.
  */
 const guardrailAddedReducer: StateReducer<"GuardrailAdded"> = {
   tag: "GuardrailAdded",
   reduce: (state, event: GuardrailAddedEvent) => {
-    const severityIcon =
-      event.severity === "critical" ? "[critical]" : "[warn]";
-    const line = `${severityIcon} Guardrail: ${event.pattern}`;
+    const severity = event.severity === "critical" ? "critical" : "warn";
+    const line = `<ferix:guardrail severity="${severity}">${event.pattern}</ferix:guardrail>`;
     return appendOutput(state, `${line}\n`);
   },
 };

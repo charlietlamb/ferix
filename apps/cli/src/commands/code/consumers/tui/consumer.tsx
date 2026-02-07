@@ -9,12 +9,7 @@ import { onCleanup, onMount } from "solid-js";
 import { createStore } from "solid-js/store";
 import type { DomainEvent } from "../../domain/index.js";
 import type { ConsumeResult, Consumer, ConsumerContext } from "../types.js";
-import {
-  ExitProvider,
-  ThemeProvider,
-  ToastProvider,
-  useTheme,
-} from "./context/index.js";
+import { ExitProvider, ThemeProvider, ToastProvider } from "./context/index.js";
 import { createInitialState } from "./state.js";
 import {
   createStreamConsumer,
@@ -45,7 +40,6 @@ interface ConsumerAppProps {
 function ConsumerSession(props: ConsumerAppProps) {
   const dimensions = useTerminalDimensions();
   const renderer = useRenderer();
-  const { theme } = useTheme();
 
   // Disable stdout interception
   renderer.disableStdoutInterception();
@@ -81,7 +75,7 @@ function ConsumerSession(props: ConsumerAppProps) {
 
   return (
     <box
-      backgroundColor={theme.background}
+      backgroundColor="transparent"
       flexDirection="column"
       height={dimensions().height}
       width={dimensions().width}

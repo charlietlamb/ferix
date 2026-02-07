@@ -27,6 +27,8 @@ const tasksDefinedReducer: StateReducer<"TasksDefined"> = {
     ...state,
     tasks: event.tasks.map(toTUITask),
     currentTaskId: event.tasks[0]?.id,
+    // Emit task-block marker so LogsView can render tasks compactly from state
+    outputLines: [...state.outputLines, "<ferix:task-block/>"],
   }),
 };
 

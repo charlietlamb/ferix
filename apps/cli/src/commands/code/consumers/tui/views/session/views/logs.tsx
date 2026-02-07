@@ -1,28 +1,85 @@
 import type { ScrollBoxRenderable } from "@opentui/core";
 import { createEffect, createSignal, For, on, Show } from "solid-js";
+import type { TUITask } from "../../../../../domain/schemas/tui.js";
 import { StyledLine } from "../../../components/index.js";
 import { useTheme } from "../../../context/index.js";
 import { styleFerixTags } from "../../../tags/index.js";
+import { taskLine } from "../../../tags/primitives.js";
 
 interface LogsViewProps {
   readonly outputLines: readonly string[];
+  readonly tasks: readonly TUITask[];
   readonly scrollOffset: number;
   readonly userScrolled: boolean;
   readonly height: number;
   readonly width: number;
 }
 
+/** Marker text emitted by task-block tag handler */
+const TASK_BLOCK_MARKER = "__TASK_BLOCK__";
+
+/**
+ * Renders all tasks as compact inline lines.
+ * Each task renders as: ◆ [id] title
+ */
+function TaskBlockInline(props: {
+  readonly tasks: readonly TUITask[];
+  readonly width: number;
+}) {
+  return (
+    <For each={props.tasks}>
+      {(task) => (
+        <box paddingLeft={1}>
+          <StyledLine
+            chunks={taskLine(task.id, task.title, props.width)}
+            maxWidth={props.width}
+          />
+        </box>
+      )}
+    </For>
+  );
+}
+
 /**
  * Single log line component.
  * Extracted to avoid reactivity issues with styleFerixTags inside For callback.
+ * Skips rendering for hidden tags (empty chunks) to prevent blank lines.
+ * Also skips rendering if all chunks are empty/whitespace-only.
+ * Detects task-block marker to delegate to TaskBlockInline.
  */
-function LogLine(props: { readonly line: string; readonly width: number }) {
+function LogLine(props: {
+  readonly line: string;
+  readonly width: number;
+  readonly tasks: readonly TUITask[];
+}) {
   const chunks = () => styleFerixTags(props.line || " ", props.width);
 
+  // Check if this is a task-block marker
+  const isTaskBlock = () =>
+    chunks().length === 1 && chunks()[0]?.text === TASK_BLOCK_MARKER;
+
+  // Check if there is any visible content (non-empty, non-whitespace text)
+  const hasVisibleContent = () => {
+    const c = chunks();
+    if (c.length === 0) {
+      return false;
+    }
+    return c.some((chunk) => chunk.text.trim().length > 0);
+  };
+
   return (
-    <box paddingLeft={1}>
-      <StyledLine chunks={chunks()} maxWidth={props.width} />
-    </box>
+    <Show when={hasVisibleContent()}>
+      <Show
+        fallback={
+          <box paddingLeft={1}>
+            <StyledLine chunks={chunks()} maxWidth={props.width} />
+          </box>
+        }
+        when={isTaskBlock()}
+      >
+        <TaskBlockInline tasks={props.tasks} width={props.width} />
+      </Show>
+    </Show>
   );
 }
 
@@ -82,7 +139,9 @@ export function LogsView(props: LogsViewProps) {
           when={props.outputLines.length > 0}
         >
           <For each={props.outputLines}>
-            {(line) => <LogLine line={line} width={contentWidth()} />}
+            {(line) => (
+              <LogLine line={line} tasks={props.tasks} width={contentWidth()} />
+            )}
           </For>
         </Show>
       </box>

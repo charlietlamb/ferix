@@ -38,6 +38,8 @@ const DIALOG_ACTIONS: Record<string, DialogKey> = {
   deleteRepositoryPalette: "deleteRepositoryPalette",
 };
 
+const AUTH_REQUIRED_DIALOG_ACTIONS = new Set(["addRepositoryDialog"]);
+
 const AUTH_REQUIRED_ROUTES: Record<string, string> = {
   createPromptDialog: "/create-prompt",
   settingsDialog: "/settings",
@@ -108,7 +110,11 @@ export function CommandPalette() {
       }
 
       if (action in DIALOG_ACTIONS) {
-        openDialog(DIALOG_ACTIONS[action] as "impersonatePalette");
+        if (AUTH_REQUIRED_DIALOG_ACTIONS.has(action) && !isAuthenticated) {
+          openDialog("signInDialog");
+        } else {
+          openDialog(DIALOG_ACTIONS[action] as "impersonatePalette");
+        }
         return true;
       }
 

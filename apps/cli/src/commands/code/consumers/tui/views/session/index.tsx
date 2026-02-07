@@ -222,7 +222,7 @@ export function SessionView(props: SessionViewProps) {
       <Show
         fallback={
           <box
-            backgroundColor={theme.background}
+            backgroundColor="transparent"
             flexDirection="column"
             height="100%"
             paddingLeft={2}

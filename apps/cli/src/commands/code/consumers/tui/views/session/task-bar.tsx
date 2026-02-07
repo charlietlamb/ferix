@@ -19,7 +19,7 @@ export function TaskBar(props: TaskBarProps) {
 
   return (
     <box
-      backgroundColor={theme.backgroundElement}
+      backgroundColor="transparent"
       border={["left"]}
       borderColor={theme.borderActive}
       flexDirection="row"

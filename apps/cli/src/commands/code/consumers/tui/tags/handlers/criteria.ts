@@ -28,10 +28,11 @@ tagRendererRegistry.register({
 /**
  * Individual criterion handler.
  * Renders a criterion with its ID and description.
+ * Uses [\s\S]*? to match multiline content.
  */
 tagRendererRegistry.register({
-  pattern: /<criterion id="([^"]+)">([^<]+)<\/criterion>/g,
-  render: (m, w) => criterionLine(m[1] ?? "", m[2] ?? "", w),
+  pattern: /<criterion id="([^"]+)">([\s\S]*?)<\/criterion>/g,
+  render: (m, w) => criterionLine(m[1] ?? "", (m[2] ?? "").trim(), w),
 });
 
 /**

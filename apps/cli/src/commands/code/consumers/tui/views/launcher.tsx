@@ -126,7 +126,7 @@ function SessionRow(props: {
 
   return (
     <box
-      backgroundColor={props.isSelected ? theme.backgroundElement : undefined}
+      backgroundColor="transparent"
       border={props.isSelected ? ["left"] : undefined}
       borderColor={props.isSelected ? theme.borderActive : undefined}
       flexDirection="column"
@@ -497,7 +497,7 @@ export function LauncherView() {
     <box flexDirection="column" height="100%" width="100%">
       {/* Header area with logo */}
       <box
-        backgroundColor={theme.backgroundPanel}
+        backgroundColor="transparent"
         flexDirection="column"
         paddingLeft={2}
         paddingTop={1}
@@ -541,9 +541,7 @@ export function LauncherView() {
         <Show when={!loading() && viewMode() === "sessions"}>
           {/* Create new option */}
           <box
-            backgroundColor={
-              selectedIndex() === 0 ? theme.backgroundElement : undefined
-            }
+            backgroundColor="transparent"
             border={selectedIndex() === 0 ? ["left"] : undefined}
             borderColor={selectedIndex() === 0 ? theme.borderActive : undefined}
             flexDirection="column"
@@ -599,6 +597,7 @@ export function LauncherView() {
                 backgroundColor={theme.backgroundElement}
                 focused={true}
                 height={dimensions().height - 14}
+                initialValue={taskInput()}
                 onContentChange={(event) => {
                   const text =
                     typeof event === "string" ? event : String(event);

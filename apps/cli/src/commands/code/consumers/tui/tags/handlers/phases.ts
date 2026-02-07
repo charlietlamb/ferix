@@ -29,10 +29,11 @@ tagRendererRegistry.register({
 /**
  * Individual phase handler.
  * Renders a phase with its ID and description.
+ * Uses [\s\S]*? to match multiline content.
  */
 tagRendererRegistry.register({
-  pattern: /<phase id="([^"]+)">([^<]+)<\/phase>/g,
-  render: (m, w) => phaseLine(m[1] ?? "", m[2] ?? "", w),
+  pattern: /<phase id="([^"]+)">([\s\S]*?)<\/phase>/g,
+  render: (m, w) => phaseLine(m[1] ?? "", (m[2] ?? "").trim(), w),
 });
 
 /**
@@ -56,8 +57,9 @@ tagRendererRegistry.register({
 /**
  * Phase failed handler.
  * Renders a failure marker with reason when a phase fails.
+ * Uses [\s\S]*? to match multiline content.
  */
 tagRendererRegistry.register({
-  pattern: /<ferix:phase-failed id="([^"]+)">([^<]+)<\/ferix:phase-failed>/g,
-  render: (m, w) => phaseFailed(m[1] ?? "", m[2] ?? "", w),
+  pattern: /<ferix:phase-failed id="([^"]+)">([\s\S]*?)<\/ferix:phase-failed>/g,
+  render: (m, w) => phaseFailed(m[1] ?? "", (m[2] ?? "").trim(), w),
 });

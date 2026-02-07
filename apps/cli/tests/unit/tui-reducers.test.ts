@@ -11,6 +11,7 @@ import "../../src/commands/code/consumers/tui/reducers/iteration.js";
 import "../../src/commands/code/consumers/tui/reducers/llm.js";
 import "../../src/commands/code/consumers/tui/reducers/discovery.js";
 import "../../src/commands/code/consumers/tui/reducers/progress.js";
+import "../../src/commands/code/consumers/tui/reducers/tasks.js";
 
 /**
  * Helper to create a minimal TUI state for testing.
@@ -544,7 +545,7 @@ describe("TUI Reducers", () => {
         const result = stateReducerRegistry.reduce(state, event);
 
         expect(
-          result.outputLines.some((line) => line.includes("Learning"))
+          result.outputLines.some((line) => line.includes("ferix:learning"))
         ).toBe(true);
         expect(
           result.outputLines.some((line) =>
@@ -588,7 +589,7 @@ describe("TUI Reducers", () => {
         const result = stateReducerRegistry.reduce(state, event);
 
         expect(
-          result.outputLines.some((line) => line.includes("Guardrail"))
+          result.outputLines.some((line) => line.includes("ferix:guardrail"))
         ).toBe(true);
         expect(
           result.outputLines.some((line) => line.includes("Error pattern"))
@@ -628,6 +629,76 @@ describe("TUI Reducers", () => {
         const result = stateReducerRegistry.reduce(state, event);
 
         expect(result).toEqual(state);
+      });
+    });
+  });
+
+  describe("Tasks Reducers", () => {
+    describe("TasksDefined", () => {
+      it("should set tasks from event", () => {
+        const state = createTestState({ tasks: [] });
+        const event = {
+          _tag: "TasksDefined" as const,
+          tasks: [
+            { id: "1", title: "First task" },
+            { id: "2", title: "Second task" },
+          ],
+          timestamp: Date.now(),
+        };
+
+        const result = stateReducerRegistry.reduce(state, event);
+
+        expect(result.tasks.length).toBe(2);
+        expect(result.tasks[0]?.id).toBe("1");
+        expect(result.tasks[0]?.title).toBe("First task");
+        expect(result.tasks[1]?.id).toBe("2");
+        expect(result.tasks[1]?.title).toBe("Second task");
+      });
+
+      it("should set currentTaskId to first task", () => {
+        const state = createTestState({ currentTaskId: undefined });
+        const event = {
+          _tag: "TasksDefined" as const,
+          tasks: [
+            { id: "1", title: "First task" },
+            { id: "2", title: "Second task" },
+          ],
+          timestamp: Date.now(),
+        };
+
+        const result = stateReducerRegistry.reduce(state, event);
+
+        expect(result.currentTaskId).toBe("1");
+      });
+
+      it("should emit task-block marker to outputLines", () => {
+        const state = createTestState({ outputLines: ["Previous line"] });
+        const event = {
+          _tag: "TasksDefined" as const,
+          tasks: [{ id: "1", title: "Task" }],
+          timestamp: Date.now(),
+        };
+
+        const result = stateReducerRegistry.reduce(state, event);
+
+        expect(result.outputLines).toContain("<ferix:task-block/>");
+        expect(result.outputLines[0]).toBe("Previous line");
+        expect(result.outputLines[1]).toBe("<ferix:task-block/>");
+      });
+
+      it("should initialize tasks with pending status", () => {
+        const state = createTestState();
+        const event = {
+          _tag: "TasksDefined" as const,
+          tasks: [{ id: "1", title: "Task" }],
+          timestamp: Date.now(),
+        };
+
+        const result = stateReducerRegistry.reduce(state, event);
+
+        expect(result.tasks[0]?.status).toBe("pending");
+        expect(result.tasks[0]?.phases).toEqual([]);
+        expect(result.tasks[0]?.criteria).toEqual([]);
       });
     });
   });

@@ -2,7 +2,6 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/solid";
 import { createMemo, createSignal, Match, Switch } from "solid-js";
 import type { SetStoreFunction } from "solid-js/store";
 import type { ViewMode } from "../../../../domain/schemas/tui.js";
-import { useTheme } from "../../context/index.js";
 import { computeDetailLineCount } from "../../util/detail-line-count.js";
 import type { MutableTUIState } from "../../util/stream-to-store.js";
 import { clamp } from "../../util/text.js";
@@ -33,7 +32,6 @@ interface SessionContentProps {
  */
 export function SessionContent(props: SessionContentProps) {
   const dimensions = useTerminalDimensions();
-  const { theme } = useTheme();
 
   // Local UI state
   const [viewMode, setViewMode] = createSignal<ViewMode>("logs");
@@ -269,7 +267,7 @@ export function SessionContent(props: SessionContentProps) {
 
   return (
     <box
-      backgroundColor={theme.background}
+      backgroundColor="transparent"
       flexDirection="column"
       height="100%"
       width="100%"
@@ -290,6 +288,7 @@ export function SessionContent(props: SessionContentProps) {
             height={contentHeight()}
             outputLines={props.store.outputLines}
             scrollOffset={scrollOffset()}
+            tasks={props.store.tasks}
             userScrolled={userScrolled()}
             width={dimensions().width}
           />

@@ -33,7 +33,10 @@ const worktreeRemovedReducer: StateReducer<"WorktreeRemoved"> = {
 const branchPushedReducer: StateReducer<"BranchPushed"> = {
   tag: "BranchPushed",
   reduce: (state, event: BranchPushedEvent) => ({
-    ...appendOutput(state, `\nBranch pushed: ${event.branchName}\n`),
+    ...appendOutput(
+      state,
+      `\n<ferix:branch-pushed>${event.branchName}</ferix:branch-pushed>\n`
+    ),
     gitPushed: true,
   }),
 };
@@ -41,7 +44,10 @@ const branchPushedReducer: StateReducer<"BranchPushed"> = {
 const prCreatedReducer: StateReducer<"PRCreated"> = {
   tag: "PRCreated",
   reduce: (state, event: PRCreatedEvent) => ({
-    ...appendOutput(state, `\nPR created: ${event.prUrl}\n`),
+    ...appendOutput(
+      state,
+      `\n<ferix:pr-created>${event.prUrl}</ferix:pr-created>\n`
+    ),
     prUrl: event.prUrl,
   }),
 };
