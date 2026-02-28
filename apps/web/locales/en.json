@@ -180,6 +180,11 @@
     "viewAll": "View All",
     "promptCount": "{count} prompts"
   },
+  "mcp": {
+    "title": "Popular MCP Servers",
+    "viewAll": "View All",
+    "stars": "{count} stars"
+  },
   "cta": {
     "title": "Share your skills, subagents and rules",
     "description": "Help the community by sharing your skills, subagents and rules",
@@ -201,6 +206,7 @@
     "recent": "Recent",
     "tags": "All Tags",
     "repositories": "Repositories",
+    "mcp": "MCP Servers",
     "topCategories": "Top Categories",
     "viewAll": "View All",
     "personal": "Personal",
@@ -211,6 +217,38 @@
     "new": "New"
   },
   "pages": {
+    "mcp": {
+      "title": "MCP Servers",
+      "description": "Discover MCP servers from the official registry. Tools and integrations for AI assistants.",
+      "empty": "No MCP servers yet",
+      "loading": "Loading MCP servers...",
+      "searchPlaceholder": "Search MCP servers...",
+      "sortByStars": "Most Stars",
+      "sortByRecent": "Recently Updated",
+      "sortByName": "Name",
+      "detail": {
+        "version": "Version",
+        "packages": "Packages",
+        "links": "Links",
+        "stats": "Stats",
+        "details": "Details",
+        "install": "Install",
+        "copied": "Copied!",
+        "transport": "Transport",
+        "repository": "Repository",
+        "website": "Website",
+        "stars": "Stars",
+        "lastUpdated": "Last Updated",
+        "published": "Published",
+        "copyCommand": "Copy install command",
+        "notFound": "MCP server not found"
+      },
+      "filters": {
+        "registry": "Registry",
+        "transport": "Transport",
+        "all": "All"
+      }
+    },
     "popular": {
       "title": "Popular Prompts",
       "description": "Explore the most popular prompts created by our community."

@@ -295,8 +295,9 @@ export const remove = mutation({
 });
 
 /**
- * Recalculates directory counts by collecting all prompts.
+ * Recalculates directory prompt count by collecting all prompts.
  * Used as a reconciliation step after sync operations.
+ * Note: totalDownloads is synced separately from skills.sh via cron.
  */
 export const updateDirectoryCounts = internalMutation({
   args: { directoryId: v.id("directories") },
@@ -306,13 +307,7 @@ export const updateDirectoryCounts = internalMutation({
       .withIndex("by_directoryId", (q) => q.eq("directoryId", args.directoryId))
       .collect();
 
-    const promptCount = prompts.length;
-    const totalDownloads = prompts.reduce(
-      (sum, p) => sum + (p.downloads ?? 0),
-      0
-    );
-
-    await ctx.db.patch(args.directoryId, { promptCount, totalDownloads });
+    await ctx.db.patch(args.directoryId, { promptCount: prompts.length });
   },
 });
 
@@ -411,7 +406,6 @@ export const removeDeletedFiles = internalMutation({
   handler: async (ctx, args) => {
     const currentPathsSet = new Set(args.currentFilePaths);
     let deletedCount = 0;
-    let deletedDownloads = 0;
 
     const existingPrompts = await ctx.db
       .query("prompts")
@@ -440,14 +434,12 @@ export const removeDeletedFiles = internalMutation({
         await ctx.db.delete(prompt._id);
 
         deletedCount++;
-        deletedDownloads += prompt.downloads ?? 0;
       }
     }
 
     if (deletedCount > 0) {
       await updateDirectoryStats(ctx, args.directoryId, {
         promptCount: -deletedCount,
-        downloads: -deletedDownloads,
       });
     }
 

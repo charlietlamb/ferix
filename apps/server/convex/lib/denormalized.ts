@@ -111,15 +111,16 @@ export async function getUserStats(ctx: MutationCtx, userId: string) {
 }
 
 /**
- * Updates the directory stats with delta values.
+ * Updates the directory prompt count with delta value.
+ * Note: totalDownloads is synced separately from skills.sh via cron.
  * @param ctx - Mutation context
  * @param directoryId - The directory to update stats for
- * @param delta - The changes to apply (promptCount and/or downloads)
+ * @param delta - The changes to apply (promptCount only)
  */
 export async function updateDirectoryStats(
   ctx: MutationCtx,
   directoryId: Id<"directories">,
-  delta: { promptCount?: number; downloads?: number }
+  delta: { promptCount?: number }
 ) {
   const directory = await ctx.db.get(directoryId);
   if (!directory) {
@@ -130,10 +131,6 @@ export async function updateDirectoryStats(
     promptCount: Math.max(
       0,
       (directory.promptCount ?? 0) + (delta.promptCount ?? 0)
-    ),
-    totalDownloads: Math.max(
-      0,
-      (directory.totalDownloads ?? 0) + (delta.downloads ?? 0)
     ),
   });
 }

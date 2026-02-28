@@ -28,6 +28,25 @@ export const bulkImportItemStatus = v.union(
   v.literal("failed")
 );
 
+export const mcpSyncStatusTypes = v.union(
+  v.literal("idle"),
+  v.literal("syncing"),
+  v.literal("error")
+);
+
+export const mcpRegistryType = v.union(
+  v.literal("npm"),
+  v.literal("pypi"),
+  v.literal("oci"),
+  v.literal("nuget")
+);
+
+export const mcpTransportType = v.union(
+  v.literal("stdio"),
+  v.literal("sse"),
+  v.literal("streamable-http")
+);
+
 export default defineSchema({
   /**
    * Cache for npm package name to GitHub organization mapping.
@@ -64,6 +83,8 @@ export default defineSchema({
     updatedAt: v.number(),
     directoryId: v.optional(v.id("directories")),
     filePath: v.optional(v.string()),
+    /** When skills.sh install count was last synced */
+    installsUpdatedAt: v.optional(v.number()),
   })
     .index("by_userId", ["userId"])
     .index("by_slug", ["slug"])
@@ -97,7 +118,10 @@ export default defineSchema({
     lastSyncedAt: v.optional(v.number()),
     syncStatus: v.optional(syncStatusTypes),
     promptCount: v.optional(v.number()),
+    /** Install count from skills.sh (synced via cron) */
     totalDownloads: v.optional(v.number()),
+    /** When skills.sh install count was last synced */
+    installsUpdatedAt: v.optional(v.number()),
   })
     .index("by_githubUrl", ["githubUrl"])
     .index("by_owner", ["owner"])
@@ -161,4 +185,54 @@ export default defineSchema({
   })
     .index("by_jobId", ["jobId"])
     .index("by_jobId_status", ["jobId", "status"]),
+
+  /** MCP Server cache from registry.modelcontextprotocol.io */
+  mcpServers: defineTable({
+    // Registry fields
+    name: v.string(),
+    title: v.string(),
+    description: v.optional(v.string()),
+    version: v.string(),
+    repositoryUrl: v.optional(v.string()),
+    websiteUrl: v.optional(v.string()),
+    iconUrl: v.optional(v.string()),
+
+    // Package info
+    packages: v.array(
+      v.object({
+        registryType: mcpRegistryType,
+        identifier: v.string(),
+        transport: mcpTransportType,
+      })
+    ),
+
+    // Registry metadata
+    registryStatus: v.string(),
+    publishedAt: v.number(),
+    registryUpdatedAt: v.number(),
+
+    // GitHub enrichment
+    githubOwner: v.optional(v.string()),
+    githubRepo: v.optional(v.string()),
+    githubStars: v.optional(v.number()),
+    githubStarsUpdatedAt: v.optional(v.number()),
+
+    // Sync metadata
+    lastSyncedAt: v.number(),
+  })
+    .index("by_name", ["name"])
+    .index("by_githubStars", ["githubStars"])
+    .index("by_registryUpdatedAt", ["registryUpdatedAt"])
+    .searchIndex("search_title", {
+      searchField: "title",
+    }),
+
+  /** Global sync state for MCP registry */
+  mcpSyncState: defineTable({
+    key: v.literal("global"),
+    lastSyncAt: v.optional(v.number()),
+    totalServers: v.number(),
+    syncStatus: mcpSyncStatusTypes,
+    errorMessage: v.optional(v.string()),
+  }).index("by_key", ["key"]),
 });

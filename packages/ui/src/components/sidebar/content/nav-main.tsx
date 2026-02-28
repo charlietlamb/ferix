@@ -16,21 +16,21 @@ import {
   FireIcon,
   FolderIcon,
   TagIcon,
-  TerminalIcon,
 } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import type { ComponentType } from "react";
 
 interface NavItem {
-  titleKey: "popular" | "recent" | "tags" | "repositories" | "code" | "sync";
+  titleKey: "popular" | "recent" | "tags" | "repositories" | "sync";
   href: string;
   icon: ComponentType<{ className?: string }>;
   badge?: "new";
 }
 
 const navItems: NavItem[] = [
-  { titleKey: "code", href: "/code", icon: TerminalIcon, badge: "new" },
   { titleKey: "sync", href: "/sync", icon: ArrowsClockwiseIcon, badge: "new" },
+  // MCP hidden for now - components preserved
+  // { titleKey: "mcp", href: "/mcp", icon: CubeIcon, badge: "new" },
   { titleKey: "popular", href: "/popular", icon: FireIcon },
   { titleKey: "recent", href: "/recent", icon: ClockIcon },
   { titleKey: "tags", href: "/tags", icon: TagIcon },
